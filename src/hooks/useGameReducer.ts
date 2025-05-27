@@ -1,3 +1,4 @@
+
 import { useReducer } from 'react';
 import { GameState, GameAction } from '@/types/game';
 
@@ -17,25 +18,39 @@ const generateDetourTrapTiles = (giftTiles: number[]): { index: number; moveBack
   const detourTrapTiles: { index: number; moveBack: number; revealed: boolean }[] = [];
   const occupiedTiles = new Set(giftTiles);
   
-  // Generate 8 traps with random penalties
+  // Generate 8 traps with strategic placement
+  const penalties = [];
   for (let i = 0; i < 8; i++) {
-    const penalty = Math.floor(Math.random() * 46) + 5; // 5-50 tiles back
-    
-    // Calculate minimum position for this penalty (must have enough tiles before it)
-    const minPosition = penalty + 1;
+    penalties.push(Math.floor(Math.random() * 46) + 5); // 5-50 tiles back
+  }
+  
+  // Sort penalties in descending order (highest penalties first)
+  penalties.sort((a, b) => b - a);
+  
+  for (const penalty of penalties) {
+    // Calculate valid positions for this penalty
+    const minPosition = penalty + 1; // Must have enough tiles before it
     const maxPosition = 99; // Can't be on tile 100
     
-    // Find a valid position for this trap
-    let attempts = 0;
+    if (minPosition > maxPosition) continue; // Skip if impossible
+    
     let position;
+    let attempts = 0;
     
     do {
       position = Math.floor(Math.random() * (maxPosition - minPosition + 1)) + minPosition;
+      
+      // Check if this position would cause overlap with existing traps
+      const wouldOverlap = detourTrapTiles.some(trap => {
+        const backPosition = Math.max(1, position - penalty);
+        return backPosition === trap.index;
+      });
+      
       attempts++;
-    } while (occupiedTiles.has(position) && attempts < 50);
+    } while ((occupiedTiles.has(position) || wouldOverlap) && attempts < 100);
     
-    // If we couldn't find a spot after 50 attempts, skip this trap
-    if (attempts >= 50) continue;
+    // If we couldn't find a spot after 100 attempts, skip this trap
+    if (attempts >= 100) continue;
     
     detourTrapTiles.push({
       index: position,

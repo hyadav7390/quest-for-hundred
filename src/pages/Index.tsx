@@ -51,13 +51,6 @@ const Index = () => {
     dispatch({ type: 'MOVE_PLAYER', payload: targetPosition });
     playSound('move');
     
-    // Regenerate gift on previous position if it was a gift tile
-    if (gameState.giftTiles.includes(previousPosition)) {
-      setTimeout(() => {
-        dispatch({ type: 'REGENERATE_GIFT', payload: previousPosition });
-      }, 1000);
-    }
-    
     // Small delay for movement animation
     setTimeout(() => {
       // Check if player reached tile 100
@@ -106,12 +99,26 @@ const Index = () => {
           // Finish turn after detour trap animation
           setTimeout(() => {
             dispatch({ type: 'FINISH_TURN' });
+            
+            // Regenerate gift on previous position if it was a gift tile
+            if (gameState.giftTiles.includes(previousPosition)) {
+              setTimeout(() => {
+                dispatch({ type: 'REGENERATE_GIFT', payload: previousPosition });
+              }, 500);
+            }
           }, 1000);
         }, 1000);
         return;
       }
 
       dispatch({ type: 'FINISH_TURN' });
+      
+      // Regenerate gift on previous position if it was a gift tile
+      if (gameState.giftTiles.includes(previousPosition)) {
+        setTimeout(() => {
+          dispatch({ type: 'REGENERATE_GIFT', payload: previousPosition });
+        }, 500);
+      }
     }, 500);
   };
 
