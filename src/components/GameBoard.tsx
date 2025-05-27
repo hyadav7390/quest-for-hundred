@@ -1,14 +1,23 @@
 
-import { motion } from 'framer-motion';
-import { Gift, RotateCcw } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Gift, DoorClosed, DoorOpen } from 'lucide-react';
+import { TileType } from '@/types/game';
 
 interface GameBoardProps {
   playerPosition: number;
   giftTiles: number[];
-  bounceBackTiles: { index: number; moveBack: number }[];
+  detourTrapTiles: { index: number; moveBack: number; revealed: boolean }[];
+  revealedTraps: number[];
+  isMoving: boolean;
 }
 
-const GameBoard = ({ playerPosition, giftTiles, bounceBackTiles }: GameBoardProps) => {
+const GameBoard = ({ 
+  playerPosition, 
+  giftTiles, 
+  detourTrapTiles, 
+  revealedTraps,
+  isMoving 
+}: GameBoardProps) => {
   const getTileNumber = (row: number, col: number): number => {
     const isEvenRow = row % 2 === 0;
     if (isEvenRow) {
@@ -18,23 +27,29 @@ const GameBoard = ({ playerPosition, giftTiles, bounceBackTiles }: GameBoardProp
     }
   };
 
-  const getTileType = (tileNumber: number) => {
-    if (giftTiles.includes(tileNumber)) return 'gift';
-    const bounceBack = bounceBackTiles.find(bt => bt.index === tileNumber);
-    if (bounceBack) return { type: 'bounceback', moveBack: bounceBack.moveBack };
-    return 'normal';
+  const getTileType = (tileNumber: number): TileType => {
+    if (giftTiles.includes(tileNumber)) return { type: 'gift' };
+    const detourTrap = detourTrapTiles.find(dt => dt.index === tileNumber);
+    if (detourTrap) {
+      return { 
+        type: 'detour-trap', 
+        moveBack: detourTrap.moveBack,
+        revealed: revealedTraps.includes(tileNumber)
+      };
+    }
+    return { type: 'normal' };
   };
 
-  const getTileStyles = (tileNumber: number, tileType: any) => {
+  const getTileStyles = (tileNumber: number, tileType: TileType) => {
     let baseStyles = "w-16 h-16 flex items-center justify-center rounded-lg relative border-2 transition-all duration-300";
     
     if (tileNumber === playerPosition) {
       baseStyles += " ring-4 ring-yellow-400 ring-opacity-75";
     }
 
-    if (tileType === 'gift') {
+    if (tileType.type === 'gift') {
       return baseStyles + " bg-gradient-to-br from-yellow-400 to-amber-500 border-yellow-600 shadow-lg";
-    } else if (tileType.type === 'bounceback') {
+    } else if (tileType.type === 'detour-trap') {
       return baseStyles + " bg-gradient-to-br from-red-500 to-orange-600 border-red-700 shadow-lg";
     } else if (tileNumber === 100) {
       return baseStyles + " bg-gradient-to-br from-green-400 to-emerald-500 border-green-600 shadow-lg";
@@ -43,13 +58,61 @@ const GameBoard = ({ playerPosition, giftTiles, bounceBackTiles }: GameBoardProp
     }
   };
 
+  const CrawlingCharacter = () => (
+    <motion.div
+      className="w-8 h-8 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full border-2 border-white shadow-lg flex items-center justify-center relative"
+      animate={{
+        y: isMoving ? [-2, 2, -2] : 0,
+        rotate: isMoving ? [0, 5, -5, 0] : 0,
+      }}
+      transition={{
+        duration: 0.5,
+        repeat: isMoving ? Infinity : 0,
+        ease: "easeInOut"
+      }}
+    >
+      <motion.div
+        className="w-3 h-3 bg-white rounded-full"
+        animate={{
+          scale: isMoving ? [1, 1.2, 1] : 1,
+        }}
+        transition={{
+          duration: 0.3,
+          repeat: isMoving ? Infinity : 0,
+        }}
+      />
+      {/* Crawling legs animation */}
+      <motion.div
+        className="absolute -bottom-1 -left-1 w-1 h-2 bg-blue-300 rounded"
+        animate={{
+          rotate: isMoving ? [0, 20, -20, 0] : 0,
+        }}
+        transition={{
+          duration: 0.4,
+          repeat: isMoving ? Infinity : 0,
+        }}
+      />
+      <motion.div
+        className="absolute -bottom-1 -right-1 w-1 h-2 bg-blue-300 rounded"
+        animate={{
+          rotate: isMoving ? [0, -20, 20, 0] : 0,
+        }}
+        transition={{
+          duration: 0.4,
+          repeat: isMoving ? Infinity : 0,
+          delay: 0.2,
+        }}
+      />
+    </motion.div>
+  );
+
   return (
     <div className="bg-gray-900 p-6 rounded-2xl shadow-2xl">
       <div className="grid grid-cols-10 gap-2">
         {Array.from({ length: 100 }, (_, index) => {
           const row = Math.floor(index / 10);
           const col = index % 10;
-          const tileNumber = getTileNumber(9 - row, col); // Reverse row for bottom-up layout
+          const tileNumber = getTileNumber(9 - row, col);
           const tileType = getTileType(tileNumber);
           
           return (
@@ -68,25 +131,60 @@ const GameBoard = ({ playerPosition, giftTiles, bounceBackTiles }: GameBoardProp
               {/* Player Avatar */}
               {tileNumber === playerPosition && (
                 <motion.div
-                  className="w-8 h-8 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full border-2 border-white shadow-lg flex items-center justify-center"
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ type: "spring", stiffness: 500, damping: 25 }}
                 >
-                  <span className="text-white text-xs font-bold">P</span>
+                  <CrawlingCharacter />
                 </motion.div>
               )}
               
               {/* Gift Icon */}
-              {tileType === 'gift' && tileNumber !== playerPosition && (
+              {tileType.type === 'gift' && tileNumber !== playerPosition && (
                 <Gift className="w-6 h-6 text-white" />
               )}
               
-              {/* BounceBack Icon and Value */}
-              {tileType.type === 'bounceback' && tileNumber !== playerPosition && (
+              {/* Detour Trap Door */}
+              {tileType.type === 'detour-trap' && (
                 <div className="flex flex-col items-center">
-                  <RotateCcw className="w-4 h-4 text-white" />
-                  <span className="text-xs text-white font-bold">-{tileType.moveBack}</span>
+                  <AnimatePresence mode="wait">
+                    {tileNumber === playerPosition ? (
+                      <motion.div
+                        key="open-door"
+                        initial={{ scale: 0.8 }}
+                        animate={{ scale: 1 }}
+                        exit={{ scale: 0.8 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <DoorOpen className="w-6 h-6 text-white" />
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key="closed-door"
+                        initial={{ scale: 0.8 }}
+                        animate={{ scale: 1 }}
+                        exit={{ scale: 0.8 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <DoorClosed className="w-6 h-6 text-white" />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                  
+                  {/* Show penalty number only when revealed */}
+                  <AnimatePresence>
+                    {tileType.revealed && (
+                      <motion.span
+                        className="text-xs text-white font-bold mt-1"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.5 }}
+                      >
+                        -{tileType.moveBack}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
                 </div>
               )}
               

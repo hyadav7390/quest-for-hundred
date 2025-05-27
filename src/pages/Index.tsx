@@ -2,6 +2,7 @@
 import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useGameReducer } from '@/hooks/useGameReducer';
+import { useSoundEffects } from '@/hooks/useSoundEffects';
 import GameBoard from '@/components/GameBoard';
 import Dice from '@/components/Dice';
 import ScoreBoard from '@/components/ScoreBoard';
@@ -10,12 +11,19 @@ import { toast } from '@/hooks/use-toast';
 
 const Index = () => {
   const [gameState, dispatch] = useGameReducer();
+  const { playSound } = useSoundEffects(gameState.isSoundMuted);
+
+  useEffect(() => {
+    // Play start game sound
+    playSound('start');
+  }, []);
 
   const rollDice = () => {
     if (gameState.isRolling || gameState.isMoving) return;
     
     const diceValue = Math.floor(Math.random() * 6) + 1;
     dispatch({ type: 'ROLL_DICE', payload: diceValue });
+    playSound('diceRoll');
     
     // Start movement after dice animation
     setTimeout(() => {
@@ -26,6 +34,7 @@ const Index = () => {
 
   const handlePlayerMovement = async (diceValue: number) => {
     const targetPosition = gameState.playerPosition + diceValue;
+    const previousPosition = gameState.playerPosition;
     
     // Check if player would overshoot tile 100
     if (targetPosition > 100) {
@@ -40,12 +49,21 @@ const Index = () => {
 
     // Move player
     dispatch({ type: 'MOVE_PLAYER', payload: targetPosition });
+    playSound('move');
+    
+    // Regenerate gift on previous position if it was a gift tile
+    if (gameState.giftTiles.includes(previousPosition)) {
+      setTimeout(() => {
+        dispatch({ type: 'REGENERATE_GIFT', payload: previousPosition });
+      }, 1000);
+    }
     
     // Small delay for movement animation
     setTimeout(() => {
       // Check if player reached tile 100
       if (targetPosition === 100) {
         dispatch({ type: 'WIN_GAME' });
+        playSound('win');
         toast({
           title: "🎉 Victory!",
           description: "Congratulations! You've reached tile 100!",
@@ -58,6 +76,7 @@ const Index = () => {
       if (gameState.giftTiles.includes(targetPosition)) {
         const giftPoints = Math.floor(Math.random() * 51) + 50;
         dispatch({ type: 'COLLECT_GIFT', payload: targetPosition });
+        playSound('gift');
         toast({
           title: "🎁 Gift Collected!",
           description: `You earned ${giftPoints} bonus points!`,
@@ -65,19 +84,25 @@ const Index = () => {
         });
       }
 
-      // Check for BounceBack tiles
-      const bounceBackTile = gameState.bounceBackTiles.find(bt => bt.index === targetPosition);
-      if (bounceBackTile) {
-        const newPosition = Math.max(1, targetPosition - bounceBackTile.moveBack);
-        dispatch({ 
-          type: 'TRIGGER_BOUNCEBACK', 
-          payload: { newPosition, penalty: bounceBackTile.moveBack } 
-        });
-        toast({
-          title: "🔄 BounceBack!",
-          description: `You moved back ${bounceBackTile.moveBack} tiles to position ${newPosition}.`,
-          variant: "destructive",
-        });
+      // Check for Detour Trap tiles
+      const detourTrap = gameState.detourTrapTiles.find(dt => dt.index === targetPosition);
+      if (detourTrap) {
+        // Reveal the trap penalty
+        dispatch({ type: 'REVEAL_TRAP', payload: targetPosition });
+        
+        setTimeout(() => {
+          const newPosition = Math.max(1, targetPosition - detourTrap.moveBack);
+          dispatch({ 
+            type: 'TRIGGER_DETOUR_TRAP', 
+            payload: { newPosition, penalty: detourTrap.moveBack, trapIndex: targetPosition } 
+          });
+          playSound('detourTrap');
+          toast({
+            title: "🚪 Detour Trap!",
+            description: `You went through the door and moved back ${detourTrap.moveBack} tiles to position ${newPosition}.`,
+            variant: "destructive",
+          });
+        }, 1000);
       }
 
       dispatch({ type: 'FINISH_TURN' });
@@ -86,11 +111,16 @@ const Index = () => {
 
   const restartGame = () => {
     dispatch({ type: 'RESET_GAME' });
+    playSound('start');
     toast({
       title: "New Game Started!",
       description: "Good luck on your quest to tile 100!",
       variant: "default",
     });
+  };
+
+  const toggleSound = () => {
+    dispatch({ type: 'TOGGLE_SOUND' });
   };
 
   return (
@@ -107,7 +137,7 @@ const Index = () => {
             🎮 GiftQuest100
           </h1>
           <p className="text-xl text-gray-300">
-            Roll the dice, collect gifts, avoid BounceBack tiles, and reach tile 100!
+            Roll the dice, collect gifts, avoid Detour Traps, and reach tile 100!
           </p>
         </motion.div>
 
@@ -117,7 +147,9 @@ const Index = () => {
             <GameBoard
               playerPosition={gameState.playerPosition}
               giftTiles={gameState.giftTiles}
-              bounceBackTiles={gameState.bounceBackTiles}
+              detourTrapTiles={gameState.detourTrapTiles}
+              revealedTraps={gameState.revealedTraps}
+              isMoving={gameState.isMoving}
             />
           </div>
 
@@ -129,7 +161,9 @@ const Index = () => {
               position={gameState.playerPosition}
               turnsPlayed={gameState.turnsPlayed}
               giftsCollected={gameState.giftsCollected}
-              bounceBacksTriggered={gameState.bounceBacksTriggered}
+              detourTrapsTriggered={gameState.detourTrapsTriggered}
+              isSoundMuted={gameState.isSoundMuted}
+              onToggleSound={toggleSound}
             />
 
             {/* Dice Control */}
@@ -165,7 +199,7 @@ const Index = () => {
           score={gameState.score}
           turnsPlayed={gameState.turnsPlayed}
           giftsCollected={gameState.giftsCollected}
-          bounceBacksTriggered={gameState.bounceBacksTriggered}
+          bounceBacksTriggered={gameState.detourTrapsTriggered}
           onRestart={restartGame}
         />
       </div>

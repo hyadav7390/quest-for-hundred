@@ -4,13 +4,15 @@ export interface GameState {
   score: number;
   diceValue: number | null;
   giftTiles: number[];
-  bounceBackTiles: { index: number; moveBack: number }[];
+  detourTrapTiles: { index: number; moveBack: number; revealed: boolean }[];
   gameStatus: 'playing' | 'won';
   turnsPlayed: number;
   giftsCollected: number;
-  bounceBacksTriggered: number;
+  detourTrapsTriggered: number;
   isRolling: boolean;
   isMoving: boolean;
+  isSoundMuted: boolean;
+  revealedTraps: number[];
 }
 
 export type GameAction =
@@ -18,7 +20,16 @@ export type GameAction =
   | { type: 'START_MOVING' }
   | { type: 'MOVE_PLAYER'; payload: number }
   | { type: 'COLLECT_GIFT'; payload: number }
-  | { type: 'TRIGGER_BOUNCEBACK'; payload: { newPosition: number; penalty: number } }
+  | { type: 'REGENERATE_GIFT'; payload: number }
+  | { type: 'TRIGGER_DETOUR_TRAP'; payload: { newPosition: number; penalty: number; trapIndex: number } }
+  | { type: 'REVEAL_TRAP'; payload: number }
   | { type: 'FINISH_TURN' }
   | { type: 'WIN_GAME' }
-  | { type: 'RESET_GAME' };
+  | { type: 'RESET_GAME' }
+  | { type: 'TOGGLE_SOUND' };
+
+export interface TileType {
+  type: 'gift' | 'detour-trap' | 'normal';
+  moveBack?: number;
+  revealed?: boolean;
+}

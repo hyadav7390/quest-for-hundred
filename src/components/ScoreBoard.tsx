@@ -1,13 +1,15 @@
 
 import { motion } from 'framer-motion';
-import { Trophy, Target, Gift, RotateCcw } from 'lucide-react';
+import { Trophy, Target, Gift, DoorClosed, Volume2, VolumeX } from 'lucide-react';
 
 interface ScoreBoardProps {
   score: number;
   position: number;
   turnsPlayed: number;
   giftsCollected: number;
-  bounceBacksTriggered: number;
+  detourTrapsTriggered: number;
+  isSoundMuted: boolean;
+  onToggleSound: () => void;
 }
 
 const ScoreBoard = ({ 
@@ -15,7 +17,9 @@ const ScoreBoard = ({
   position, 
   turnsPlayed, 
   giftsCollected, 
-  bounceBacksTriggered 
+  detourTrapsTriggered,
+  isSoundMuted,
+  onToggleSound
 }: ScoreBoardProps) => {
   return (
     <motion.div
@@ -24,7 +28,21 @@ const ScoreBoard = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <h2 className="text-2xl font-bold text-white mb-4 text-center">Game Stats</h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-bold text-white">Game Stats</h2>
+        <motion.button
+          onClick={onToggleSound}
+          className="p-2 rounded-lg bg-gray-700 hover:bg-gray-600 transition-colors"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          {isSoundMuted ? (
+            <VolumeX className="w-5 h-5 text-gray-400" />
+          ) : (
+            <Volume2 className="w-5 h-5 text-blue-400" />
+          )}
+        </motion.button>
+      </div>
       
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-gray-700 rounded-lg p-4 text-center">
@@ -46,9 +64,9 @@ const ScoreBoard = ({
         </div>
         
         <div className="bg-gray-700 rounded-lg p-4 text-center">
-          <RotateCcw className="w-8 h-8 text-red-400 mx-auto mb-2" />
-          <p className="text-sm text-gray-300">BounceBack</p>
-          <p className="text-2xl font-bold text-white">{bounceBacksTriggered}</p>
+          <DoorClosed className="w-8 h-8 text-red-400 mx-auto mb-2" />
+          <p className="text-sm text-gray-300">Detour Traps</p>
+          <p className="text-2xl font-bold text-white">{detourTrapsTriggered}</p>
         </div>
       </div>
       
