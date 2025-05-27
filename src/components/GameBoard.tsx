@@ -2,6 +2,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Gift, DoorClosed, DoorOpen } from 'lucide-react';
 import { TileType } from '@/types/game';
+import CrawlingCharacter from './CrawlingCharacter';
 
 interface GameBoardProps {
   playerPosition: number;
@@ -41,7 +42,7 @@ const GameBoard = ({
   };
 
   const getTileStyles = (tileNumber: number, tileType: TileType) => {
-    let baseStyles = "w-16 h-16 flex items-center justify-center rounded-lg relative border-2 transition-all duration-300";
+    let baseStyles = "w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center rounded-lg relative border-2 transition-all duration-300";
     
     if (tileNumber === playerPosition) {
       baseStyles += " ring-4 ring-yellow-400 ring-opacity-75";
@@ -58,57 +59,9 @@ const GameBoard = ({
     }
   };
 
-  const CrawlingCharacter = () => (
-    <motion.div
-      className="w-8 h-8 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full border-2 border-white shadow-lg flex items-center justify-center relative"
-      animate={{
-        y: isMoving ? [-2, 2, -2] : 0,
-        rotate: isMoving ? [0, 5, -5, 0] : 0,
-      }}
-      transition={{
-        duration: 0.5,
-        repeat: isMoving ? Infinity : 0,
-        ease: "easeInOut"
-      }}
-    >
-      <motion.div
-        className="w-3 h-3 bg-white rounded-full"
-        animate={{
-          scale: isMoving ? [1, 1.2, 1] : 1,
-        }}
-        transition={{
-          duration: 0.3,
-          repeat: isMoving ? Infinity : 0,
-        }}
-      />
-      {/* Crawling legs animation */}
-      <motion.div
-        className="absolute -bottom-1 -left-1 w-1 h-2 bg-blue-300 rounded"
-        animate={{
-          rotate: isMoving ? [0, 20, -20, 0] : 0,
-        }}
-        transition={{
-          duration: 0.4,
-          repeat: isMoving ? Infinity : 0,
-        }}
-      />
-      <motion.div
-        className="absolute -bottom-1 -right-1 w-1 h-2 bg-blue-300 rounded"
-        animate={{
-          rotate: isMoving ? [0, -20, 20, 0] : 0,
-        }}
-        transition={{
-          duration: 0.4,
-          repeat: isMoving ? Infinity : 0,
-          delay: 0.2,
-        }}
-      />
-    </motion.div>
-  );
-
   return (
-    <div className="bg-gray-900 p-6 rounded-2xl shadow-2xl">
-      <div className="grid grid-cols-10 gap-2">
+    <div className="bg-gray-900 p-3 sm:p-6 rounded-2xl shadow-2xl">
+      <div className="grid grid-cols-10 gap-1 sm:gap-2">
         {Array.from({ length: 100 }, (_, index) => {
           const row = Math.floor(index / 10);
           const col = index % 10;
@@ -135,13 +88,25 @@ const GameBoard = ({
                   animate={{ scale: 1 }}
                   transition={{ type: "spring", stiffness: 500, damping: 25 }}
                 >
-                  <CrawlingCharacter />
+                  <CrawlingCharacter isMoving={isMoving} />
                 </motion.div>
               )}
               
-              {/* Gift Icon */}
+              {/* Gift Icon with Animation */}
               {tileType.type === 'gift' && tileNumber !== playerPosition && (
-                <Gift className="w-6 h-6 text-white" />
+                <motion.div
+                  animate={{
+                    scale: [1, 1.2, 1],
+                    rotate: [0, 10, -10, 0],
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                >
+                  <Gift className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
+                </motion.div>
               )}
               
               {/* Detour Trap Door */}
@@ -156,7 +121,7 @@ const GameBoard = ({
                         exit={{ scale: 0.8 }}
                         transition={{ duration: 0.3 }}
                       >
-                        <DoorOpen className="w-6 h-6 text-white" />
+                        <DoorOpen className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
                       </motion.div>
                     ) : (
                       <motion.div
@@ -166,7 +131,7 @@ const GameBoard = ({
                         exit={{ scale: 0.8 }}
                         transition={{ duration: 0.3 }}
                       >
-                        <DoorClosed className="w-6 h-6 text-white" />
+                        <DoorClosed className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -176,10 +141,10 @@ const GameBoard = ({
                     {tileType.revealed && (
                       <motion.span
                         className="text-xs text-white font-bold mt-1"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.5 }}
+                        initial={{ opacity: 0, y: 10, scale: 0.5 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -10, scale: 0.5 }}
+                        transition={{ duration: 0.5, type: "spring" }}
                       >
                         -{tileType.moveBack}
                       </motion.span>
@@ -190,7 +155,7 @@ const GameBoard = ({
               
               {/* Goal Flag */}
               {tileNumber === 100 && tileNumber !== playerPosition && (
-                <span className="text-2xl">🏁</span>
+                <span className="text-xl sm:text-2xl">🏁</span>
               )}
             </motion.div>
           );

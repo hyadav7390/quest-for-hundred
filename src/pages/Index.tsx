@@ -102,7 +102,13 @@ const Index = () => {
             description: `You went through the door and moved back ${detourTrap.moveBack} tiles to position ${newPosition}.`,
             variant: "destructive",
           });
+          
+          // Finish turn after detour trap animation
+          setTimeout(() => {
+            dispatch({ type: 'FINISH_TURN' });
+          }, 1000);
         }, 1000);
+        return;
       }
 
       dispatch({ type: 'FINISH_TURN' });
@@ -128,20 +134,70 @@ const Index = () => {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <motion.div
-          className="text-center mb-8"
+          className="text-center mb-6 sm:mb-8"
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <h1 className="text-5xl font-bold text-white mb-2 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+          <h1 className="text-3xl sm:text-5xl font-bold text-white mb-2 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
             🎮 GiftQuest100
           </h1>
-          <p className="text-xl text-gray-300">
+          <p className="text-lg sm:text-xl text-gray-300">
             Roll the dice, collect gifts, avoid Detour Traps, and reach tile 100!
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Mobile Layout */}
+        <div className="block lg:hidden space-y-6">
+          {/* Score Board - Top on mobile */}
+          <ScoreBoard
+            score={gameState.score}
+            position={gameState.playerPosition}
+            turnsPlayed={gameState.turnsPlayed}
+            giftsCollected={gameState.giftsCollected}
+            detourTrapsTriggered={gameState.detourTrapsTriggered}
+            isSoundMuted={gameState.isSoundMuted}
+            onToggleSound={toggleSound}
+          />
+
+          {/* Game Board */}
+          <GameBoard
+            playerPosition={gameState.playerPosition}
+            giftTiles={gameState.giftTiles}
+            detourTrapTiles={gameState.detourTrapTiles}
+            revealedTraps={gameState.revealedTraps}
+            isMoving={gameState.isMoving}
+          />
+
+          {/* Controls - Bottom on mobile */}
+          <div className="space-y-4">
+            <motion.div
+              className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-6 shadow-xl border border-gray-600"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
+              <Dice
+                value={gameState.diceValue}
+                isRolling={gameState.isRolling}
+                onRoll={rollDice}
+                disabled={gameState.isRolling || gameState.isMoving || gameState.gameStatus === 'won'}
+              />
+            </motion.div>
+
+            <motion.button
+              onClick={restartGame}
+              className="w-full py-3 bg-gradient-to-r from-red-600 to-pink-600 text-white font-bold rounded-lg shadow-lg hover:from-red-700 hover:to-pink-700 transition-all duration-200"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              New Game
+            </motion.button>
+          </div>
+        </div>
+
+        {/* Desktop Layout */}
+        <div className="hidden lg:grid lg:grid-cols-4 gap-6">
           {/* Game Board - Takes up more space */}
           <div className="lg:col-span-3">
             <GameBoard

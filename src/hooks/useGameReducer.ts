@@ -1,4 +1,3 @@
-
 import { useReducer } from 'react';
 import { GameState, GameAction } from '@/types/game';
 
@@ -18,34 +17,32 @@ const generateDetourTrapTiles = (giftTiles: number[]): { index: number; moveBack
   const detourTrapTiles: { index: number; moveBack: number; revealed: boolean }[] = [];
   const occupiedTiles = new Set(giftTiles);
   
-  // Generate 8 detour traps with strategic placement
-  const trapValues = [];
+  // Generate 8 traps with random penalties
   for (let i = 0; i < 8; i++) {
-    trapValues.push(Math.floor(Math.random() * 46) + 5); // 5-50 tiles back
-  }
-  
-  // Sort trap values: highest values closer to 100, lowest closer to 1
-  trapValues.sort((a, b) => b - a);
-  
-  // Place traps strategically
-  const availableTiles = [];
-  for (let i = 2; i <= 99; i++) {
-    if (!occupiedTiles.has(i)) {
-      availableTiles.push(i);
-    }
-  }
-  
-  // Sort available tiles by distance from 100 (closest first)
-  availableTiles.sort((a, b) => Math.abs(100 - a) - Math.abs(100 - b));
-  
-  // Assign highest penalty traps to tiles closer to 100
-  for (let i = 0; i < Math.min(8, availableTiles.length); i++) {
+    const penalty = Math.floor(Math.random() * 46) + 5; // 5-50 tiles back
+    
+    // Calculate minimum position for this penalty (must have enough tiles before it)
+    const minPosition = penalty + 1;
+    const maxPosition = 99; // Can't be on tile 100
+    
+    // Find a valid position for this trap
+    let attempts = 0;
+    let position;
+    
+    do {
+      position = Math.floor(Math.random() * (maxPosition - minPosition + 1)) + minPosition;
+      attempts++;
+    } while (occupiedTiles.has(position) && attempts < 50);
+    
+    // If we couldn't find a spot after 50 attempts, skip this trap
+    if (attempts >= 50) continue;
+    
     detourTrapTiles.push({
-      index: availableTiles[i],
-      moveBack: trapValues[i],
+      index: position,
+      moveBack: penalty,
       revealed: false
     });
-    occupiedTiles.add(availableTiles[i]);
+    occupiedTiles.add(position);
   }
   
   return detourTrapTiles;
@@ -84,6 +81,7 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         ...state,
         isRolling: false,
         isMoving: true,
+        revealedTraps: [], // Hide all revealed traps when starting new movement
       };
 
     case 'MOVE_PLAYER': {
@@ -99,11 +97,13 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
 
     case 'COLLECT_GIFT': {
       const giftPoints = Math.floor(Math.random() * 51) + 50; // 50-100 points
+      const updatedGiftTiles = state.giftTiles.filter(tile => tile !== action.payload);
       
       return {
         ...state,
         score: state.score + giftPoints,
         giftsCollected: state.giftsCollected + 1,
+        giftTiles: updatedGiftTiles,
       };
     }
 
