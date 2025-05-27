@@ -1,4 +1,3 @@
-
 import { useReducer } from 'react';
 import { GameState, GameAction } from '@/types/game';
 
@@ -41,10 +40,8 @@ const generateDetourTrapTiles = (giftTiles: number[]): { index: number; moveBack
       position = Math.floor(Math.random() * (maxPosition - minPosition + 1)) + minPosition;
       
       // Check if this position would cause overlap with existing traps
-      const wouldOverlap = detourTrapTiles.some(trap => {
-        const backPosition = Math.max(1, position - penalty);
-        return backPosition === trap.index;
-      });
+      const backPosition = Math.max(1, position - penalty);
+      const wouldOverlap = detourTrapTiles.some(trap => backPosition === trap.index);
       
       attempts++;
     } while ((occupiedTiles.has(position) || wouldOverlap) && attempts < 100);
