@@ -21,7 +21,9 @@
   <script>
     var badge = document.getElementById('lovable-badge');
     if (badge) {
-      badge.style.display = 'none';
+      setTimeout(() => {
+        badge.style.display = 'none';
+      }, 500)
     }
   </script>
 </body>
