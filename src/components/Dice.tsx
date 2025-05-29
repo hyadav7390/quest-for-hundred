@@ -13,6 +13,20 @@ const Dice = ({ value, isRolling, onRoll, disabled }: DiceProps) => {
   const [animationValue, setAnimationValue] = useState(1);
 
   useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.code === 'Space' && !disabled) {
+        onRoll();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [disabled, onRoll]);
+
+  useEffect(() => {
     if (isRolling) {
       const interval = setInterval(() => {
         setAnimationValue(Math.floor(Math.random() * 6) + 1);
