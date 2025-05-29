@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useGameReducer } from '@/hooks/useGameReducer';
@@ -16,6 +15,7 @@ const Index = () => {
   const [gameState, dispatch] = useGameReducer();
   const { playSound } = useSoundEffects(gameState.isSoundMuted);
   const [showNewGameConfirmation, setShowNewGameConfirmation] = useState(false);
+  const [currentGameGiftScore, setCurrentGameGiftScore] = useState(0);
 
   useEffect(() => {
     // Play start game sound
@@ -30,6 +30,7 @@ const Index = () => {
     const gift = gameState.giftTiles.find(g => g.index === currentPosition);
     if (gift) {
       dispatch({ type: 'COLLECT_GIFT', payload: { tileIndex: currentPosition, points: gift.points } });
+      setCurrentGameGiftScore(prev => prev + gift.points);
       playSound('gift');
       toast({
         title: "🎁 Gift Collected!",
@@ -129,14 +130,7 @@ const Index = () => {
       // Check if player reached tile 100
       if (targetPosition === 100) {
         // Update user profile with final scores before winning
-        const totalGiftScore = gameState.giftTiles.reduce((sum, gift) => {
-          if (!gameState.giftTiles.find(g => g.index === gift.index)) {
-            return sum + gift.points;
-          }
-          return sum;
-        }, 0);
-        
-        updateUserProfile(gameState.score, totalGiftScore, gameState.giftsCollected);
+        updateUserProfile(gameState.score, currentGameGiftScore, gameState.giftsCollected);
         
         dispatch({ type: 'WIN_GAME' });
         playSound('win');
@@ -174,14 +168,11 @@ const Index = () => {
   const restartGame = () => {
     // Update user profile with current game data before resetting
     if (gameState.diceRolled) {
-      const collectedGiftScore = gameState.giftTiles
-        .filter(gift => !gameState.giftTiles.some(g => g.index === gift.index))
-        .reduce((sum, gift) => sum + gift.points, 0);
-      
-      updateUserProfile(gameState.score, collectedGiftScore, gameState.giftsCollected);
+      updateUserProfile(gameState.score, currentGameGiftScore, gameState.giftsCollected);
     }
     
     dispatch({ type: 'RESET_GAME' });
+    setCurrentGameGiftScore(0);
     playSound('start');
     setShowNewGameConfirmation(false);
     toast({
@@ -333,7 +324,10 @@ const Index = () => {
           score={gameState.score}
           turnsPlayed={gameState.turnsPlayed}
           giftsCollected={gameState.giftsCollected}
-          bounceBacksTriggered={gameState.detourTrapsTriggered}
+          detourTrapsTriggered={gameState.detourTrapsTriggered}
+          shortcutGatesTriggered={gameState.shortcutGatesTriggered}
+          gameScore={gameState.score - currentGameGiftScore}
+          giftScore={currentGameGiftScore}
           onRestart={restartGame}
         />
 

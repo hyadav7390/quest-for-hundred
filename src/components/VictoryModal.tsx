@@ -1,13 +1,16 @@
 
 import { motion } from 'framer-motion';
-import { Trophy, RotateCcw, Gift, Target } from 'lucide-react';
+import { Trophy, RotateCcw, Gift, Target, DoorClosed, ArrowUp } from 'lucide-react';
 
 interface VictoryModalProps {
   isOpen: boolean;
   score: number;
   turnsPlayed: number;
   giftsCollected: number;
-  bounceBacksTriggered: number;
+  detourTrapsTriggered: number;
+  shortcutGatesTriggered: number;
+  gameScore: number;
+  giftScore: number;
   onRestart: () => void;
 }
 
@@ -16,7 +19,10 @@ const VictoryModal = ({
   score, 
   turnsPlayed, 
   giftsCollected, 
-  bounceBacksTriggered, 
+  detourTrapsTriggered,
+  shortcutGatesTriggered,
+  gameScore,
+  giftScore,
   onRestart 
 }: VictoryModalProps) => {
   if (!isOpen) return null;
@@ -54,7 +60,19 @@ const VictoryModal = ({
               <span className="text-2xl font-bold text-yellow-400">{score}</span>
             </div>
             
-            <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="bg-gray-600 rounded p-2">
+                <div className="text-xs text-gray-300">Game Score</div>
+                <div className="text-white font-bold">{gameScore}</div>
+              </div>
+              
+              <div className="bg-gray-600 rounded p-2">
+                <div className="text-xs text-gray-300">Gift Score</div>
+                <div className="text-yellow-400 font-bold">{giftScore}</div>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4 text-sm mt-4">
               <div className="flex items-center space-x-2">
                 <Target className="w-4 h-4 text-blue-400" />
                 <span className="text-gray-300">Turns: {turnsPlayed}</span>
@@ -65,9 +83,14 @@ const VictoryModal = ({
                 <span className="text-gray-300">Gifts: {giftsCollected}</span>
               </div>
               
-              <div className="flex items-center space-x-2 col-span-2">
-                <RotateCcw className="w-4 h-4 text-red-400" />
-                <span className="text-gray-300">BounceBack tiles hit: {bounceBacksTriggered}</span>
+              <div className="flex items-center space-x-2">
+                <DoorClosed className="w-4 h-4 text-red-400" />
+                <span className="text-gray-300">Traps: {detourTrapsTriggered}</span>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <ArrowUp className="w-4 h-4 text-green-400" />
+                <span className="text-gray-300">Gates: {shortcutGatesTriggered}</span>
               </div>
             </div>
           </div>

@@ -1,6 +1,6 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { Gift, DoorClosed, DoorOpen, ArrowUp } from 'lucide-react';
+import { Gift, DoorClosed, DoorOpen } from 'lucide-react';
 import { TileType } from '@/types/game';
 import CrawlingCharacter from './CrawlingCharacter';
 
@@ -110,7 +110,7 @@ const GameBoard = ({
                 </motion.div>
               )}
               
-              {/* Gift Icon with Points */}
+              {/* Gift Icon without Points */}
               {tileType.type === 'gift' && tileNumber !== playerPosition && (
                 <div className="flex flex-col items-center">
                   <motion.div
@@ -126,7 +126,6 @@ const GameBoard = ({
                   >
                     <Gift className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                   </motion.div>
-                  <span className="text-xs text-white font-bold">{tileType.points}</span>
                 </div>
               )}
               
@@ -174,21 +173,32 @@ const GameBoard = ({
                 </div>
               )}
               
-              {/* Shortcut Gate */}
+              {/* Shortcut Gate Door */}
               {tileType.type === 'shortcut-gate' && (
                 <div className="flex flex-col items-center">
-                  <motion.div
-                    animate={{
-                      y: [0, -2, 0],
-                    }}
-                    transition={{
-                      duration: 1.5,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                    }}
-                  >
-                    <ArrowUp className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
-                  </motion.div>
+                  <AnimatePresence mode="wait">
+                    {tileNumber === playerPosition ? (
+                      <motion.div
+                        key="open-door"
+                        initial={{ scale: 0.8 }}
+                        animate={{ scale: 1 }}
+                        exit={{ scale: 0.8 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <DoorOpen className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key="closed-door"
+                        initial={{ scale: 0.8 }}
+                        animate={{ scale: 1 }}
+                        exit={{ scale: 0.8 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <DoorClosed className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                   
                   {/* Show bonus number only when revealed */}
                   <AnimatePresence>
