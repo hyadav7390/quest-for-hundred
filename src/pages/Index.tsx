@@ -278,7 +278,7 @@ const Index = () => {
           </div>
 
           {/* Side Panel */}
-          <div className="lg:col-span-1 space-y-6">
+          <div className="lg:col-span-1 space-y-3">
             {/* Score Board */}
             <ScoreBoard
               score={gameState.score}

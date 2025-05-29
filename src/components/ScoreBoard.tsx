@@ -30,7 +30,7 @@ const ScoreBoard = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-between items-center mb-2">
         <h2 className="text-2xl font-bold text-white">Game Stats</h2>
         <motion.button
           onClick={onToggleSound}
@@ -46,38 +46,38 @@ const ScoreBoard = ({
         </motion.button>
       </div>
       
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-gray-700 rounded-lg p-4 text-center">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="bg-gray-700 rounded-lg p-3 text-center">
           <Trophy className="w-8 h-8 text-yellow-400 mx-auto mb-2" />
           <p className="text-sm text-gray-300">Score</p>
           <p className="text-2xl font-bold text-white">{score}</p>
         </div>
 
-        <div className="bg-gray-700 rounded-lg p-4 text-center">
+        <div className="bg-gray-700 rounded-lg p-3 text-center">
           <Dices className="w-8 h-8 text-yellow-400 mx-auto mb-2" />
           <p className="text-sm text-gray-300">Dice Rolled</p>
           <p className="text-2xl font-bold text-white">{turnsPlayed}</p>
         </div>
         
-        <div className="bg-gray-700 rounded-lg p-4 text-center">
+        <div className="bg-gray-700 rounded-lg p-3 text-center">
           <Target className="w-8 h-8 text-blue-400 mx-auto mb-2" />
           <p className="text-sm text-gray-300">Position</p>
           <p className="text-2xl font-bold text-white">{position}/100</p>
         </div>
         
-        <div className="bg-gray-700 rounded-lg p-4 text-center">
+        <div className="bg-gray-700 rounded-lg p-3 text-center">
           <Gift className="w-8 h-8 text-green-400 mx-auto mb-2" />
           <p className="text-sm text-gray-300">Gifts</p>
           <p className="text-2xl font-bold text-white">{giftsCollected}</p>
         </div>
         
-        <div className="bg-gray-700 rounded-lg p-4 text-center">
+        <div className="bg-gray-700 rounded-lg p-3 text-center">
           <DoorClosed className="w-8 h-8 text-red-400 mx-auto mb-2" />
           <p className="text-sm text-gray-300">Detour Traps</p>
           <p className="text-2xl font-bold text-white">{detourTrapsTriggered}</p>
         </div>
         
-        <div className="bg-gray-700 rounded-lg p-4 text-center">
+        <div className="bg-gray-700 rounded-lg p-3 text-center">
           <DoorClosed className="w-8 h-8 text-green-400 mx-auto mb-2" />
           <p className="text-sm text-gray-300">Shortcut Gates</p>
           <p className="text-2xl font-bold text-white">{shortcutGatesTriggered}</p>
