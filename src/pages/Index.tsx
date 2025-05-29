@@ -147,10 +147,10 @@ const Index = () => {
           transition={{ duration: 0.6 }}
         >
           <h1 className="text-3xl sm:text-5xl font-bold text-white mb-2 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
-            🎮 GiftQuest100
+            🎮 NunuGames
           </h1>
           <p className="text-lg sm:text-xl text-gray-300">
-            Roll the dice, collect gifts, avoid Detour Traps, and reach tile 100!
+            Roll the dice, collect gifts, avoid detour traps, and take your NUNU to 100!
           </p>
         </motion.div>
 

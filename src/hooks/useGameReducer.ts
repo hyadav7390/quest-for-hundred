@@ -160,7 +160,7 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       return {
         ...state,
         gameStatus: 'won',
-        score: state.score + 100, // Finish bonus
+        score: state.score + 1000, // Finish bonus
         isMoving: false,
       };
 
