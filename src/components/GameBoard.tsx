@@ -1,14 +1,16 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { Gift, DoorClosed, DoorOpen } from 'lucide-react';
+import { Gift, DoorClosed, DoorOpen, ArrowUp } from 'lucide-react';
 import { TileType } from '@/types/game';
 import CrawlingCharacter from './CrawlingCharacter';
 
 interface GameBoardProps {
   playerPosition: number;
-  giftTiles: number[];
+  giftTiles: { index: number; points: number }[];
   detourTrapTiles: { index: number; moveBack: number; revealed: boolean }[];
+  shortcutGateTiles: { index: number; moveForward: number; revealed: boolean }[];
   revealedTraps: number[];
+  revealedGates: number[];
   isMoving: boolean;
 }
 
@@ -16,7 +18,9 @@ const GameBoard = ({
   playerPosition, 
   giftTiles, 
   detourTrapTiles, 
+  shortcutGateTiles,
   revealedTraps,
+  revealedGates,
   isMoving 
 }: GameBoardProps) => {
   const getTileNumber = (row: number, col: number): number => {
@@ -29,7 +33,9 @@ const GameBoard = ({
   };
 
   const getTileType = (tileNumber: number): TileType => {
-    if (giftTiles.includes(tileNumber)) return { type: 'gift' };
+    const gift = giftTiles.find(g => g.index === tileNumber);
+    if (gift) return { type: 'gift', points: gift.points };
+    
     const detourTrap = detourTrapTiles.find(dt => dt.index === tileNumber);
     if (detourTrap) {
       return { 
@@ -38,6 +44,16 @@ const GameBoard = ({
         revealed: revealedTraps.includes(tileNumber)
       };
     }
+    
+    const shortcutGate = shortcutGateTiles.find(sg => sg.index === tileNumber);
+    if (shortcutGate) {
+      return {
+        type: 'shortcut-gate',
+        moveForward: shortcutGate.moveForward,
+        revealed: revealedGates.includes(tileNumber)
+      };
+    }
+    
     return { type: 'normal' };
   };
 
@@ -52,8 +68,10 @@ const GameBoard = ({
       return baseStyles + " bg-gradient-to-br from-yellow-400 to-amber-500 border-yellow-600 shadow-lg";
     } else if (tileType.type === 'detour-trap') {
       return baseStyles + " bg-gradient-to-br from-red-500 to-orange-600 border-red-700 shadow-lg";
-    } else if (tileNumber === 100) {
+    } else if (tileType.type === 'shortcut-gate') {
       return baseStyles + " bg-gradient-to-br from-green-400 to-emerald-500 border-green-600 shadow-lg";
+    } else if (tileNumber === 100) {
+      return baseStyles + " bg-gradient-to-br from-purple-400 to-blue-500 border-purple-600 shadow-lg";
     } else {
       return baseStyles + " bg-gradient-to-br from-gray-700 to-gray-800 border-gray-600 hover:border-gray-500";
     }
@@ -92,21 +110,24 @@ const GameBoard = ({
                 </motion.div>
               )}
               
-              {/* Gift Icon with Animation */}
+              {/* Gift Icon with Points */}
               {tileType.type === 'gift' && tileNumber !== playerPosition && (
-                <motion.div
-                  animate={{
-                    scale: [1, 1.2, 1],
-                    rotate: [0, 10, -10, 0],
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  }}
-                >
-                  <Gift className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
-                </motion.div>
+                <div className="flex flex-col items-center">
+                  <motion.div
+                    animate={{
+                      scale: [1, 1.2, 1],
+                      rotate: [0, 10, -10, 0],
+                    }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
+                  >
+                    <Gift className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                  </motion.div>
+                  <span className="text-xs text-white font-bold">{tileType.points}</span>
+                </div>
               )}
               
               {/* Detour Trap Door */}
@@ -147,6 +168,39 @@ const GameBoard = ({
                         transition={{ duration: 0.5, type: "spring" }}
                       >
                         -{tileType.moveBack}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
+              
+              {/* Shortcut Gate */}
+              {tileType.type === 'shortcut-gate' && (
+                <div className="flex flex-col items-center">
+                  <motion.div
+                    animate={{
+                      y: [0, -2, 0],
+                    }}
+                    transition={{
+                      duration: 1.5,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
+                  >
+                    <ArrowUp className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
+                  </motion.div>
+                  
+                  {/* Show bonus number only when revealed */}
+                  <AnimatePresence>
+                    {tileType.revealed && (
+                      <motion.span
+                        className="text-xs text-white font-bold mt-1"
+                        initial={{ opacity: 0, y: 10, scale: 0.5 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -10, scale: 0.5 }}
+                        transition={{ duration: 0.5, type: "spring" }}
+                      >
+                        +{tileType.moveForward}
                       </motion.span>
                     )}
                   </AnimatePresence>

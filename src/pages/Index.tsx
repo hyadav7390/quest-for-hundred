@@ -1,22 +1,95 @@
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useGameReducer } from '@/hooks/useGameReducer';
 import { useSoundEffects } from '@/hooks/useSoundEffects';
+import { updateUserProfile } from '@/utils/userProfile';
 import GameBoard from '@/components/GameBoard';
 import Dice from '@/components/Dice';
 import ScoreBoard from '@/components/ScoreBoard';
 import VictoryModal from '@/components/VictoryModal';
+import UserProfile from '@/components/UserProfile';
+import NewGameConfirmation from '@/components/NewGameConfirmation';
 import { toast } from '@/hooks/use-toast';
 
 const Index = () => {
   const [gameState, dispatch] = useGameReducer();
   const { playSound } = useSoundEffects(gameState.isSoundMuted);
+  const [showNewGameConfirmation, setShowNewGameConfirmation] = useState(false);
 
   useEffect(() => {
     // Play start game sound
     playSound('start');
   }, []);
+
+  // Handle consecutive tile effects
+  const handleTileEffects = async (position: number, previousPosition: number): Promise<number> => {
+    let currentPosition = position;
+    
+    // Check for gift tiles
+    const gift = gameState.giftTiles.find(g => g.index === currentPosition);
+    if (gift) {
+      dispatch({ type: 'COLLECT_GIFT', payload: { tileIndex: currentPosition, points: gift.points } });
+      playSound('gift');
+      toast({
+        title: "🎁 Gift Collected!",
+        description: `You earned ${gift.points} bonus points!`,
+        variant: "default",
+      });
+    }
+
+    // Check for Detour Trap tiles
+    const detourTrap = gameState.detourTrapTiles.find(dt => dt.index === currentPosition);
+    if (detourTrap) {
+      dispatch({ type: 'REVEAL_TRAP', payload: currentPosition });
+      
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const newPosition = Math.max(1, currentPosition - detourTrap.moveBack);
+      dispatch({ 
+        type: 'TRIGGER_DETOUR_TRAP', 
+        payload: { newPosition, penalty: detourTrap.moveBack, trapIndex: currentPosition } 
+      });
+      playSound('detourTrap');
+      toast({
+        title: "🚪 Detour Trap!",
+        description: `You went through the door and moved back ${detourTrap.moveBack} tiles to position ${newPosition}.`,
+        variant: "destructive",
+      });
+      
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Recursively check the new position for more effects
+      return handleTileEffects(newPosition, currentPosition);
+    }
+
+    // Check for Shortcut Gate tiles
+    const shortcutGate = gameState.shortcutGateTiles.find(sg => sg.index === currentPosition);
+    if (shortcutGate) {
+      dispatch({ type: 'REVEAL_GATE', payload: currentPosition });
+      
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const newPosition = Math.min(100, currentPosition + shortcutGate.moveForward);
+      dispatch({ 
+        type: 'TRIGGER_SHORTCUT_GATE', 
+        payload: { newPosition, bonus: shortcutGate.moveForward, gateIndex: currentPosition } 
+      });
+      playSound('gift'); // Use gift sound for positive effect
+      toast({
+        title: "🚀 Shortcut Gate!",
+        description: `You found a shortcut and moved forward ${shortcutGate.moveForward} tiles to position ${newPosition}!`,
+        variant: "default",
+      });
+      
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Recursively check the new position for more effects
+      return handleTileEffects(newPosition, currentPosition);
+    }
+    
+    return currentPosition;
+  };
 
   const rollDice = () => {
     if (gameState.isRolling || gameState.isMoving) return;
@@ -52,9 +125,19 @@ const Index = () => {
     playSound('move');
     
     // Small delay for movement animation
-    setTimeout(() => {
+    setTimeout(async () => {
       // Check if player reached tile 100
       if (targetPosition === 100) {
+        // Update user profile with final scores before winning
+        const totalGiftScore = gameState.giftTiles.reduce((sum, gift) => {
+          if (!gameState.giftTiles.find(g => g.index === gift.index)) {
+            return sum + gift.points;
+          }
+          return sum;
+        }, 0);
+        
+        updateUserProfile(gameState.score, totalGiftScore, gameState.giftsCollected);
+        
         dispatch({ type: 'WIN_GAME' });
         playSound('win');
         toast({
@@ -65,66 +148,42 @@ const Index = () => {
         return;
       }
 
-      // Check for gift tiles
-      if (gameState.giftTiles.includes(targetPosition)) {
-        const giftPoints = Math.floor(Math.random() * 51) + 50;
-        dispatch({ type: 'COLLECT_GIFT', payload: targetPosition });
-        playSound('gift');
-        toast({
-          title: "🎁 Gift Collected!",
-          description: `You earned ${giftPoints} bonus points!`,
-          variant: "default",
-        });
-      }
-
-      // Check for Detour Trap tiles
-      const detourTrap = gameState.detourTrapTiles.find(dt => dt.index === targetPosition);
-      if (detourTrap) {
-        // Reveal the trap penalty
-        dispatch({ type: 'REVEAL_TRAP', payload: targetPosition });
-        
-        setTimeout(() => {
-          const newPosition = Math.max(1, targetPosition - detourTrap.moveBack);
-          dispatch({ 
-            type: 'TRIGGER_DETOUR_TRAP', 
-            payload: { newPosition, penalty: detourTrap.moveBack, trapIndex: targetPosition } 
-          });
-          playSound('detourTrap');
-          toast({
-            title: "🚪 Detour Trap!",
-            description: `You went through the door and moved back ${detourTrap.moveBack} tiles to position ${newPosition}.`,
-            variant: "destructive",
-          });
-          
-          // Finish turn after detour trap animation
-          setTimeout(() => {
-            dispatch({ type: 'FINISH_TURN' });
-            
-            // Regenerate gift on previous position if it was a gift tile
-            if (gameState.giftTiles.includes(previousPosition)) {
-              setTimeout(() => {
-                dispatch({ type: 'REGENERATE_GIFT', payload: previousPosition });
-              }, 500);
-            }
-          }, 1000);
-        }, 1000);
-        return;
-      }
+      // Handle tile effects (gifts, traps, gates) with consecutive logic
+      await handleTileEffects(targetPosition, previousPosition);
 
       dispatch({ type: 'FINISH_TURN' });
       
       // Regenerate gift on previous position if it was a gift tile
-      if (gameState.giftTiles.includes(previousPosition)) {
+      const previousGift = gameState.giftTiles.find(g => g.index === previousPosition);
+      if (previousGift) {
         setTimeout(() => {
-          dispatch({ type: 'REGENERATE_GIFT', payload: previousPosition });
+          dispatch({ type: 'REGENERATE_GIFT', payload: { index: previousPosition, points: previousGift.points } });
         }, 500);
       }
     }, 500);
   };
 
+  const handleNewGameClick = () => {
+    if (gameState.diceRolled) {
+      setShowNewGameConfirmation(true);
+    } else {
+      restartGame();
+    }
+  };
+
   const restartGame = () => {
+    // Update user profile with current game data before resetting
+    if (gameState.diceRolled) {
+      const collectedGiftScore = gameState.giftTiles
+        .filter(gift => !gameState.giftTiles.some(g => g.index === gift.index))
+        .reduce((sum, gift) => sum + gift.points, 0);
+      
+      updateUserProfile(gameState.score, collectedGiftScore, gameState.giftsCollected);
+    }
+    
     dispatch({ type: 'RESET_GAME' });
     playSound('start');
+    setShowNewGameConfirmation(false);
     toast({
       title: "New Game Started!",
       description: "Good luck on your quest to tile 100!",
@@ -141,17 +200,23 @@ const Index = () => {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <motion.div
-          className="text-center mb-6 sm:mb-8"
+          className="flex justify-between items-center mb-6 sm:mb-8"
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <h1 className="text-3xl sm:text-5xl font-bold text-white mb-2 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
-            🎮 NunuGames
-          </h1>
-          <p className="text-lg sm:text-xl text-gray-300">
-            Roll the dice, collect gifts, avoid detour traps, and take your NUNU to 100!
-          </p>
+          <div className="text-center flex-1">
+            <h1 className="text-3xl sm:text-5xl font-bold text-white mb-2 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+              🎮 NunuGames
+            </h1>
+            <p className="text-lg sm:text-xl text-gray-300">
+              Roll the dice, collect gifts, avoid detour traps, find shortcut gates, and take your NUNU to 100!
+            </p>
+          </div>
+          
+          <div className="ml-4">
+            <UserProfile />
+          </div>
         </motion.div>
 
         {/* Mobile Layout */}
@@ -163,6 +228,7 @@ const Index = () => {
             turnsPlayed={gameState.turnsPlayed}
             giftsCollected={gameState.giftsCollected}
             detourTrapsTriggered={gameState.detourTrapsTriggered}
+            shortcutGatesTriggered={gameState.shortcutGatesTriggered}
             isSoundMuted={gameState.isSoundMuted}
             onToggleSound={toggleSound}
           />
@@ -172,7 +238,9 @@ const Index = () => {
             playerPosition={gameState.playerPosition}
             giftTiles={gameState.giftTiles}
             detourTrapTiles={gameState.detourTrapTiles}
+            shortcutGateTiles={gameState.shortcutGateTiles}
             revealedTraps={gameState.revealedTraps}
+            revealedGates={gameState.revealedGates}
             isMoving={gameState.isMoving}
           />
 
@@ -193,7 +261,7 @@ const Index = () => {
             </motion.div>
 
             <motion.button
-              onClick={restartGame}
+              onClick={handleNewGameClick}
               className="w-full py-3 bg-gradient-to-r from-red-600 to-pink-600 text-white font-bold rounded-lg shadow-lg hover:from-red-700 hover:to-pink-700 transition-all duration-200"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -211,7 +279,9 @@ const Index = () => {
               playerPosition={gameState.playerPosition}
               giftTiles={gameState.giftTiles}
               detourTrapTiles={gameState.detourTrapTiles}
+              shortcutGateTiles={gameState.shortcutGateTiles}
               revealedTraps={gameState.revealedTraps}
+              revealedGates={gameState.revealedGates}
               isMoving={gameState.isMoving}
             />
           </div>
@@ -225,6 +295,7 @@ const Index = () => {
               turnsPlayed={gameState.turnsPlayed}
               giftsCollected={gameState.giftsCollected}
               detourTrapsTriggered={gameState.detourTrapsTriggered}
+              shortcutGatesTriggered={gameState.shortcutGatesTriggered}
               isSoundMuted={gameState.isSoundMuted}
               onToggleSound={toggleSound}
             />
@@ -246,7 +317,7 @@ const Index = () => {
 
             {/* Reset Button */}
             <motion.button
-              onClick={restartGame}
+              onClick={handleNewGameClick}
               className="w-full py-3 bg-gradient-to-r from-red-600 to-pink-600 text-white font-bold rounded-lg shadow-lg hover:from-red-700 hover:to-pink-700 transition-all duration-200"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -264,6 +335,13 @@ const Index = () => {
           giftsCollected={gameState.giftsCollected}
           bounceBacksTriggered={gameState.detourTrapsTriggered}
           onRestart={restartGame}
+        />
+
+        {/* New Game Confirmation */}
+        <NewGameConfirmation
+          isOpen={showNewGameConfirmation}
+          onConfirm={restartGame}
+          onCancel={() => setShowNewGameConfirmation(false)}
         />
       </div>
     </div>

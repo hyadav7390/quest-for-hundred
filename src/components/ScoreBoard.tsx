@@ -1,6 +1,6 @@
 
 import { motion } from 'framer-motion';
-import { Trophy, Target, Gift, DoorClosed, Volume2, VolumeX } from 'lucide-react';
+import { Trophy, Target, Gift, DoorClosed, ArrowUp, Volume2, VolumeX } from 'lucide-react';
 
 interface ScoreBoardProps {
   score: number;
@@ -8,6 +8,7 @@ interface ScoreBoardProps {
   turnsPlayed: number;
   giftsCollected: number;
   detourTrapsTriggered: number;
+  shortcutGatesTriggered: number;
   isSoundMuted: boolean;
   onToggleSound: () => void;
 }
@@ -18,6 +19,7 @@ const ScoreBoard = ({
   turnsPlayed, 
   giftsCollected, 
   detourTrapsTriggered,
+  shortcutGatesTriggered,
   isSoundMuted,
   onToggleSound
 }: ScoreBoardProps) => {
@@ -67,6 +69,12 @@ const ScoreBoard = ({
           <DoorClosed className="w-8 h-8 text-red-400 mx-auto mb-2" />
           <p className="text-sm text-gray-300">Detour Traps</p>
           <p className="text-2xl font-bold text-white">{detourTrapsTriggered}</p>
+        </div>
+        
+        <div className="col-span-2 bg-gray-700 rounded-lg p-4 text-center">
+          <ArrowUp className="w-8 h-8 text-green-400 mx-auto mb-2" />
+          <p className="text-sm text-gray-300">Shortcut Gates</p>
+          <p className="text-2xl font-bold text-white">{shortcutGatesTriggered}</p>
         </div>
       </div>
       

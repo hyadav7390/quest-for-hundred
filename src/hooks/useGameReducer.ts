@@ -2,21 +2,69 @@
 import { useReducer } from 'react';
 import { GameState, GameAction } from '@/types/game';
 
-const generateGiftTiles = (): number[] => {
-  const count = Math.floor(Math.random() * 3) + 10; // 10-12 gifts
-  const tiles = new Set<number>();
+const GIFT_DISTRIBUTION = [
+  { points: 50, count: 3 },
+  { points: 110, count: 2 },
+  { points: 150, count: 2 },
+  { points: 200, count: 2 },
+  { points: 230, count: 1 },
+  { points: 250, count: 1 },
+  { points: 300, count: 1 },
+];
+
+const generateGiftTiles = (): { index: number; points: number }[] => {
+  const gifts: { index: number; points: number }[] = [];
+  const occupiedTiles = new Set<number>();
   
-  while (tiles.size < count) {
-    const tile = Math.floor(Math.random() * 98) + 2; // tiles 2-99 (exclude 1 and 100)
-    tiles.add(tile);
+  // Create all 12 gifts based on distribution
+  for (const giftType of GIFT_DISTRIBUTION) {
+    for (let i = 0; i < giftType.count; i++) {
+      let position;
+      let attempts = 0;
+      
+      do {
+        position = Math.floor(Math.random() * 98) + 2; // tiles 2-99
+        attempts++;
+      } while (occupiedTiles.has(position) && attempts < 100);
+      
+      if (attempts < 100) {
+        gifts.push({ index: position, points: giftType.points });
+        occupiedTiles.add(position);
+      }
+    }
   }
   
-  return Array.from(tiles);
+  return gifts;
 };
 
-const generateDetourTrapTiles = (giftTiles: number[]): { index: number; moveBack: number; revealed: boolean }[] => {
+const generateShortcutGateTiles = (occupiedTiles: Set<number>): { index: number; moveForward: number; revealed: boolean }[] => {
+  const gates: { index: number; moveForward: number; revealed: boolean }[] = [];
+  
+  for (let i = 0; i < 4; i++) {
+    const moveForward = Math.floor(Math.random() * 16) + 5; // 5-20 tiles forward
+    let position;
+    let attempts = 0;
+    
+    do {
+      position = Math.floor(Math.random() * 80) + 2; // tiles 2-81 (so max forward is 99)
+      attempts++;
+    } while (occupiedTiles.has(position) && attempts < 100);
+    
+    if (attempts < 100) {
+      gates.push({
+        index: position,
+        moveForward,
+        revealed: false
+      });
+      occupiedTiles.add(position);
+    }
+  }
+  
+  return gates;
+};
+
+const generateDetourTrapTiles = (occupiedTiles: Set<number>): { index: number; moveBack: number; revealed: boolean }[] => {
   const detourTrapTiles: { index: number; moveBack: number; revealed: boolean }[] = [];
-  const occupiedTiles = new Set(giftTiles);
   
   // Generate 8 traps with strategic placement
   const penalties = [];
@@ -36,7 +84,7 @@ const generateDetourTrapTiles = (giftTiles: number[]): { index: number; moveBack
     
     let position;
     let attempts = 0;
-    let wouldOverlap = false;
+    let wouldOverlap;
     
     do {
       position = Math.floor(Math.random() * (maxPosition - minPosition + 1)) + minPosition;
@@ -63,7 +111,10 @@ const generateDetourTrapTiles = (giftTiles: number[]): { index: number; moveBack
 };
 
 const initialGiftTiles = generateGiftTiles();
-const initialDetourTrapTiles = generateDetourTrapTiles(initialGiftTiles);
+const initialOccupiedTiles = new Set(initialGiftTiles.map(gift => gift.index));
+const initialShortcutGateTiles = generateShortcutGateTiles(initialOccupiedTiles);
+initialShortcutGateTiles.forEach(gate => initialOccupiedTiles.add(gate.index));
+const initialDetourTrapTiles = generateDetourTrapTiles(initialOccupiedTiles);
 
 const initialState: GameState = {
   playerPosition: 1,
@@ -71,14 +122,18 @@ const initialState: GameState = {
   diceValue: null,
   giftTiles: initialGiftTiles,
   detourTrapTiles: initialDetourTrapTiles,
+  shortcutGateTiles: initialShortcutGateTiles,
   gameStatus: 'playing',
   turnsPlayed: 0,
   giftsCollected: 0,
   detourTrapsTriggered: 0,
+  shortcutGatesTriggered: 0,
   isRolling: false,
   isMoving: false,
   isSoundMuted: false,
   revealedTraps: [],
+  revealedGates: [],
+  diceRolled: false,
 };
 
 const gameReducer = (state: GameState, action: GameAction): GameState => {
@@ -88,6 +143,7 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         ...state,
         diceValue: action.payload,
         isRolling: true,
+        diceRolled: true,
       };
 
     case 'START_MOVING':
@@ -95,7 +151,8 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         ...state,
         isRolling: false,
         isMoving: true,
-        revealedTraps: [], // Hide all revealed traps when starting new movement
+        revealedTraps: [],
+        revealedGates: [],
       };
 
     case 'MOVE_PLAYER': {
@@ -110,12 +167,11 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
     }
 
     case 'COLLECT_GIFT': {
-      const giftPoints = Math.floor(Math.random() * 51) + 50; // 50-100 points
-      const updatedGiftTiles = state.giftTiles.filter(tile => tile !== action.payload);
+      const updatedGiftTiles = state.giftTiles.filter(gift => gift.index !== action.payload.tileIndex);
       
       return {
         ...state,
-        score: state.score + giftPoints,
+        score: state.score + action.payload.points,
         giftsCollected: state.giftsCollected + 1,
         giftTiles: updatedGiftTiles,
       };
@@ -123,7 +179,7 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
 
     case 'REGENERATE_GIFT': {
       const updatedGiftTiles = [...state.giftTiles];
-      if (!updatedGiftTiles.includes(action.payload)) {
+      if (!updatedGiftTiles.some(gift => gift.index === action.payload.index)) {
         updatedGiftTiles.push(action.payload);
       }
       
@@ -140,11 +196,26 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       };
     }
 
+    case 'REVEAL_GATE': {
+      return {
+        ...state,
+        revealedGates: [...state.revealedGates, action.payload],
+      };
+    }
+
     case 'TRIGGER_DETOUR_TRAP': {
       return {
         ...state,
         playerPosition: action.payload.newPosition,
         detourTrapsTriggered: state.detourTrapsTriggered + 1,
+      };
+    }
+
+    case 'TRIGGER_SHORTCUT_GATE': {
+      return {
+        ...state,
+        playerPosition: action.payload.newPosition,
+        shortcutGatesTriggered: state.shortcutGatesTriggered + 1,
       };
     }
 
@@ -172,12 +243,16 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
 
     case 'RESET_GAME': {
       const newGiftTiles = generateGiftTiles();
-      const newDetourTrapTiles = generateDetourTrapTiles(newGiftTiles);
+      const newOccupiedTiles = new Set(newGiftTiles.map(gift => gift.index));
+      const newShortcutGateTiles = generateShortcutGateTiles(newOccupiedTiles);
+      newShortcutGateTiles.forEach(gate => newOccupiedTiles.add(gate.index));
+      const newDetourTrapTiles = generateDetourTrapTiles(newOccupiedTiles);
       
       return {
         ...initialState,
         giftTiles: newGiftTiles,
         detourTrapTiles: newDetourTrapTiles,
+        shortcutGateTiles: newShortcutGateTiles,
         isSoundMuted: state.isSoundMuted, // Preserve sound setting
       };
     }
