@@ -14,16 +14,16 @@ interface VictoryModalProps {
   onRestart: () => void;
 }
 
-const VictoryModal = ({ 
-  isOpen, 
-  score, 
-  turnsPlayed, 
-  giftsCollected, 
+const VictoryModal = ({
+  isOpen,
+  score,
+  turnsPlayed,
+  giftsCollected,
   detourTrapsTriggered,
   shortcutGatesTriggered,
   gameScore,
   giftScore,
-  onRestart 
+  onRestart
 }: VictoryModalProps) => {
   if (!isOpen) return null;
 
@@ -48,7 +48,7 @@ const VictoryModal = ({
           >
             <Trophy className="w-12 h-12 text-white" />
           </motion.div>
-          
+
           <h2 className="text-3xl font-bold text-white mb-2">Congratulations!</h2>
           <p className="text-gray-300">You've reached tile 100!</p>
         </div>
@@ -59,51 +59,61 @@ const VictoryModal = ({
               <span className="text-lg font-semibold text-white">Final Score</span>
               <span className="text-2xl font-bold text-yellow-400">{score}</span>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div className="bg-gray-600 rounded p-2">
                 <div className="text-xs text-gray-300">Game Score</div>
                 <div className="text-white font-bold">{gameScore}</div>
               </div>
-              
+
               <div className="bg-gray-600 rounded p-2">
                 <div className="text-xs text-gray-300">Gift Score</div>
                 <div className="text-yellow-400 font-bold">{giftScore}</div>
               </div>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4 text-sm mt-4">
               <div className="flex items-center space-x-2">
                 <Target className="w-4 h-4 text-blue-400" />
                 <span className="text-gray-300">Turns: {turnsPlayed}</span>
               </div>
-              
+
               <div className="flex items-center space-x-2">
                 <Gift className="w-4 h-4 text-yellow-400" />
                 <span className="text-gray-300">Gifts: {giftsCollected}</span>
               </div>
-              
+
               <div className="flex items-center space-x-2">
                 <DoorClosed className="w-4 h-4 text-red-400" />
                 <span className="text-gray-300">Traps: {detourTrapsTriggered}</span>
               </div>
-              
+
               <div className="flex items-center space-x-2">
-                <ArrowUp className="w-4 h-4 text-green-400" />
-                <span className="text-gray-300">Gates: {shortcutGatesTriggered}</span>
+                <DoorClosed className="w-4 h-4 text-green-400" />
+                <span className="text-gray-300">Shortcuts: {shortcutGatesTriggered}</span>
               </div>
             </div>
           </div>
         </div>
 
-        <motion.button
-          onClick={onRestart}
-          className="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold rounded-lg shadow-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-200"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          Play Again
-        </motion.button>
+        <div className="grid grid-cols-2 gap-3 text-sm">
+          <motion.button
+            onClick={onRestart}
+            className="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold rounded-lg shadow-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-200"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            Play Again
+          </motion.button>
+          <motion.button
+            onClick={onRestart}
+            className="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold rounded-lg shadow-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-200"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            Sign your Score
+          </motion.button>
+        </div>
       </motion.div>
     </motion.div>
   );

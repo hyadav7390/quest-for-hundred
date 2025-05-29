@@ -54,21 +54,21 @@ const ScoreBoard = ({
         </div>
 
         <div className="bg-gray-700 rounded-lg p-3 text-center">
-          <Dices className="w-8 h-8 text-yellow-400 mx-auto mb-2" />
+          <Dices className="w-8 h-8 text-red-400 mx-auto mb-2" />
           <p className="text-sm text-gray-300">Dice Rolled</p>
           <p className="text-2xl font-bold text-white">{turnsPlayed}</p>
         </div>
-        
-        <div className="bg-gray-700 rounded-lg p-3 text-center">
-          <Target className="w-8 h-8 text-blue-400 mx-auto mb-2" />
-          <p className="text-sm text-gray-300">Position</p>
-          <p className="text-2xl font-bold text-white">{position}/100</p>
-        </div>
-        
+
         <div className="bg-gray-700 rounded-lg p-3 text-center">
           <Gift className="w-8 h-8 text-green-400 mx-auto mb-2" />
           <p className="text-sm text-gray-300">Gifts</p>
           <p className="text-2xl font-bold text-white">{giftsCollected}</p>
+        </div>
+        
+        <div className="bg-gray-700 rounded-lg p-3 text-center">
+          <Target className="w-8 h-8 text-yellow-400 mx-auto mb-2" />
+          <p className="text-sm text-gray-300">Position</p>
+          <p className="text-2xl font-bold text-white">{position}/100</p>
         </div>
         
         <div className="bg-gray-700 rounded-lg p-3 text-center">
