@@ -1,6 +1,6 @@
 
 import { motion } from 'framer-motion';
-import { Trophy, Target, Gift, DoorClosed, ArrowUp, Volume2, VolumeX } from 'lucide-react';
+import { Trophy, Target, Gift, DoorClosed, Dices, Volume2, VolumeX } from 'lucide-react';
 
 interface ScoreBoardProps {
   score: number;
@@ -52,6 +52,12 @@ const ScoreBoard = ({
           <p className="text-sm text-gray-300">Score</p>
           <p className="text-2xl font-bold text-white">{score}</p>
         </div>
+
+        <div className="bg-gray-700 rounded-lg p-4 text-center">
+          <Dices className="w-8 h-8 text-yellow-400 mx-auto mb-2" />
+          <p className="text-sm text-gray-300">Dice Rolled</p>
+          <p className="text-2xl font-bold text-white">{turnsPlayed}</p>
+        </div>
         
         <div className="bg-gray-700 rounded-lg p-4 text-center">
           <Target className="w-8 h-8 text-blue-400 mx-auto mb-2" />
@@ -71,16 +77,11 @@ const ScoreBoard = ({
           <p className="text-2xl font-bold text-white">{detourTrapsTriggered}</p>
         </div>
         
-        <div className="col-span-2 bg-gray-700 rounded-lg p-4 text-center">
-          <ArrowUp className="w-8 h-8 text-green-400 mx-auto mb-2" />
+        <div className="bg-gray-700 rounded-lg p-4 text-center">
+          <DoorClosed className="w-8 h-8 text-green-400 mx-auto mb-2" />
           <p className="text-sm text-gray-300">Shortcut Gates</p>
           <p className="text-2xl font-bold text-white">{shortcutGatesTriggered}</p>
         </div>
-      </div>
-      
-      <div className="mt-4 bg-gray-700 rounded-lg p-3 text-center">
-        <p className="text-sm text-gray-300">Turns Played</p>
-        <p className="text-xl font-bold text-white">{turnsPlayed}</p>
       </div>
     </motion.div>
   );
