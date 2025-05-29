@@ -58,7 +58,7 @@ const GameBoard = ({
   };
 
   const getTileStyles = (tileNumber: number, tileType: TileType) => {
-    let baseStyles = "w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center rounded-lg relative border-2 transition-all duration-300";
+    let baseStyles = "flex items-center justify-center rounded-lg relative border-2 transition-all duration-300 py-5";
     
     if (tileNumber === playerPosition) {
       baseStyles += " ring-4 ring-yellow-400 ring-opacity-75";
@@ -79,7 +79,7 @@ const GameBoard = ({
 
   return (
     <div className="bg-gray-900 p-3 sm:p-6 rounded-2xl shadow-2xl">
-      <div className="grid grid-cols-10 gap-1 sm:gap-2">
+      <div className="grid grid-cols-10 gap-1 sm:gap-2 justify-between">
         {Array.from({ length: 100 }, (_, index) => {
           const row = Math.floor(index / 10);
           const col = index % 10;
