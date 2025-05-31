@@ -148,12 +148,12 @@ const Index = () => {
       dispatch({ type: 'FINISH_TURN' });
       
       // Regenerate gift on previous position if it was a gift tile
-      const previousGift = gameState.giftTiles.find(g => g.index === previousPosition);
-      if (previousGift) {
-        setTimeout(() => {
-          dispatch({ type: 'REGENERATE_GIFT', payload: { index: previousPosition, points: previousGift.points } });
-        }, 500);
-      }
+      // const previousGift = gameState.giftTiles.find(g => g.index === previousPosition);
+      // if (previousGift) {
+      //   setTimeout(() => {
+      //     dispatch({ type: 'REGENERATE_GIFT', payload: { index: previousPosition, points: previousGift.points } });
+      //   }, 500);
+      // }
     }, 500);
   };
 
@@ -198,10 +198,10 @@ const Index = () => {
         >
           <div className="text-center flex-1">
             <h1 className="text-3xl sm:text-5xl font-bold text-white mb-2 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
-              🎮 NunuGames
+              🎮 NU GAMES
             </h1>
             <p className="text-lg sm:text-xl text-gray-300">
-              Roll the dice, collect gifts, avoid detour traps, find shortcut gates, and take your NUNU to 100!
+              Roll the dice, collect gifts, avoid detour traps, find shortcuts, and make your NUNU rise to 100!
             </p>
           </div>
           

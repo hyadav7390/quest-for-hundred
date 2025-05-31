@@ -58,14 +58,14 @@ const GameBoard = ({
   };
 
   const getTileStyles = (tileNumber: number, tileType: TileType) => {
-    let baseStyles = "flex items-center justify-center rounded-lg relative border-2 transition-all duration-300 py-5";
+    let baseStyles = "w-full min-h-16 flex items-center justify-center rounded-lg relative border-2 transition-all duration-300 py-4";
     
     if (tileNumber === playerPosition) {
       baseStyles += " ring-4 ring-yellow-400 ring-opacity-75";
     }
 
     if (tileType.type === 'gift') {
-      return baseStyles + " bg-gradient-to-br from-yellow-400 to-amber-500 border-yellow-600 shadow-lg";
+      return baseStyles + " bg-gradient-to-br from-yellow-400 to-amber-500 border-yellow-600 shadow-lg"; 
     } else if (tileType.type === 'detour-trap') {
       return baseStyles + " bg-gradient-to-br from-red-500 to-orange-600 border-red-700 shadow-lg";
     } else if (tileType.type === 'shortcut-gate') {
@@ -124,7 +124,7 @@ const GameBoard = ({
                       ease: "easeInOut",
                     }}
                   >
-                    <Gift className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                    <Gift className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
                   </motion.div>
                 </div>
               )}
@@ -141,7 +141,7 @@ const GameBoard = ({
                         exit={{ scale: 0.8 }}
                         transition={{ duration: 0.3 }}
                       >
-                        <DoorOpen className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
+                        <DoorOpen className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
                       </motion.div>
                     ) : (
                       <motion.div
@@ -151,7 +151,7 @@ const GameBoard = ({
                         exit={{ scale: 0.8 }}
                         transition={{ duration: 0.3 }}
                       >
-                        <DoorClosed className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
+                        <DoorClosed className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -185,7 +185,7 @@ const GameBoard = ({
                         exit={{ scale: 0.8 }}
                         transition={{ duration: 0.3 }}
                       >
-                        <DoorOpen className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
+                        <DoorOpen className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
                       </motion.div>
                     ) : (
                       <motion.div
@@ -195,7 +195,7 @@ const GameBoard = ({
                         exit={{ scale: 0.8 }}
                         transition={{ duration: 0.3 }}
                       >
-                        <DoorClosed className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
+                        <DoorClosed className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
                       </motion.div>
                     )}
                   </AnimatePresence>
