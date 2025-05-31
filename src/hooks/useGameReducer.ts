@@ -69,7 +69,7 @@ const generateDetourTrapTiles = (occupiedTiles: Set<number>): { index: number; m
   // Generate 8 traps with strategic placement
   const penalties = [];
   for (let i = 0; i < 8; i++) {
-    penalties.push(Math.floor(Math.random() * 46) + 5); // 5-50 tiles back
+    penalties.push(Math.floor(Math.random() * 36) + 5); // 5-40 tiles back
   }
   
   // Sort penalties in descending order (highest penalties first)

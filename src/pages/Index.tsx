@@ -198,7 +198,7 @@ const Index = () => {
         >
           <div className="text-center flex-1">
             <h1 className="text-3xl sm:text-5xl font-bold text-white mb-2 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
-              🎮 NU GAMES
+              🎮 NUNU GAMES
             </h1>
             <p className="text-lg sm:text-xl text-gray-300">
               Roll the dice, collect gifts, avoid detour traps, find shortcuts, and make your NUNU rise to 100!

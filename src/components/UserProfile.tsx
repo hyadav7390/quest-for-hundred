@@ -5,6 +5,7 @@ import { User, Gift } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { getUserProfile } from '@/utils/userProfile';
+import CrawlingCharacter from './CrawlingCharacter';
 
 const UserProfile = () => {
   const [profile, setProfile] = useState(getUserProfile());
@@ -19,22 +20,24 @@ const UserProfile = () => {
     <Popover>
       <PopoverTrigger asChild>
         <motion.button
-          className="p-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-full shadow-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-200"
+          className="p-2"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={refreshProfile}
         >
-          <User className="w-6 h-6" />
+          {/* <User className="w-6 h-6" /> */}
+          <CrawlingCharacter isMoving={false} />
         </motion.button>
       </PopoverTrigger>
       
       <PopoverContent className="w-80 bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-600">
         <div className="space-y-4">
           <div className="text-center">
-            <h3 className="text-xl font-bold text-white mb-2">Player Profile</h3>
-            <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full mx-auto flex items-center justify-center">
+            <h3 className="text-xl font-bold text-white mb-5">Player Profile</h3>
+            {/* <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full mx-auto flex items-center justify-center">
               <User className="w-8 h-8 text-white" />
-            </div>
+            </div> */}
+            <CrawlingCharacter isMoving={false} />
           </div>
           
           <div className="grid grid-cols-2 gap-3">
@@ -66,7 +69,7 @@ const UserProfile = () => {
             disabled 
             className="w-full bg-gray-600 text-gray-400 cursor-not-allowed"
           >
-            Redeem Gifts (Coming Soon)
+            Redeem (Coming Soon)
           </Button>
         </div>
       </PopoverContent>
