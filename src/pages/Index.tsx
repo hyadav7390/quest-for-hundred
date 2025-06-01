@@ -9,6 +9,7 @@ import ScoreBoard from '@/components/ScoreBoard';
 import VictoryModal from '@/components/VictoryModal';
 import UserProfile from '@/components/UserProfile';
 import NewGameConfirmation from '@/components/NewGameConfirmation';
+import SplashAnimation from '@/components/SplashAnimation';
 import { toast } from '@/hooks/use-toast';
 
 const Index = () => {
@@ -16,11 +17,28 @@ const Index = () => {
   const { playSound } = useSoundEffects(gameState.isSoundMuted);
   const [showNewGameConfirmation, setShowNewGameConfirmation] = useState(false);
   const [currentGameGiftScore, setCurrentGameGiftScore] = useState(0);
+  const [splash, setSplash] = useState<{
+    isVisible: boolean;
+    type: 'gift' | 'shortcut' | 'detour';
+    value: number;
+  }>({
+    isVisible: false,
+    type: 'gift',
+    value: 0
+  });
 
   useEffect(() => {
     // Play start game sound
     playSound('start');
   }, []);
+
+  const showSplash = (type: 'gift' | 'shortcut' | 'detour', value: number) => {
+    setSplash({ isVisible: true, type, value });
+  };
+
+  const hideSplash = () => {
+    setSplash({ isVisible: false, type: 'gift', value: 0 });
+  };
 
   // Handle consecutive tile effects
   const handleTileEffects = async (position: number, previousPosition: number): Promise<number> => {
@@ -32,11 +50,14 @@ const Index = () => {
       dispatch({ type: 'COLLECT_GIFT', payload: { tileIndex: currentPosition, points: gift.points } });
       setCurrentGameGiftScore(prev => prev + gift.points);
       playSound('gift');
+      showSplash('gift', gift.points);
       toast({
         title: "🎁 Gift Collected!",
         description: `You earned ${gift.points} bonus points!`,
         variant: "default",
       });
+      
+      await new Promise(resolve => setTimeout(resolve, 1500));
     }
 
     // Check for Detour Trap tiles
@@ -52,13 +73,14 @@ const Index = () => {
         payload: { newPosition, penalty: detourTrap.moveBack, trapIndex: currentPosition } 
       });
       playSound('detourTrap');
+      showSplash('detour', detourTrap.moveBack);
       toast({
         title: "🚪 Detour Trap!",
         description: `You went through the door and moved back ${detourTrap.moveBack} tiles to position ${newPosition}.`,
         variant: "destructive",
       });
       
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
       // Recursively check the new position for more effects
       return handleTileEffects(newPosition, currentPosition);
@@ -77,13 +99,14 @@ const Index = () => {
         payload: { newPosition, bonus: shortcutGate.moveForward, gateIndex: currentPosition } 
       });
       playSound('gift'); // Use gift sound for positive effect
+      showSplash('shortcut', shortcutGate.moveForward);
       toast({
         title: "🚀 Shortcut Gate!",
         description: `You found a shortcut and moved forward ${shortcutGate.moveForward} tiles to position ${newPosition}!`,
         variant: "default",
       });
       
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
       // Recursively check the new position for more effects
       return handleTileEffects(newPosition, currentPosition);
@@ -129,8 +152,11 @@ const Index = () => {
     setTimeout(async () => {
       // Check if player reached tile 100
       if (targetPosition === 100) {
+        // Calculate final scores properly
+        const finalGameScore = gameState.score + (targetPosition - gameState.playerPosition) * 10 + 1000; // Include finish bonus
+        
         // Update user profile with final scores before winning
-        updateUserProfile(gameState.score, currentGameGiftScore, gameState.giftsCollected);
+        updateUserProfile(finalGameScore - currentGameGiftScore, currentGameGiftScore, gameState.giftsCollected);
         
         dispatch({ type: 'WIN_GAME' });
         playSound('win');
@@ -146,14 +172,6 @@ const Index = () => {
       await handleTileEffects(targetPosition, previousPosition);
 
       dispatch({ type: 'FINISH_TURN' });
-      
-      // Regenerate gift on previous position if it was a gift tile
-      // const previousGift = gameState.giftTiles.find(g => g.index === previousPosition);
-      // if (previousGift) {
-      //   setTimeout(() => {
-      //     dispatch({ type: 'REGENERATE_GIFT', payload: { index: previousPosition, points: previousGift.points } });
-      //   }, 500);
-      // }
     }, 500);
   };
 
@@ -168,7 +186,8 @@ const Index = () => {
   const restartGame = () => {
     // Update user profile with current game data before resetting
     if (gameState.diceRolled) {
-      updateUserProfile(gameState.score, currentGameGiftScore, gameState.giftsCollected);
+      const gameScore = gameState.score - currentGameGiftScore;
+      updateUserProfile(gameScore, currentGameGiftScore, gameState.giftsCollected);
     }
     
     dispatch({ type: 'RESET_GAME' });
@@ -197,9 +216,6 @@ const Index = () => {
           transition={{ duration: 0.6 }}
         >
           <div className="text-center flex-1">
-            {/* <h1 className="text-3xl sm:text-5xl font-bold text-white mb-2 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
-              🎮 NUNU GAMES
-            </h1> */}
             <p className="text-lg sm:text-xl text-gray-300">
               Roll the dice, collect gifts, avoid detour traps, find shortcuts, and make your NUNU rise to 100!
             </p>
@@ -317,6 +333,14 @@ const Index = () => {
             </motion.button>
           </div>
         </div>
+
+        {/* Splash Animation */}
+        <SplashAnimation
+          isVisible={splash.isVisible}
+          type={splash.type}
+          value={splash.value}
+          onComplete={hideSplash}
+        />
 
         {/* Victory Modal */}
         <VictoryModal
