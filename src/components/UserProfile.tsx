@@ -32,13 +32,13 @@ const UserProfile = () => {
       
       <PopoverContent className="w-80 bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-600">
         <div className="space-y-4">
-          <div className="text-center">
+          {/* <div className="text-center">
             <h3 className="text-xl font-bold text-white mb-5">Player Profile</h3>
-            {/* <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full mx-auto flex items-center justify-center">
+            <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full mx-auto flex items-center justify-center">
               <User className="w-8 h-8 text-white" />
-            </div> */}
+            </div>
             <CrawlingCharacter isMoving={false} />
-          </div>
+          </div> */}
           
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-gray-700 rounded-lg p-3 text-center">
@@ -65,12 +65,12 @@ const UserProfile = () => {
             </div>
           </div>
           
-          <Button 
+          {/* <Button 
             disabled 
             className="w-full bg-gray-600 text-gray-400 cursor-not-allowed"
           >
             Redeem (Coming Soon)
-          </Button>
+          </Button> */}
         </div>
       </PopoverContent>
     </Popover>

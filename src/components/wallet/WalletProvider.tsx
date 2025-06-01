@@ -1,0 +1,59 @@
+
+import { WagmiProvider } from 'wagmi';
+import { sepolia, mainnet, polygon, optimism, arbitrum, base } from 'wagmi/chains';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { RainbowKitProvider, getDefaultConfig, connectorsForWallets } from '@rainbow-me/rainbowkit';
+import {
+  rainbowWallet,
+  metaMaskWallet,
+  coinbaseWallet,
+  walletConnectWallet,
+} from '@rainbow-me/rainbowkit/wallets';
+import '@rainbow-me/rainbowkit/styles.css';
+import { monadTestnet } from '@/types/monadTestnet';
+
+// Configure chains & providers
+const projectId = '424572aa10a33929bbcbd6ec6184f296'; 
+
+const connectors = connectorsForWallets(
+  [
+    {
+      groupName: 'Recommended',
+      wallets: [rainbowWallet, metaMaskWallet],
+    },
+    {
+      groupName: 'Others',
+      wallets: [coinbaseWallet, walletConnectWallet],
+    },
+  ],
+  { appName: 'RainbowKit App', projectId: projectId },
+);
+
+// Create wagmi config
+const config = getDefaultConfig({
+  chains: [sepolia, mainnet, polygon, optimism, arbitrum, base, monadTestnet],
+  appName: 'Nunu Games',
+  projectId,
+  connectors
+});
+
+// Create a client for React Query
+const queryClient = new QueryClient();
+
+interface WalletProviderProps {
+  children: React.ReactNode;
+}
+
+const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
+  return (
+    <WagmiProvider config={config}>
+      <QueryClientProvider client={queryClient}>
+        <RainbowKitProvider>
+          {children}
+        </RainbowKitProvider>
+      </QueryClientProvider>
+    </WagmiProvider>
+  );
+};
+
+export default WalletProvider;
