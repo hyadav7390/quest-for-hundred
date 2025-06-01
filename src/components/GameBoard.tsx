@@ -58,7 +58,7 @@ const GameBoard = ({
   };
 
   const getTileStyles = (tileNumber: number, tileType: TileType) => {
-    let baseStyles = "w-full min-h-16 flex items-center justify-center rounded-lg relative border-2 transition-all duration-300 py-4";
+    let baseStyles = "w-full min-h-12 sm:min-h-16 flex items-center justify-center rounded-lg relative border-2 transition-all duration-300 pt-2";
     
     if (tileNumber === playerPosition) {
       baseStyles += " ring-4 ring-yellow-400 ring-opacity-75";

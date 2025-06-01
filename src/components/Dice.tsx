@@ -55,7 +55,7 @@ const Dice = ({ value, isRolling, onRoll, disabled }: DiceProps) => {
   };
 
   return (
-    <div className="flex flex-col items-center space-y-6">
+    <div className="flex flex-col items-center space-y-3">
       <motion.div
         className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-300 rounded-xl border-2 border-gray-400 relative shadow-lg"
         animate={{
