@@ -157,7 +157,7 @@ const GameBoard = ({
                   </AnimatePresence>
                   
                   {/* Show penalty number only when revealed */}
-                  <AnimatePresence>
+                  {/* <AnimatePresence>
                     {tileType.revealed && (
                       <motion.span
                         className="text-xs text-white font-bold mt-1"
@@ -169,7 +169,7 @@ const GameBoard = ({
                         -{tileType.moveBack}
                       </motion.span>
                     )}
-                  </AnimatePresence>
+                  </AnimatePresence> */}
                 </div>
               )}
               
@@ -201,7 +201,7 @@ const GameBoard = ({
                   </AnimatePresence>
                   
                   {/* Show bonus number only when revealed */}
-                  <AnimatePresence>
+                  {/* <AnimatePresence>
                     {tileType.revealed && (
                       <motion.span
                         className="text-xs text-white font-bold mt-1"
@@ -213,7 +213,7 @@ const GameBoard = ({
                         +{tileType.moveForward}
                       </motion.span>
                     )}
-                  </AnimatePresence>
+                  </AnimatePresence> */}
                 </div>
               )}
               

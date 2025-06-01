@@ -33,7 +33,7 @@ const Header: React.FC = () => {
       hash,
     });
   
-  const handleSendEth = () => {
+  const handleSendMonad = () => {
     try {
       if (!recipient || !amount) {
         toast.error('Please enter recipient address and amount');
@@ -44,7 +44,7 @@ const Header: React.FC = () => {
       sendTransaction({ 
         to: recipient,
         value: parseEther(amount),
-        chainId: sepolia.id,
+        chainId: monadTestnet.id,
       });
     } catch (error) {
       console.error('Error sending transaction:', error);
@@ -59,12 +59,12 @@ const Header: React.FC = () => {
         <div>
           <p>Transaction confirmed!</p>
           <a 
-            href={`https://sepolia.etherscan.io/tx/${hash}`}
+            href={`https://testnet.monvision.io/tx/${hash}`}
             target="_blank"
             rel="noopener noreferrer"
             className="text-blue-500 underline"
           >
-            View on Etherscan
+            View on Monvision
           </a>
         </div>
       );
@@ -108,24 +108,24 @@ const Header: React.FC = () => {
           {/* Wallet Connection Button */}
           <ConnectButton />
           
-          {/* Send ETH Button (only visible when connected) */}
+          {/* Send MON Button (only visible when connected) */}
           {isConnected && (
             <Button 
               variant="outline"
               onClick={() => setShowSendForm(!showSendForm)}
               className="bg-gradient-to-r from-indigo-500/10 to-purple-500/10 hover:from-indigo-500/20 hover:to-purple-500/20 px-3 py-1 rounded-full transition-all duration-300"
             >
-              {showSendForm ? 'Hide' : 'Send ETH'}
+              {showSendForm ? 'Hide' : 'Send MON'}
             </Button>
           )}
         </div>
         
-        {/* Send ETH Form */}
+        {/* Send MON Form */}
         {isConnected && showSendForm && (
           <Card className="w-full mt-4 border border-indigo-200 bg-gradient-to-r from-indigo-50/50 to-purple-50/50 animate-fade-in">
             <CardHeader className="pb-3">
-              <CardTitle className="text-xl text-indigo-700">Send ETH</CardTitle>
-              <CardDescription>Transfer ETH to another address on {getChainName(chainId)}</CardDescription>
+              <CardTitle className="text-xl text-indigo-700">Send Monad</CardTitle>
+              <CardDescription>Transfer MONAD to another address on {getChainName(chainId)}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -140,7 +140,7 @@ const Header: React.FC = () => {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="amount" className="text-indigo-700">Amount (ETH)</Label>
+                <Label htmlFor="amount" className="text-indigo-700">Amount (MON)</Label>
                 <Input 
                   id="amount"
                   type="number"
@@ -155,7 +155,7 @@ const Header: React.FC = () => {
               
               <Button
                 className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 transition-all duration-300"
-                onClick={handleSendEth}
+                onClick={handleSendMonad}
                 disabled={isPending || isConfirming || !recipient || !amount}
               >
                 {isPending || isConfirming ? (
@@ -164,7 +164,7 @@ const Header: React.FC = () => {
                     {isPending ? 'Confirm in Wallet' : 'Processing...'}
                   </>
                 ) : (
-                  'Send ETH'
+                  'Send MON'
                 )}
               </Button>
               
@@ -172,7 +172,7 @@ const Header: React.FC = () => {
                 <div className="bg-indigo-50 p-3 rounded-md break-all border border-indigo-200">
                   <p className="text-sm font-medium text-indigo-700">Transaction Hash:</p>
                   <a 
-                    href={`https://sepolia.etherscan.io/tx/${hash}`}
+                    href={`https://testnet.monvision.io/tx/${hash}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-purple-600 hover:text-purple-800 text-sm transition-colors"

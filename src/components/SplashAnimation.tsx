@@ -13,11 +13,11 @@ const SplashAnimation = ({ isVisible, type, value, onComplete }: SplashAnimation
   const getIcon = () => {
     switch (type) {
       case 'gift':
-        return <Gift className="w-16 h-16 text-yellow-400" />;
+        return <Gift className="w-42 h-42 text-yellow-400" />;
       case 'shortcut':
-        return <TrendingUp className="w-16 h-16 text-green-400" />;
+        return <TrendingUp className="w-42 h-42 text-green-400" />;
       case 'detour':
-        return <TrendingDown className="w-16 h-16 text-red-400" />;
+        return <TrendingDown className="w-42 h-42 text-red-400" />;
     }
   };
 
@@ -35,11 +35,11 @@ const SplashAnimation = ({ isVisible, type, value, onComplete }: SplashAnimation
   const getText = () => {
     switch (type) {
       case 'gift':
-        return `+${value} Points!`;
+        return `Oh Yeah! NUNU got a Gift for +${value} Points!`;
       case 'shortcut':
-        return `Shortcut +${value}!`;
+        return `Oh Yeah! NUNU found a Shortcut for +${value} tiles!`;
       case 'detour':
-        return `Detour -${value}!`;
+        return `Oh No! NUNU got Detoured for -${value} tiles!`;
     }
   };
 
@@ -52,7 +52,7 @@ const SplashAnimation = ({ isVisible, type, value, onComplete }: SplashAnimation
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onAnimationComplete={() => {
-            setTimeout(onComplete, 1000);
+            setTimeout(onComplete, 2000);
           }}
         >
           {/* Burst effect */}
