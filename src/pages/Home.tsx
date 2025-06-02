@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Play, Gift, Zap, Target, Twitter, MessageCircle, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import GlobalProgressTracker from '@/components/GlobalProgressTracker';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -90,6 +91,9 @@ const Home = () => {
           ))}
         </div>
       </div>
+
+      {/* Global Progress Tracker */}
+      <GlobalProgressTracker />
 
       {/* Features Section */}
       <div className="max-w-7xl mx-auto px-4 py-20">

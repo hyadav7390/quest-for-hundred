@@ -58,10 +58,11 @@ const GameBoard = ({
   };
 
   const getTileStyles = (tileNumber: number, tileType: TileType) => {
-    let baseStyles = "w-full min-h-12 sm:min-h-16 flex items-center justify-center rounded-lg relative border-2 transition-all duration-300 pt-2";
+    let baseStyles = "w-full min-h-12 sm:min-h-16 flex items-center justify-center rounded-lg relative border-2 transition-all duration-300 pt-2 overflow-visible";
     
     if (tileNumber === playerPosition) {
-      baseStyles += " ring-4 ring-yellow-400 ring-opacity-75";
+      // Enhanced tile highlighting for player position
+      baseStyles += " ring-4 ring-yellow-400 ring-opacity-75 scale-110 z-10 shadow-2xl shadow-yellow-400/50";
     }
 
     if (tileType.type === 'gift') {
@@ -85,33 +86,53 @@ const GameBoard = ({
           const col = index % 10;
           const tileNumber = getTileNumber(9 - row, col);
           const tileType = getTileType(tileNumber);
+          const isPlayerTile = tileNumber === playerPosition;
           
           return (
             <motion.div
               key={tileNumber}
               className={getTileStyles(tileNumber, tileType)}
               initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: index * 0.01, duration: 0.3 }}
+              animate={{ 
+                opacity: 1, 
+                scale: isPlayerTile ? 1.1 : 1,
+                zIndex: isPlayerTile ? 10 : 1
+              }}
+              transition={{ 
+                delay: index * 0.01, 
+                duration: 0.3,
+                scale: { duration: 0.2, ease: "easeInOut" }
+              }}
             >
               {/* Tile Number */}
-              <span className="text-xs font-bold text-white absolute top-0.5 left-1">
+              <span className="text-xs font-bold text-white absolute top-0.5 left-1 z-20">
                 {tileNumber}
               </span>
               
-              {/* Player Avatar */}
-              {tileNumber === playerPosition && (
+              {/* Player Avatar with jumping animation */}
+              {isPlayerTile && (
                 <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: "spring", stiffness: 500, damping: 25 }}
+                  initial={{ scale: 0, y: 0 }}
+                  animate={{ 
+                    scale: 1,
+                    y: isMoving ? [-10, 0, -8, 0] : 0
+                  }}
+                  transition={{ 
+                    scale: { type: "spring", stiffness: 500, damping: 25 },
+                    y: { 
+                      duration: isMoving ? 0.6 : 0,
+                      repeat: isMoving ? Infinity : 0,
+                      ease: "easeInOut"
+                    }
+                  }}
+                  className="z-30 relative"
                 >
                   <CrawlingCharacter isMoving={isMoving} />
                 </motion.div>
               )}
               
-              {/* Gift Icon without Points */}
-              {tileType.type === 'gift' && tileNumber !== playerPosition && (
+              {/* Gift Icon */}
+              {tileType.type === 'gift' && !isPlayerTile && (
                 <div className="flex flex-col items-center">
                   <motion.div
                     animate={{
@@ -124,7 +145,7 @@ const GameBoard = ({
                       ease: "easeInOut",
                     }}
                   >
-                    <Gift className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+                    <Gift className="w-6 h-6 sm:w-8 sm:h-8 text-white drop-shadow-lg" />
                   </motion.div>
                 </div>
               )}
@@ -133,43 +154,34 @@ const GameBoard = ({
               {tileType.type === 'detour-trap' && (
                 <div className="flex flex-col items-center">
                   <AnimatePresence mode="wait">
-                    {tileNumber === playerPosition ? (
+                    {isPlayerTile ? (
                       <motion.div
                         key="open-door"
-                        initial={{ scale: 0.8 }}
-                        animate={{ scale: 1 }}
-                        exit={{ scale: 0.8 }}
+                        initial={{ scale: 0.8, rotateY: 0 }}
+                        animate={{ scale: 1, rotateY: 180 }}
+                        exit={{ scale: 0.8, rotateY: 0 }}
                         transition={{ duration: 0.3 }}
                       >
-                        <DoorOpen className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+                        <DoorOpen className="w-6 h-6 sm:w-8 sm:h-8 text-white drop-shadow-lg" />
                       </motion.div>
                     ) : (
                       <motion.div
                         key="closed-door"
                         initial={{ scale: 0.8 }}
-                        animate={{ scale: 1 }}
+                        animate={{ 
+                          scale: 1,
+                          rotateY: [0, 5, -5, 0]
+                        }}
                         exit={{ scale: 0.8 }}
-                        transition={{ duration: 0.3 }}
+                        transition={{ 
+                          scale: { duration: 0.3 },
+                          rotateY: { duration: 2, repeat: Infinity, ease: "easeInOut" }
+                        }}
                       >
-                        <DoorClosed className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+                        <DoorClosed className="w-6 h-6 sm:w-8 sm:h-8 text-white drop-shadow-lg" />
                       </motion.div>
                     )}
                   </AnimatePresence>
-                  
-                  {/* Show penalty number only when revealed */}
-                  {/* <AnimatePresence>
-                    {tileType.revealed && (
-                      <motion.span
-                        className="text-xs text-white font-bold mt-1"
-                        initial={{ opacity: 0, y: 10, scale: 0.5 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -10, scale: 0.5 }}
-                        transition={{ duration: 0.5, type: "spring" }}
-                      >
-                        -{tileType.moveBack}
-                      </motion.span>
-                    )}
-                  </AnimatePresence> */}
                 </div>
               )}
               
@@ -177,49 +189,52 @@ const GameBoard = ({
               {tileType.type === 'shortcut-gate' && (
                 <div className="flex flex-col items-center">
                   <AnimatePresence mode="wait">
-                    {tileNumber === playerPosition ? (
+                    {isPlayerTile ? (
                       <motion.div
                         key="open-door"
-                        initial={{ scale: 0.8 }}
-                        animate={{ scale: 1 }}
-                        exit={{ scale: 0.8 }}
+                        initial={{ scale: 0.8, rotateY: 0 }}
+                        animate={{ scale: 1, rotateY: 180 }}
+                        exit={{ scale: 0.8, rotateY: 0 }}
                         transition={{ duration: 0.3 }}
                       >
-                        <DoorOpen className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+                        <DoorOpen className="w-6 h-6 sm:w-8 sm:h-8 text-white drop-shadow-lg" />
                       </motion.div>
                     ) : (
                       <motion.div
                         key="closed-door"
                         initial={{ scale: 0.8 }}
-                        animate={{ scale: 1 }}
+                        animate={{ 
+                          scale: 1,
+                          rotateY: [0, 5, -5, 0]
+                        }}
                         exit={{ scale: 0.8 }}
-                        transition={{ duration: 0.3 }}
+                        transition={{ 
+                          scale: { duration: 0.3 },
+                          rotateY: { duration: 2, repeat: Infinity, ease: "easeInOut" }
+                        }}
                       >
-                        <DoorClosed className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+                        <DoorClosed className="w-6 h-6 sm:w-8 sm:h-8 text-white drop-shadow-lg" />
                       </motion.div>
                     )}
                   </AnimatePresence>
-                  
-                  {/* Show bonus number only when revealed */}
-                  {/* <AnimatePresence>
-                    {tileType.revealed && (
-                      <motion.span
-                        className="text-xs text-white font-bold mt-1"
-                        initial={{ opacity: 0, y: 10, scale: 0.5 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -10, scale: 0.5 }}
-                        transition={{ duration: 0.5, type: "spring" }}
-                      >
-                        +{tileType.moveForward}
-                      </motion.span>
-                    )}
-                  </AnimatePresence> */}
                 </div>
               )}
               
               {/* Goal Flag */}
-              {tileNumber === 100 && tileNumber !== playerPosition && (
-                <span className="text-xl sm:text-2xl">🏁</span>
+              {tileNumber === 100 && !isPlayerTile && (
+                <motion.span 
+                  className="text-xl sm:text-2xl"
+                  animate={{
+                    scale: [1, 1.1, 1],
+                  }}
+                  transition={{
+                    duration: 1.5,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                >
+                  🏁
+                </motion.span>
               )}
             </motion.div>
           );
