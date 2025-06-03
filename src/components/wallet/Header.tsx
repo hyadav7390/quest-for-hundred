@@ -49,7 +49,7 @@ const Header = () => {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            🎮 NUNU
+            🎮 NUNU GAMES
           </motion.button>
 
           {/* Desktop Navigation */}
