@@ -4,23 +4,41 @@ import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Home, Gamepad2, Menu, X } from 'lucide-react';
-import { useState } from 'react';
+import React, { useState } from 'react';
+
+import { useAccount, useBalance, useChainId, useSendTransaction, useWaitForTransactionReceipt } from 'wagmi';
+import { sepolia, mainnet, polygon, optimism, arbitrum, base } from 'wagmi/chains';
+import { monadTestnet } from '@/types/monadTestnet';
+import { toast } from 'sonner';
+import { parseEther } from 'viem/utils';
+import SendMonadModal from './Sendmodal';
+
 
 const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  const { address, isConnected } = useAccount();
+  const chainId = useChainId();
+  const { data: balance } = useBalance({
+    address,
+  });
+
+  const [recipient, setRecipient] = useState('');
+  const [amount, setAmount] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   const navigationItems = [
-    { 
-      label: 'Home', 
-      path: '/', 
+    {
+      label: 'Home',
+      path: '/',
       icon: <Home className="w-4 h-4" />,
       show: true
     },
-    { 
-      label: 'Games', 
-      path: '/games', 
+    {
+      label: 'Games',
+      path: '/games',
       icon: <Gamepad2 className="w-4 h-4" />,
       show: true
     },
@@ -31,6 +49,72 @@ const Header = () => {
       return location.pathname === '/';
     }
     return location.pathname.startsWith(path);
+  };
+
+  // Send transaction hookAdd commentMore actions
+  const { data: hash, isPending, sendTransaction } = useSendTransaction();
+
+  // Track transaction status
+  const { isLoading: isConfirming, isSuccess: isConfirmed } =
+    useWaitForTransactionReceipt({
+      hash,
+    });
+
+  const handleSendMonad = () => {
+    try {
+      if (!recipient || !amount) {
+        toast.error('Please enter recipient address and amount');
+        return;
+      }
+
+      // Convert ETH to Wei and send transaction
+      sendTransaction({
+        to: recipient,
+        value: parseEther(amount),
+        chainId: monadTestnet.id,
+      });
+    } catch (error) {
+      console.error('Error sending transaction:', error);
+      toast.error('Transaction failed. Please try again.');
+    }
+  };
+
+  // Show transaction confirmationAdd commentMore actions
+  React.useEffect(() => {
+    if (isConfirmed && hash) {
+      toast.success(
+        <div>
+          <p>Transaction confirmed!</p>
+          <a
+            href={`https://testnet.monvision.io/tx/${hash}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-500 underline"
+          >
+            View on Monvision
+          </a>
+        </div>
+      );
+
+      // Reset form
+      setRecipient('');
+      setAmount('');
+      setIsModalOpen(false);
+    }
+  }, [isConfirmed, hash]);
+
+
+  // Get chain name from chainIdAdd commentMore actions
+  const getChainName = (id: number | undefined) => {
+    if (!id) return 'Unknown';
+    if (id === sepolia.id) return 'Sepolia';
+    if (id === mainnet.id) return 'Ethereum';
+    if (id === arbitrum.id) return 'Arbitrum';
+    if (id === base.id) return 'Base';
+    if (id === polygon.id) return 'Polygon';
+    if (id === optimism.id) return 'Optimism';
+    if (id === monadTestnet.id) return 'Monad';
+    return 'Unknown Network';
   };
 
   return (
@@ -62,22 +146,37 @@ const Header = () => {
                   variant={isActivePath(item.path) ? "default" : "ghost"}
                   size="sm"
                   onClick={() => navigate(item.path)}
-                  className={`flex items-center space-x-2 ${
-                    isActivePath(item.path)
-                      ? 'bg-purple-600 hover:bg-purple-700 text-white'
-                      : 'text-gray-300 hover:text-white hover:bg-gray-800'
-                  } transition-all duration-200`}
+                  className={`flex items-center space-x-2 ${isActivePath(item.path)
+                    ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                    : 'text-gray-300 hover:text-white hover:bg-gray-800'
+                    } transition-all duration-200`}
                 >
                   {item.icon}
                   <span>{item.label}</span>
                 </Button>
               ))}
+            {isConnected && (
+              <Button
+                variant="outline"
+                onClick={() => setIsModalOpen(true)}
+                className="bg-gradient-to-r from-indigo-500/10 to-purple-500/10 hover:from-indigo-500/20 hover:to-purple-500/20 px-2 transition-all duration-300"
+              >
+                {'Send MON'}
+              </Button>
+            )}
+
           </nav>
 
           {/* Desktop Wallet Connection */}
           <div className="hidden md:block">
             <ConnectButton />
           </div>
+
+          <SendMonadModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            onSend={handleSendMonad}
+          />
 
           {/* Mobile Menu Button */}
           <button
@@ -113,18 +212,28 @@ const Header = () => {
                       navigate(item.path);
                       setMobileMenuOpen(false);
                     }}
-                    className={`flex items-center justify-start space-x-2 w-full ${
-                      isActivePath(item.path)
-                        ? 'bg-purple-600 hover:bg-purple-700 text-white'
-                        : 'text-gray-300 hover:text-white hover:bg-gray-800'
-                    } transition-all duration-200`}
+                    className={`flex items-center justify-start space-x-2 w-full ${isActivePath(item.path)
+                      ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                      : 'text-gray-300 hover:text-white hover:bg-gray-800'
+                      } transition-all duration-200`}
                   >
                     {item.icon}
                     <span>{item.label}</span>
                   </Button>
                 ))}
+
+              {/* Send MON Button (only visible when connected) */}
+              {isConnected && (
+                <Button
+                  variant="outline"
+                  onClick={() => setIsModalOpen(true)}
+                  className="bg-gradient-to-r from-indigo-500/10 to-purple-500/10 hover:from-indigo-500/20 hover:to-purple-500/20 px-3 py-1 rounded-full transition-all duration-300"
+                >
+                  {'Send MON'}
+                </Button>
+              )}
             </nav>
-            
+
             {/* Mobile Wallet Connection */}
             <div className="pt-4 border-t border-gray-700 mt-4">
               <ConnectButton />
