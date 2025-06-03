@@ -1,6 +1,6 @@
 
 import { motion } from 'framer-motion';
-import { Play, Gift, Zap, Target, Twitter, MessageCircle, Send } from 'lucide-react';
+import { Play, Gift, Zap, Target, Twitter, MessageCircle, Send, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import GlobalProgressTracker from '@/components/GlobalProgressTracker';
@@ -11,18 +11,18 @@ const Home = () => {
   const features = [
     {
       icon: <Target className="w-8 h-8 text-blue-400" />,
-      title: "Race to 100",
-      description: "Navigate through 100 tiles in this thrilling board game adventure"
+      title: "Multiple Games",
+      description: "Experience various exciting games on the NUNU platform"
     },
     {
       icon: <Gift className="w-8 h-8 text-yellow-400" />,
-      title: "Collect Gifts",
-      description: "Discover 12 hidden gifts with varying point values (50-300 points)"
+      title: "Earn NUNU Coins",
+      description: "Collect gifts and earn NUNU coins to unlock new games and features"
     },
     {
       icon: <Zap className="w-8 h-8 text-green-400" />,
-      title: "Unpredictable Journey",
-      description: "Face detour traps and find shortcut gates that change your path"
+      title: "Community Driven",
+      description: "Join a community working together to unlock rewards and new content"
     }
   ];
 
@@ -47,7 +47,7 @@ const Home = () => {
               🎮 NUNU GAMES
             </h1>
             <p className="text-xl sm:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto">
-              Roll the dice, collect gifts, avoid detour traps, find shortcuts, and make your NUNU rise to 100!
+              The ultimate gaming platform where every game rewards you with NUNU coins. Play, earn, and unlock the future of gaming!
             </p>
             
             <motion.div
@@ -57,11 +57,11 @@ const Home = () => {
             >
               <Button
                 size="lg"
-                onClick={() => navigate('/game')}
+                onClick={() => navigate('/games')}
                 className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-12 py-6 text-xl font-bold rounded-2xl shadow-2xl transform hover:scale-105 transition-all duration-200"
               >
                 <Play className="w-6 h-6 mr-3" />
-                Launch Game
+                Browse Games
               </Button>
             </motion.div>
           </motion.div>
@@ -95,7 +95,7 @@ const Home = () => {
       {/* Global Progress Tracker */}
       <GlobalProgressTracker />
 
-      {/* Features Section */}
+      {/* Platform Features Section */}
       <div className="max-w-7xl mx-auto px-4 py-20">
         <motion.h2
           className="text-4xl font-bold text-white text-center mb-16"
@@ -103,7 +103,7 @@ const Home = () => {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          Game Features
+          Platform Features
         </motion.h2>
 
         <div className="grid md:grid-cols-3 gap-8">
@@ -124,7 +124,7 @@ const Home = () => {
         </div>
       </div>
 
-      {/* Game Mechanics Section */}
+      {/* NUNU Whitepaper Section */}
       <div className="bg-gray-800 py-20">
         <div className="max-w-7xl mx-auto px-4">
           <motion.div
@@ -133,32 +133,46 @@ const Home = () => {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <h2 className="text-4xl font-bold text-white mb-8">The Unpredictable Journey</h2>
+            <h2 className="text-4xl font-bold text-white mb-8">The NUNU Ecosystem</h2>
             <p className="text-xl text-gray-300 max-w-4xl mx-auto mb-12">
-              Every game is unique! With randomly placed gifts, detour traps, and shortcut gates, 
-              no two games are ever the same. Will you collect all the gifts and reach tile 100, 
-              or will the traps slow you down?
+              NUNU Games is building the future of gaming where players are rewarded for their time and skill. 
+              Our ecosystem revolves around NUNU coins - the universal currency that powers all games on our platform.
+              As players collect gifts and complete games, they earn NUNU coins that unlock new experiences and rewards.
             </p>
             
             <div className="grid sm:grid-cols-3 gap-8">
               <div className="bg-gradient-to-br from-yellow-500 to-amber-600 rounded-xl p-6">
                 <Gift className="w-12 h-12 text-white mx-auto mb-4" />
-                <h3 className="text-lg font-bold text-white mb-2">12 Hidden Gifts</h3>
-                <p className="text-white opacity-90">Worth 50-300 points each</p>
+                <h3 className="text-lg font-bold text-white mb-2">Earn NUNU Coins</h3>
+                <p className="text-white opacity-90">Collect gifts and complete games to earn coins</p>
               </div>
               
-              <div className="bg-gradient-to-br from-red-500 to-red-700 rounded-xl p-6">
-                <div className="text-4xl mb-4">🚪</div>
-                <h3 className="text-lg font-bold text-white mb-2">8 Detour Traps</h3>
-                <p className="text-white opacity-90">Move you backward 5-40 tiles</p>
+              <div className="bg-gradient-to-br from-purple-500 to-purple-700 rounded-xl p-6">
+                <div className="text-4xl mb-4">🎮</div>
+                <h3 className="text-lg font-bold text-white mb-2">Unlock Games</h3>
+                <p className="text-white opacity-90">Use coins to access premium games and features</p>
               </div>
               
               <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl p-6">
-                <div className="text-4xl mb-4">🚪</div>
-                <h3 className="text-lg font-bold text-white mb-2">4 Shortcut Gates</h3>
-                <p className="text-white opacity-90">Jump forward 5-20 tiles</p>
+                <div className="text-4xl mb-4">🏆</div>
+                <h3 className="text-lg font-bold text-white mb-2">Community Rewards</h3>
+                <p className="text-white opacity-90">Participate in global challenges and earn rare NFTs</p>
               </div>
             </div>
+
+            <motion.div
+              className="mt-12"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <Button
+                size="lg"
+                className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-8 py-4 text-lg font-bold rounded-xl shadow-xl"
+              >
+                <FileText className="w-5 h-5 mr-2" />
+                Read Whitepaper
+              </Button>
+            </motion.div>
           </motion.div>
         </div>
       </div>
@@ -170,18 +184,18 @@ const Home = () => {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <h2 className="text-4xl font-bold text-white mb-8">Ready to Play?</h2>
+          <h2 className="text-4xl font-bold text-white mb-8">Ready to Start Gaming?</h2>
           <p className="text-xl text-gray-300 mb-12">
-            Start your journey to tile 100 and see how high you can score!
+            Join thousands of players earning NUNU coins and building the future of gaming!
           </p>
           
           <Button
             size="lg"
-            onClick={() => navigate('/game')}
+            onClick={() => navigate('/games')}
             className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-12 py-6 text-xl font-bold rounded-2xl shadow-2xl transform hover:scale-105 transition-all duration-200 mb-12"
           >
             <Play className="w-6 h-6 mr-3" />
-            Start Playing Now
+            Browse Games Now
           </Button>
 
           <div className="flex justify-center space-x-6">

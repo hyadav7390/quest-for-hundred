@@ -10,7 +10,7 @@ interface VictoryModalProps {
   detourTrapsTriggered: number;
   shortcutGatesTriggered: number;
   gameScore: number;
-  giftScore: number;
+  nunuCoins: number;
   onRestart: () => void;
 }
 
@@ -22,7 +22,7 @@ const VictoryModal = ({
   detourTrapsTriggered,
   shortcutGatesTriggered,
   gameScore,
-  giftScore,
+  nunuCoins,
   onRestart
 }: VictoryModalProps) => {
   if (!isOpen) return null;
@@ -51,6 +51,7 @@ const VictoryModal = ({
 
           <h2 className="text-3xl font-bold text-white mb-2">Congratulations!</h2>
           <p className="text-gray-300">You've reached tile 100!</p>
+          <p className="text-yellow-400 font-bold">+ 1000 NUNU Coins Bonus!</p>
         </div>
 
         <div className="space-y-4 mb-6">
@@ -67,8 +68,8 @@ const VictoryModal = ({
               </div>
 
               <div className="bg-gray-600 rounded p-2">
-                <div className="text-xs text-gray-300">Gift Score</div>
-                <div className="text-yellow-400 font-bold">{giftScore}</div>
+                <div className="text-xs text-gray-300">NUNU Coins</div>
+                <div className="text-yellow-400 font-bold">{nunuCoins}</div>
               </div>
             </div>
 

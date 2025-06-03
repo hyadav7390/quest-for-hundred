@@ -5,10 +5,10 @@ import { Progress } from '@/components/ui/progress';
 
 const GlobalProgressTracker = () => {
   // Mock data - in real app this would come from backend
-  const totalGiftsCollected = 12847;
+  const totalNunuCoinsCollected = 12847;
   const totalPlayers = 3291;
-  const nextUnlockTarget = 15000;
-  const progressPercentage = (totalGiftsCollected / nextUnlockTarget) * 100;
+  const nextUnlockTarget = 1000000; // 1 million NUNU coins to unlock next reward
+  const progressPercentage = (totalNunuCoinsCollected / nextUnlockTarget) * 100;
 
   return (
     <div className="bg-gray-800 py-20 border-y border-gray-700">
@@ -22,7 +22,7 @@ const GlobalProgressTracker = () => {
         >
           <h2 className="text-4xl font-bold text-white mb-4">Community Achievement</h2>
           <p className="text-xl text-gray-300 mb-12 max-w-3xl mx-auto">
-            Join thousands of players collecting gifts and unlocking rewards for the entire community!
+            Join thousands of players collecting NUNU coins and unlocking rewards for the entire community!
           </p>
           
           <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-8 border border-gray-600 shadow-2xl">
@@ -55,9 +55,9 @@ const GlobalProgressTracker = () => {
                   <Gift className="w-8 h-8 text-white" />
                 </div>
                 <div className="text-3xl font-bold text-white mb-1">
-                  {totalGiftsCollected.toLocaleString()}
+                  {totalNunuCoinsCollected.toLocaleString()}
                 </div>
-                <div className="text-gray-400">Gifts Collected</div>
+                <div className="text-gray-400">NUNU Coins Collected</div>
               </motion.div>
               
               <motion.div
@@ -71,7 +71,7 @@ const GlobalProgressTracker = () => {
                   <Trophy className="w-8 h-8 text-white" />
                 </div>
                 <div className="text-3xl font-bold text-white mb-1">
-                  {Math.round(progressPercentage)}%
+                  {Math.round(progressPercentage * 100) / 100}%
                 </div>
                 <div className="text-gray-400">To Next Unlock</div>
               </motion.div>
@@ -82,7 +82,7 @@ const GlobalProgressTracker = () => {
               <div className="flex justify-between items-center text-white">
                 <span className="text-lg font-semibold">Community Progress</span>
                 <span className="text-sm text-gray-300">
-                  {totalGiftsCollected.toLocaleString()} / {nextUnlockTarget.toLocaleString()}
+                  {totalNunuCoinsCollected.toLocaleString()} / {nextUnlockTarget.toLocaleString()}
                 </span>
               </div>
               
@@ -114,7 +114,7 @@ const GlobalProgressTracker = () => {
               
               <div className="text-center">
                 <p className="text-gray-300 text-sm mb-2">
-                  Next reward unlocks at {nextUnlockTarget.toLocaleString()} gifts!
+                  Next reward unlocks at {nextUnlockTarget.toLocaleString()} NUNU coins!
                 </p>
                 <div className="flex justify-center space-x-2">
                   {[...Array(5)].map((_, i) => (
@@ -164,7 +164,7 @@ const GlobalProgressTracker = () => {
                   🎁
                 </motion.div>
                 <span className="text-white font-medium">
-                  Next Community Reward: Exclusive NFT Collection
+                  Next Community Reward: 1 Billion NUNU Tokens Minting Event
                 </span>
                 <motion.div
                   animate={{

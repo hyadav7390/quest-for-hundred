@@ -44,6 +44,16 @@ export interface TileType {
 
 export interface UserProfile {
   totalGameScore: number;
-  totalGiftScore: number;
+  totalNunuCoins: number;
   totalGiftsCollected: number;
+  totalGamesPlayed: number;
+}
+
+export interface GameInfo {
+  id: string;
+  title: string;
+  description: string;
+  thumbnail: string;
+  isAvailable: boolean;
+  comingSoon?: boolean;
 }

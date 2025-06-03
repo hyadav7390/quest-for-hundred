@@ -16,7 +16,7 @@ const Index = () => {
   const [gameState, dispatch] = useGameReducer();
   const { playSound } = useSoundEffects(gameState.isSoundMuted);
   const [showNewGameConfirmation, setShowNewGameConfirmation] = useState(false);
-  const [currentGameGiftScore, setCurrentGameGiftScore] = useState(0);
+  const [currentGameNunuCoins, setCurrentGameNunuCoins] = useState(0);
   const [splash, setSplash] = useState<{
     isVisible: boolean;
     type: 'gift' | 'shortcut' | 'detour';
@@ -48,12 +48,12 @@ const Index = () => {
     const gift = gameState.giftTiles.find(g => g.index === currentPosition);
     if (gift) {
       dispatch({ type: 'COLLECT_GIFT', payload: { tileIndex: currentPosition, points: gift.points } });
-      setCurrentGameGiftScore(prev => prev + gift.points);
+      setCurrentGameNunuCoins(prev => prev + gift.points);
       playSound('gift');
       showSplash('gift', gift.points);
       toast({
         title: "🎁 Gift Collected!",
-        description: `You earned ${gift.points} bonus points!`,
+        description: `You earned ${gift.points} NUNU coins!`,
         variant: "default",
       });
       
@@ -154,15 +154,16 @@ const Index = () => {
       if (targetPosition === 100) {
         // Calculate final scores properly
         const finalGameScore = gameState.score + (targetPosition - gameState.playerPosition) * 10 + 1000; // Include finish bonus
+        const completionBonus = 1000; // NUNU coins for completion
         
         // Update user profile with final scores before winning
-        updateUserProfile(finalGameScore - currentGameGiftScore, currentGameGiftScore, gameState.giftsCollected);
+        updateUserProfile(finalGameScore - currentGameNunuCoins, currentGameNunuCoins + completionBonus, gameState.giftsCollected, true);
         
         dispatch({ type: 'WIN_GAME' });
         playSound('win');
         toast({
           title: "🎉 Victory!",
-          description: "Congratulations! You've reached tile 100!",
+          description: "Congratulations! You've reached tile 100! +1000 NUNU Coins bonus!",
           variant: "default",
         });
         return;
@@ -186,12 +187,12 @@ const Index = () => {
   const restartGame = () => {
     // Update user profile with current game data before resetting
     if (gameState.diceRolled) {
-      const gameScore = gameState.score - currentGameGiftScore;
-      updateUserProfile(gameScore, currentGameGiftScore, gameState.giftsCollected);
+      const gameScore = gameState.score - currentGameNunuCoins;
+      updateUserProfile(gameScore, currentGameNunuCoins, gameState.giftsCollected, false);
     }
     
     dispatch({ type: 'RESET_GAME' });
-    setCurrentGameGiftScore(0);
+    setCurrentGameNunuCoins(0);
     playSound('start');
     setShowNewGameConfirmation(false);
     toast({
@@ -216,6 +217,7 @@ const Index = () => {
           transition={{ duration: 0.6 }}
         >
           <div className="text-center flex-1">
+            <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">The Hundredth Tile</h1>
             <p className="text-lg sm:text-xl text-gray-300">
               Roll the dice, collect gifts, avoid detour traps, find shortcuts, and make your NUNU rise to 100!
             </p>
@@ -350,8 +352,8 @@ const Index = () => {
           giftsCollected={gameState.giftsCollected}
           detourTrapsTriggered={gameState.detourTrapsTriggered}
           shortcutGatesTriggered={gameState.shortcutGatesTriggered}
-          gameScore={gameState.score - currentGameGiftScore}
-          giftScore={currentGameGiftScore}
+          gameScore={gameState.score - currentGameNunuCoins}
+          nunuCoins={currentGameNunuCoins + 1000} // Include completion bonus
           onRestart={restartGame}
         />
 

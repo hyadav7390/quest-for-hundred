@@ -1,242 +1,138 @@
 
-import React, { useState } from 'react';
-import { useAccount, useBalance, useChainId, useSendTransaction, useWaitForTransactionReceipt } from 'wagmi';
-import { sepolia, mainnet, polygon, optimism, arbitrum, base } from 'wagmi/chains';
-import { monadTestnet } from '@/types/monadTestnet';
-import { ConnectButton, Chain } from '@rainbow-me/rainbowkit';
+import { motion } from 'framer-motion';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { toast } from 'sonner';
-import { ArrowDown, Trophy, Menu, X } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { parseEther } from 'viem/utils';
+import { Home, Gamepad2, Menu, X } from 'lucide-react';
+import { useState } from 'react';
 
-const Header: React.FC = () => {
-  const { address, isConnected } = useAccount();
-  const chainId = useChainId();
-  const { data: balance } = useBalance({
-    address,
-  });
-  
-  const [recipient, setRecipient] = useState('');
-  const [amount, setAmount] = useState('');
-  const [showSendForm, setShowSendForm] = useState(false);
+const Header = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  
-  // Send transaction hook
-  const { data: hash, isPending, sendTransaction } = useSendTransaction();
-  
-  // Track transaction status
-  const { isLoading: isConfirming, isSuccess: isConfirmed } = 
-    useWaitForTransactionReceipt({ 
-      hash,
-    });
-  
-  const handleSendMonad = () => {
-    try {
-      if (!recipient || !amount) {
-        toast.error('Please enter recipient address and amount');
-        return;
-      }
-      
-      // Convert ETH to Wei and send transaction
-      sendTransaction({ 
-        to: recipient,
-        value: parseEther(amount),
-        chainId: monadTestnet.id,
-      });
-    } catch (error) {
-      console.error('Error sending transaction:', error);
-      toast.error('Transaction failed. Please try again.');
-    }
-  };
-  
-  // Show transaction confirmation
-  React.useEffect(() => {
-    if (isConfirmed && hash) {
-      toast.success(
-        <div>
-          <p>Transaction confirmed!</p>
-          <a 
-            href={`https://testnet.monvision.io/tx/${hash}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-500 underline"
-          >
-            View on Monvision
-          </a>
-        </div>
-      );
-      
-      // Reset form
-      setRecipient('');
-      setAmount('');
-      setShowSendForm(false);
-    }
-  }, [isConfirmed, hash]);
 
-  // Get chain name from chainId
-  const getChainName = (id: number | undefined) => {
-    if (!id) return 'Unknown';
-    if (id === sepolia.id) return 'Sepolia';
-    if (id === mainnet.id) return 'Ethereum';
-    if (id === arbitrum.id) return 'Arbitrum';
-    if (id === base.id) return 'Base';
-    if (id === polygon.id) return 'Polygon';
-    if (id === optimism.id) return 'Optimism';
-    if (id === monadTestnet.id) return 'Monad';
+  const navigationItems = [
+    { 
+      label: 'Home', 
+      path: '/', 
+      icon: <Home className="w-4 h-4" />,
+      show: true
+    },
+    { 
+      label: 'Games', 
+      path: '/games', 
+      icon: <Gamepad2 className="w-4 h-4" />,
+      show: true
+    },
+  ];
 
-    return 'Unknown Network';
+  const isActivePath = (path: string) => {
+    if (path === '/') {
+      return location.pathname === '/';
+    }
+    return location.pathname.startsWith(path);
   };
 
   return (
-    <header className="w-full py-3 px-4 border-b bg-gradient-to-r from-indigo-500/10 to-purple-500/10 shadow-md">
-      <div className="container mx-auto">
-        {/* Main header row */}
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <Link to="/" className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent hover:scale-105 transition-transform duration-300">
-              NUNU GAMES
-            </Link>
-            
-            {/* Desktop navigation */}
-            <div className="hidden md:flex items-center gap-3 ml-6">
-              <Link to="/leaderboard" className="flex items-center gap-1 text-sm bg-gradient-to-r from-indigo-500/10 to-purple-500/10 hover:from-indigo-500/20 hover:to-purple-500/20 px-3 py-2 rounded-full transition-all duration-300">
-                <Trophy className="w-4 h-4 text-indigo-600" />
-                <span className="text-indigo-700">Leaderboard</span>
-              </Link>
-            </div>
-          </div>
-          
-          {/* Desktop controls */}
-          <div className="hidden md:flex items-center gap-3">
+    <motion.header
+      className="bg-gray-900 border-b border-gray-700 sticky top-0 z-40"
+      initial={{ opacity: 0, y: -50 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="flex items-center justify-between h-16">
+          {/* Logo */}
+          <motion.button
+            onClick={() => navigate('/')}
+            className="text-2xl font-bold text-white hover:text-purple-400 transition-colors"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            🎮 NUNU
+          </motion.button>
+
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center space-x-1">
+            {navigationItems
+              .filter(item => item.show)
+              .map((item) => (
+                <Button
+                  key={item.path}
+                  variant={isActivePath(item.path) ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => navigate(item.path)}
+                  className={`flex items-center space-x-2 ${
+                    isActivePath(item.path)
+                      ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                      : 'text-gray-300 hover:text-white hover:bg-gray-800'
+                  } transition-all duration-200`}
+                >
+                  {item.icon}
+                  <span>{item.label}</span>
+                </Button>
+              ))}
+          </nav>
+
+          {/* Desktop Wallet Connection */}
+          <div className="hidden md:block">
             <ConnectButton />
-            
-            {isConnected && (
-              <Button 
-                variant="outline"
-                onClick={() => setShowSendForm(!showSendForm)}
-                className="bg-gradient-to-r from-indigo-500/10 to-purple-500/10 hover:from-indigo-500/20 hover:to-purple-500/20 px-3 py-2 rounded-full transition-all duration-300 text-sm"
-              >
-                {showSendForm ? 'Hide' : 'Send MON'}
-              </Button>
-            )}
           </div>
 
-          {/* Mobile menu button */}
-          <div className="md:hidden">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2"
-            >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </Button>
-          </div>
+          {/* Mobile Menu Button */}
+          <button
+            className="md:hidden p-2 text-gray-300 hover:text-white"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            {mobileMenuOpen ? (
+              <X className="w-6 h-6" />
+            ) : (
+              <Menu className="w-6 h-6" />
+            )}
+          </button>
         </div>
 
-        {/* Mobile menu */}
+        {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden mt-4 pb-4 border-t border-indigo-200">
-            <div className="flex flex-col gap-3 mt-4">
-              <Link 
-                to="/leaderboard" 
-                className="flex items-center gap-2 text-sm bg-gradient-to-r from-indigo-500/10 to-purple-500/10 hover:from-indigo-500/20 hover:to-purple-500/20 px-3 py-2 rounded-full transition-all duration-300"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <Trophy className="w-4 h-4 text-indigo-600" />
-                <span className="text-indigo-700">Leaderboard</span>
-              </Link>
-              
-              <div className="flex flex-col gap-2">
-                <ConnectButton />
-                
-                {isConnected && (
-                  <Button 
-                    variant="outline"
+          <motion.div
+            className="md:hidden border-t border-gray-700 py-4"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <nav className="flex flex-col space-y-2">
+              {navigationItems
+                .filter(item => item.show)
+                .map((item) => (
+                  <Button
+                    key={item.path}
+                    variant={isActivePath(item.path) ? "default" : "ghost"}
+                    size="sm"
                     onClick={() => {
-                      setShowSendForm(!showSendForm);
+                      navigate(item.path);
                       setMobileMenuOpen(false);
                     }}
-                    className="bg-gradient-to-r from-indigo-500/10 to-purple-500/10 hover:from-indigo-500/20 hover:to-purple-500/20 px-3 py-2 rounded-full transition-all duration-300 text-sm w-full"
+                    className={`flex items-center justify-start space-x-2 w-full ${
+                      isActivePath(item.path)
+                        ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                        : 'text-gray-300 hover:text-white hover:bg-gray-800'
+                    } transition-all duration-200`}
                   >
-                    {showSendForm ? 'Hide' : 'Send MON'}
+                    {item.icon}
+                    <span>{item.label}</span>
                   </Button>
-                )}
-              </div>
+                ))}
+            </nav>
+            
+            {/* Mobile Wallet Connection */}
+            <div className="pt-4 border-t border-gray-700 mt-4">
+              <ConnectButton />
             </div>
-          </div>
-        )}
-        
-        {/* Send MON Form */}
-        {isConnected && showSendForm && (
-          <Card className="w-full mt-4 border border-indigo-200 bg-gradient-to-r from-indigo-50/50 to-purple-50/50 animate-fade-in">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg sm:text-xl text-indigo-700">Send Monad</CardTitle>
-              <CardDescription className="text-sm">Transfer MONAD to another address on {getChainName(chainId)}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="recipient" className="text-indigo-700 text-sm">Recipient Address</Label>
-                <Input 
-                  id="recipient"
-                  placeholder="0x..."
-                  value={recipient}
-                  onChange={(e) => setRecipient(e.target.value)}
-                  className="border-indigo-200 focus:border-indigo-400 text-sm"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="amount" className="text-indigo-700 text-sm">Amount (MON)</Label>
-                <Input 
-                  id="amount"
-                  type="number"
-                  step="0.001"
-                  min="0"
-                  placeholder="0.01"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  className="border-indigo-200 focus:border-indigo-400 text-sm"
-                />
-              </div>
-              
-              <Button
-                className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 text-sm"
-                onClick={handleSendMonad}
-                disabled={isPending || isConfirming || !recipient || !amount}
-              >
-                {isPending || isConfirming ? (
-                  <>
-                    <ArrowDown className="animate-bounce h-4 w-4 mr-2" />
-                    {isPending ? 'Confirm in Wallet' : 'Processing...'}
-                  </>
-                ) : (
-                  'Send MON'
-                )}
-              </Button>
-              
-              {hash && (
-                <div className="bg-indigo-50 p-3 rounded-md break-all border border-indigo-200">
-                  <p className="text-xs font-medium text-indigo-700 mb-1">Transaction Hash:</p>
-                  <a 
-                    href={`https://testnet.monvision.io/tx/${hash}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-purple-600 hover:text-purple-800 text-xs transition-colors break-all"
-                  >
-                    {hash}
-                  </a>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          </motion.div>
         )}
       </div>
-    </header>
+    </motion.header>
   );
 };
 
