@@ -136,13 +136,6 @@ const GlobalProgressTracker = () => {
                             }
                           : {}
                       }
-                      transition={{
-                        scale: {
-                          duration: 1.5,
-                          repeat: Infinity,
-                          ease: "easeInOut",
-                        },
-                      }}
                     />
                   ))}
                 </div>
