@@ -13,6 +13,8 @@ import { toast } from 'sonner';
 import { parseEther } from 'viem/utils';
 import SendMonadModal from './Sendmodal';
 
+import { useOpenConnectModal } from '@0xsequence/connect';
+
 
 const Header = () => {
   const navigate = useNavigate();
@@ -24,6 +26,8 @@ const Header = () => {
   const { data: balance } = useBalance({
     address,
   });
+
+  const {setOpenConnectModal} = useOpenConnectModal();
 
   const [recipient, setRecipient] = useState('');
   const [amount, setAmount] = useState('');
@@ -169,7 +173,10 @@ const Header = () => {
 
           {/* Desktop Wallet Connection */}
           <div className="hidden md:block">
-            <ConnectButton />
+            {/* <ConnectButton /> */}
+            <button
+              className='text-gray-900 bg-gray-100 hover:bg-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500'
+              onClick={() => setOpenConnectModal(true)}>Connect</button>
           </div>
 
           <SendMonadModal
