@@ -1,8 +1,8 @@
+
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { useGameReducer } from '@/hooks/useGameReducer';
+import { useBlockchainGameReducer } from '@/hooks/useBlockchainGameReducer';
 import { useSoundEffects } from '@/hooks/useSoundEffects';
-import { updateUserProfile } from '@/utils/userProfile';
 import GameBoard from '@/components/GameBoard';
 import Dice from '@/components/Dice';
 import ScoreBoard from '@/components/ScoreBoard';
@@ -11,12 +11,13 @@ import UserProfile from '@/components/UserProfile';
 import NewGameConfirmation from '@/components/NewGameConfirmation';
 import SplashAnimation from '@/components/SplashAnimation';
 import { toast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { Wallet } from 'lucide-react';
 
 const Index = () => {
-  const [gameState, dispatch] = useGameReducer();
+  const [gameState, gameActions, contractInfo] = useBlockchainGameReducer();
   const { playSound } = useSoundEffects(gameState.isSoundMuted);
   const [showNewGameConfirmation, setShowNewGameConfirmation] = useState(false);
-  const [currentGameNunuCoins, setCurrentGameNunuCoins] = useState(0);
   const [splash, setSplash] = useState<{
     isVisible: boolean;
     type: 'gift' | 'shortcut' | 'detour';
@@ -26,6 +27,8 @@ const Index = () => {
     type: 'gift',
     value: 0
   });
+
+  const { isConnected, contractState } = contractInfo;
 
   useEffect(() => {
     // Play start game sound
@@ -40,143 +43,33 @@ const Index = () => {
     setSplash({ isVisible: false, type: 'gift', value: 0 });
   };
 
-  // Handle consecutive tile effects
-  const handleTileEffects = async (position: number, previousPosition: number): Promise<number> => {
-    let currentPosition = position;
-    
-    // Check for gift tiles
-    const gift = gameState.giftTiles.find(g => g.index === currentPosition);
-    if (gift) {
-      dispatch({ type: 'COLLECT_GIFT', payload: { tileIndex: currentPosition, points: gift.points } });
-      setCurrentGameNunuCoins(prev => prev + gift.points);
-      playSound('gift');
-      showSplash('gift', gift.points);
-      toast({
-        title: "🎁 Gift Collected!",
-        description: `You earned ${gift.points} NUNU coins!`,
-        variant: "default",
-      });
-      
-      await new Promise(resolve => setTimeout(resolve, 1500));
-    }
-
-    // Check for Detour Trap tiles
-    const detourTrap = gameState.detourTrapTiles.find(dt => dt.index === currentPosition);
-    if (detourTrap) {
-      dispatch({ type: 'REVEAL_TRAP', payload: currentPosition });
-      
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const newPosition = Math.max(1, currentPosition - detourTrap.moveBack);
-      dispatch({ 
-        type: 'TRIGGER_DETOUR_TRAP', 
-        payload: { newPosition, penalty: detourTrap.moveBack, trapIndex: currentPosition } 
-      });
-      playSound('detourTrap');
-      showSplash('detour', detourTrap.moveBack);
-      toast({
-        title: "🚪 Detour Trap!",
-        description: `You went through the door and moved back ${detourTrap.moveBack} tiles to position ${newPosition}.`,
-        variant: "destructive",
-      });
-      
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Recursively check the new position for more effects
-      return handleTileEffects(newPosition, currentPosition);
-    }
-
-    // Check for Shortcut Gate tiles
-    const shortcutGate = gameState.shortcutGateTiles.find(sg => sg.index === currentPosition);
-    if (shortcutGate) {
-      dispatch({ type: 'REVEAL_GATE', payload: currentPosition });
-      
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const newPosition = Math.min(100, currentPosition + shortcutGate.moveForward);
-      dispatch({ 
-        type: 'TRIGGER_SHORTCUT_GATE', 
-        payload: { newPosition, bonus: shortcutGate.moveForward, gateIndex: currentPosition } 
-      });
-      playSound('gift'); // Use gift sound for positive effect
-      showSplash('shortcut', shortcutGate.moveForward);
-      toast({
-        title: "🚀 Shortcut Gate!",
-        description: `You found a shortcut and moved forward ${shortcutGate.moveForward} tiles to position ${newPosition}!`,
-        variant: "default",
-      });
-      
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Recursively check the new position for more effects
-      return handleTileEffects(newPosition, currentPosition);
-    }
-    
-    return currentPosition;
-  };
-
   const rollDice = () => {
     if (gameState.isRolling || gameState.isMoving) return;
     
-    const diceValue = Math.floor(Math.random() * 6) + 1;
-    dispatch({ type: 'ROLL_DICE', payload: diceValue });
-    playSound('diceRoll');
-    
-    // Start movement after dice animation
-    setTimeout(() => {
-      dispatch({ type: 'START_MOVING' });
-      handlePlayerMovement(diceValue);
-    }, 1200);
-  };
-
-  const handlePlayerMovement = async (diceValue: number) => {
-    const targetPosition = gameState.playerPosition + diceValue;
-    const previousPosition = gameState.playerPosition;
-    
-    // Check if player would overshoot tile 100
-    if (targetPosition > 100) {
+    if (!isConnected) {
       toast({
-        title: "Can't move!",
-        description: `You need exactly ${100 - gameState.playerPosition} to reach tile 100.`,
-        variant: "default",
+        title: "Wallet Required",
+        description: "Please connect your wallet to play on-chain",
+        variant: "destructive",
       });
-      dispatch({ type: 'FINISH_TURN' });
       return;
     }
 
-    // Move player
-    dispatch({ type: 'MOVE_PLAYER', payload: targetPosition });
-    playSound('move');
-    
-    // Small delay for movement animation
-    setTimeout(async () => {
-      // Check if player reached tile 100
-      if (targetPosition === 100) {
-        // Calculate final scores properly
-        const finalGameScore = gameState.score + (targetPosition - gameState.playerPosition) * 10 + 1000; // Include finish bonus
-        const completionBonus = 1000; // NUNU coins for completion
-        
-        // Update user profile with final scores before winning
-        updateUserProfile(finalGameScore - currentGameNunuCoins, currentGameNunuCoins + completionBonus, gameState.giftsCollected, true);
-        
-        dispatch({ type: 'WIN_GAME' });
-        playSound('win');
-        toast({
-          title: "🎉 Victory!",
-          description: "Congratulations! You've reached tile 100! +1000 NUNU Coins bonus!",
-          variant: "default",
-        });
-        return;
-      }
-
-      // Handle tile effects (gifts, traps, gates) with consecutive logic
-      await handleTileEffects(targetPosition, previousPosition);
-
-      dispatch({ type: 'FINISH_TURN' });
-    }, 500);
+    // Use the blockchain-aware roll dice function
+    gameActions.rollDice();
+    playSound('diceRoll');
   };
 
   const handleNewGameClick = () => {
+    if (!isConnected) {
+      toast({
+        title: "Wallet Required",
+        description: "Please connect your wallet to start a new game",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (gameState.diceRolled) {
       setShowNewGameConfirmation(true);
     } else {
@@ -184,15 +77,8 @@ const Index = () => {
     }
   };
 
-  const restartGame = () => {
-    // Update user profile with current game data before resetting
-    if (gameState.diceRolled) {
-      const gameScore = gameState.score - currentGameNunuCoins;
-      updateUserProfile(gameScore, currentGameNunuCoins, gameState.giftsCollected, false);
-    }
-    
-    dispatch({ type: 'RESET_GAME' });
-    setCurrentGameNunuCoins(0);
+  const restartGame = async () => {
+    await gameActions.startGame();
     playSound('start');
     setShowNewGameConfirmation(false);
     toast({
@@ -203,8 +89,67 @@ const Index = () => {
   };
 
   const toggleSound = () => {
-    dispatch({ type: 'TOGGLE_SOUND' });
+    gameActions({ type: 'TOGGLE_SOUND' });
   };
+
+  // Show wallet connection prompt if not connected
+  if (!isConnected) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 p-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex justify-center items-center min-h-[60vh]">
+            <motion.div
+              className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-8 shadow-xl border border-gray-600 text-center max-w-md"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5 }}
+            >
+              <Wallet className="w-16 h-16 text-purple-400 mx-auto mb-4" />
+              <h2 className="text-2xl font-bold text-white mb-4">Connect Your Wallet</h2>
+              <p className="text-gray-300 mb-6">
+                To play The Hundredth Tile on-chain, you need to connect your wallet. 
+                Your progress will be stored on the blockchain and you'll earn real NUNU tokens!
+              </p>
+              <p className="text-sm text-gray-400">
+                Use the "Connect" button in the header to get started.
+              </p>
+            </motion.div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show game start prompt if game not started
+  if (contractState && !contractState.boardGenerated) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 p-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex justify-center items-center min-h-[60vh]">
+            <motion.div
+              className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-8 shadow-xl border border-gray-600 text-center max-w-md"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5 }}
+            >
+              <h2 className="text-2xl font-bold text-white mb-4">Start Your Game</h2>
+              <p className="text-gray-300 mb-6">
+                Ready to begin your journey to tile 100? Your game board will be generated on-chain 
+                with unique gifts and challenges.
+              </p>
+              <Button
+                onClick={restartGame}
+                className="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold rounded-lg shadow-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-200"
+                disabled={gameState.isRolling}
+              >
+                {gameState.isRolling ? 'Starting Game...' : 'Start New Game'}
+              </Button>
+            </motion.div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 p-4">
@@ -219,8 +164,13 @@ const Index = () => {
           <div className="text-center flex-1">
             <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">The Hundredth Tile</h1>
             <p className="text-lg sm:text-xl text-gray-300">
-              Roll the dice, collect gifts, avoid detour traps, find shortcuts, and make your NUNU rise to 100!
+              Roll the dice, collect NUNU tokens, and reach tile 100 on-chain!
             </p>
+            {contractState && (
+              <p className="text-sm text-purple-400 mt-2">
+                On-chain game • Earn real NUNU tokens
+              </p>
+            )}
           </div>
           
           <div className="ml-4">
@@ -352,8 +302,8 @@ const Index = () => {
           giftsCollected={gameState.giftsCollected}
           detourTrapsTriggered={gameState.detourTrapsTriggered}
           shortcutGatesTriggered={gameState.shortcutGatesTriggered}
-          gameScore={gameState.score - currentGameNunuCoins}
-          nunuCoins={currentGameNunuCoins + 1000} // Include completion bonus
+          gameScore={gameState.score}
+          nunuCoins={contractState?.nunuEarned || 0}
           onRestart={restartGame}
         />
 

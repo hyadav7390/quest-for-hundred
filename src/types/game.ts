@@ -1,4 +1,3 @@
-
 export interface GameState {
   playerPosition: number;
   score: number;
@@ -32,7 +31,8 @@ export type GameAction =
   | { type: 'FINISH_TURN' }
   | { type: 'WIN_GAME' }
   | { type: 'RESET_GAME' }
-  | { type: 'TOGGLE_SOUND' };
+  | { type: 'TOGGLE_SOUND' }
+  | { type: 'UPDATE_FROM_CONTRACT'; payload: { position: number; score: number; nunuEarned: number; hasFinished: boolean; diceValue?: number } };
 
 export interface TileType {
   type: 'gift' | 'detour-trap' | 'shortcut-gate' | 'normal';

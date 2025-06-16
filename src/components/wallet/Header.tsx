@@ -1,4 +1,3 @@
-
 import { motion } from 'framer-motion';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -14,7 +13,7 @@ import { parseEther } from 'viem/utils';
 import SendMonadModal from './Sendmodal';
 
 import { useOpenConnectModal } from '@0xsequence/connect';
-
+import ContractConfig from '../ContractConfig';
 
 const Header = () => {
   const navigate = useNavigate();
@@ -168,12 +167,11 @@ const Header = () => {
                 {'Send MON'}
               </Button>
             )}
-
           </nav>
 
-          {/* Desktop Wallet Connection */}
-          <div className="hidden md:block">
-            {/* <ConnectButton /> */}
+          {/* Desktop Actions */}
+          <div className="hidden md:flex items-center space-x-2">
+            <ContractConfig />
             <button
               className='text-gray-900 bg-gray-100 hover:bg-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500'
               onClick={() => setOpenConnectModal(true)}>Connect</button>
@@ -242,8 +240,11 @@ const Header = () => {
             </nav>
 
             {/* Mobile Wallet Connection */}
-            <div className="pt-4 border-t border-gray-700 mt-4">
-              <ConnectButton />
+            <div className="pt-4 border-t border-gray-700 mt-4 flex items-center justify-between">
+              <ContractConfig />
+              <button
+                className='text-gray-900 bg-gray-100 hover:bg-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500'
+                onClick={() => setOpenConnectModal(true)}>Connect</button>
             </div>
           </motion.div>
         )}
