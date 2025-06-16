@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, useWatchContractEvent } from 'wagmi';
 import { parseEther, formatEther } from 'viem';
@@ -182,28 +183,19 @@ export const useContract = () => {
   const [gameState, setGameState] = useState<ContractGameState | null>(null);
   const [boardData, setBoardData] = useState<ContractBoardData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [pendingTxHash, setPendingTxHash] = useState<string | null>(null);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   
   // Contract write operations
-  const { writeContract: writeStartGame, isPending: isStartingGame, data: startGameTxHash } = useWriteContract();
-  const { writeContract: writeRollDice, isPending: isRollingDice, data: rollDiceTxHash } = useWriteContract();
+  const { writeContract: writeStartGame, isPending: isStartingGame } = useWriteContract();
+  const { writeContract: writeRollDice, isPending: isRollingDice } = useWriteContract();
 
-  // Wait for transaction receipts
-  const { isLoading: isStartGameTxLoading } = useWaitForTransactionReceipt({
-    hash: startGameTxHash,
-  });
-  
-  const { isLoading: isRollDiceTxLoading } = useWaitForTransactionReceipt({
-    hash: rollDiceTxHash,
-  });
-
-  // Read player status
+  // Read player status - only when manually triggered
   const { data: playerStatus, refetch: refetchPlayerStatus } = useReadContract({
     address: CONTRACT_ADDRESS,
     abi: CONTRACT_ABI,
     functionName: 'getPlayerStatus',
     args: address ? [address] : undefined,
-    query: { enabled: !!address }
+    query: { enabled: false } // Don't auto-fetch
   });
 
   // Read game stats
@@ -214,21 +206,21 @@ export const useContract = () => {
     query: { enabled: isConnected }
   });
 
-  // Read board data
+  // Read board data - only when manually triggered
   const { data: boardTiles, refetch: refetchBoard } = useReadContract({
     address: CONTRACT_ADDRESS,
     abi: CONTRACT_ABI,
     functionName: 'getBoard',
     args: address ? [address] : undefined,
-    query: { enabled: !!address }
+    query: { enabled: false } // Don't auto-fetch
   });
 
-  // Read leaderboard
-  const { data: leaderboard, refetch: refetchLeaderboard } = useReadContract({
+  // Read leaderboard - only when manually triggered
+  const { data: leaderboardData, refetch: refetchLeaderboard } = useReadContract({
     address: CONTRACT_ADDRESS,
     abi: CONTRACT_ABI,
     functionName: 'getLeaderboard',
-    query: { enabled: isConnected }
+    query: { enabled: false } // Don't auto-fetch
   });
 
   // Watch for contract events
@@ -239,10 +231,14 @@ export const useContract = () => {
     onLogs: (logs) => {
       const playerLog = logs.find(log => log.args.player === address);
       if (playerLog) {
+        console.log('Game started event received');
         toast.success('Game started successfully!');
         setIsLoading(false);
-        refetchPlayerStatus();
-        refetchBoard();
+        // Fetch board data after game starts
+        setTimeout(() => {
+          refetchBoard();
+          refetchPlayerStatus();
+        }, 1000);
       }
     }
   });
@@ -257,26 +253,13 @@ export const useContract = () => {
         const { dice, newPosition, nunuEarned } = playerLog.args;
         console.log('Roll applied event:', { dice, newPosition, nunuEarned });
         
-        // Refetch player status to get updated state
-        setTimeout(() => {
-          refetchPlayerStatus();
-          refetchLeaderboard();
-        }, 1000);
-        
         setIsLoading(false);
         toast.success(`Rolled ${dice}! Moved to position ${newPosition}${nunuEarned > 0 ? `. Earned ${formatEther(nunuEarned)} NUNU coins!` : ''}`);
-      }
-    }
-  });
-
-  useWatchContractEvent({
-    address: CONTRACT_ADDRESS,
-    abi: CONTRACT_ABI,
-    eventName: 'RewardsClaimed',
-    onLogs: (logs) => {
-      const playerLog = logs.find(log => log.args.player === address);
-      if (playerLog && playerLog.args) {
-        toast.success(`Rewards claimed: ${formatEther(playerLog.args.amount)} NUNU tokens!`);
+        
+        // Fetch updated player status after dice roll
+        setTimeout(() => {
+          refetchPlayerStatus();
+        }, 500);
       }
     }
   });
@@ -294,9 +277,10 @@ export const useContract = () => {
     }
   });
 
-  // Process board data from contract
+  // Process board data from contract when it changes
   useEffect(() => {
     if (boardTiles && Array.isArray(boardTiles)) {
+      console.log('Processing board tiles:', boardTiles);
       const giftTiles: { index: number; points: number }[] = [];
       const detourTrapTiles: { index: number; moveBack: number }[] = [];
       const shortcutGateTiles: { index: number; moveForward: number }[] = [];
@@ -326,11 +310,14 @@ export const useContract = () => {
         }
       });
 
-      setBoardData({
+      const processedBoardData = {
         giftTiles,
         detourTrapTiles,
         shortcutGateTiles
-      });
+      };
+
+      console.log('Processed board data:', processedBoardData);
+      setBoardData(processedBoardData);
     }
   }, [boardTiles]);
 
@@ -340,7 +327,7 @@ export const useContract = () => {
       const [position, diceValue, nunuEarned, gameScore, hasFinished, boardGenerated] = playerStatus;
       const [, , rollFee] = gameStats;
       
-      setGameState({
+      const newGameState = {
         position: Number(position),
         diceValue: Number(diceValue),
         nunuEarned: Number(formatEther(nunuEarned)),
@@ -348,9 +335,19 @@ export const useContract = () => {
         hasFinished,
         boardGenerated,
         rollFee
-      });
+      };
+
+      console.log('Updated game state:', newGameState);
+      setGameState(newGameState);
     }
   }, [playerStatus, gameStats]);
+
+  // Update leaderboard when data changes
+  useEffect(() => {
+    if (leaderboardData) {
+      setLeaderboard(leaderboardData as LeaderboardEntry[]);
+    }
+  }, [leaderboardData]);
 
   // Contract interaction functions
   const startGame = async () => {
@@ -361,14 +358,14 @@ export const useContract = () => {
 
     try {
       setIsLoading(true);
-      const txHash = await writeStartGame({
+      await writeStartGame({
         address: CONTRACT_ADDRESS,
         abi: CONTRACT_ABI,
         functionName: 'startGame',
         chain,
         account: address
       });
-      console.log('Start game transaction:', txHash);
+      console.log('Start game transaction sent');
     } catch (error) {
       console.error('Error starting game:', error);
       toast.error('Failed to start game');
@@ -386,7 +383,7 @@ export const useContract = () => {
       setIsLoading(true);
       const [, , rollFee] = gameStats;
       
-      const txHash = await writeRollDice({
+      await writeRollDice({
         address: CONTRACT_ADDRESS,
         abi: CONTRACT_ABI,
         functionName: 'rollDice',
@@ -395,7 +392,7 @@ export const useContract = () => {
         chain,
         account: address
       });
-      console.log('Roll dice transaction:', txHash);
+      console.log('Roll dice transaction sent');
     } catch (error) {
       console.error('Error rolling dice:', error);
       toast.error('Failed to roll dice');
@@ -403,26 +400,44 @@ export const useContract = () => {
     }
   };
 
-  const getLeaderboardData = (): LeaderboardEntry[] => {
-    return (leaderboard as LeaderboardEntry[]) || [];
+  // Manual fetch functions
+  const fetchPlayerStatus = async () => {
+    if (address) {
+      const result = await refetchPlayerStatus();
+      return result;
+    }
+  };
+
+  const fetchBoardData = async () => {
+    if (address) {
+      const result = await refetchBoard();
+      return result;
+    }
+  };
+
+  const fetchLeaderboard = async () => {
+    const result = await refetchLeaderboard();
+    return result;
   };
 
   return {
     // State
     gameState,
     boardData,
-    isLoading: isLoading || isStartingGame || isRollingDice || isStartGameTxLoading || isRollDiceTxLoading,
+    isLoading: isLoading || isStartingGame || isRollingDice,
     isConnected,
-    leaderboard: getLeaderboardData(),
+    leaderboard,
     
     // Actions
     startGame,
     rollDice,
     
+    // Manual fetch functions
+    fetchPlayerStatus,
+    fetchBoardData,
+    fetchLeaderboard,
+    
     // Utils
-    refetchPlayerStatus,
-    refetchLeaderboard,
-    refetchBoard,
     CONTRACT_ADDRESS
   };
 };

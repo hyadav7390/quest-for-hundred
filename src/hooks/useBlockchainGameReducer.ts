@@ -1,3 +1,4 @@
+
 import { useReducer, useEffect, useCallback } from 'react';
 import { GameState, GameAction } from '@/types/game';
 import { useContract } from './useContract';
@@ -71,10 +72,21 @@ const blockchainGameReducer = (state: GameState, action: GameAction): GameState 
       };
     }
 
+    case 'UPDATE_BOARD_DATA': {
+      const { giftTiles, detourTrapTiles, shortcutGateTiles } = action.payload;
+      return {
+        ...state,
+        giftTiles,
+        detourTrapTiles: detourTrapTiles.map(trap => ({ ...trap, revealed: false })),
+        shortcutGateTiles: shortcutGateTiles.map(gate => ({ ...gate, revealed: false })),
+      };
+    }
+
     case 'COLLECT_GIFT': {
       return {
         ...state,
         giftsCollected: state.giftsCollected + 1,
+        isMoving: false,
       };
     }
 
@@ -82,6 +94,7 @@ const blockchainGameReducer = (state: GameState, action: GameAction): GameState 
       return {
         ...state,
         detourTrapsTriggered: state.detourTrapsTriggered + 1,
+        isMoving: false,
       };
     }
 
@@ -89,14 +102,13 @@ const blockchainGameReducer = (state: GameState, action: GameAction): GameState 
       return {
         ...state,
         shortcutGatesTriggered: state.shortcutGatesTriggered + 1,
+        isMoving: false,
       };
     }
 
     case 'FINISH_TURN':
-      const newTurns = state.turnsPlayed + 1;
       return {
         ...state,
-        turnsPlayed: newTurns,
         isMoving: false,
         isRolling: false,
       };
@@ -128,15 +140,27 @@ const blockchainGameReducer = (state: GameState, action: GameAction): GameState 
 
 export const useBlockchainGameReducer = () => {
   const [state, dispatch] = useReducer(blockchainGameReducer, initialState);
-  const { gameState: contractState, boardData, isLoading, startGame, rollDice, isConnected } = useContract();
+  const { 
+    gameState: contractState, 
+    boardData, 
+    isLoading, 
+    startGame, 
+    rollDice, 
+    isConnected,
+    fetchPlayerStatus,
+    fetchBoardData
+  } = useContract();
 
   // Track tile interactions
   const checkTileInteraction = useCallback((position: number) => {
     if (!boardData) return;
 
+    console.log('Checking tile interaction for position:', position);
+
     // Check for gift tiles
     const giftTile = boardData.giftTiles.find(tile => tile.index === position);
     if (giftTile) {
+      console.log('Gift tile found:', giftTile);
       dispatch({ type: 'COLLECT_GIFT', payload: { tileIndex: position, points: giftTile.points } });
       return;
     }
@@ -144,6 +168,7 @@ export const useBlockchainGameReducer = () => {
     // Check for detour trap tiles
     const detourTrap = boardData.detourTrapTiles.find(tile => tile.index === position);
     if (detourTrap) {
+      console.log('Detour trap found:', detourTrap);
       dispatch({ type: 'TRIGGER_DETOUR_TRAP', payload: { newPosition: position, penalty: detourTrap.moveBack, trapIndex: position } });
       return;
     }
@@ -151,6 +176,7 @@ export const useBlockchainGameReducer = () => {
     // Check for shortcut gate tiles
     const shortcutGate = boardData.shortcutGateTiles.find(tile => tile.index === position);
     if (shortcutGate) {
+      console.log('Shortcut gate found:', shortcutGate);
       dispatch({ type: 'TRIGGER_SHORTCUT_GATE', payload: { newPosition: position, bonus: shortcutGate.moveForward, gateIndex: position } });
       return;
     }
@@ -160,6 +186,8 @@ export const useBlockchainGameReducer = () => {
   useEffect(() => {
     if (contractState) {
       const oldPosition = state.playerPosition;
+      
+      console.log('Syncing contract state:', contractState);
       
       dispatch({
         type: 'UPDATE_FROM_CONTRACT',
@@ -172,8 +200,9 @@ export const useBlockchainGameReducer = () => {
         }
       });
 
-      // Check for tile interactions when position changes
-      if (oldPosition !== contractState.position && contractState.position > 1) {
+      // Check for tile interactions when position changes and player moved forward
+      if (oldPosition !== contractState.position && contractState.position > oldPosition) {
+        console.log('Player moved from', oldPosition, 'to', contractState.position);
         setTimeout(() => {
           checkTileInteraction(contractState.position);
           dispatch({ type: 'FINISH_TURN' });
@@ -189,6 +218,7 @@ export const useBlockchainGameReducer = () => {
   // Sync board data from contract
   useEffect(() => {
     if (boardData) {
+      console.log('Syncing board data:', boardData);
       dispatch({
         type: 'UPDATE_BOARD_DATA',
         payload: boardData
@@ -228,6 +258,12 @@ export const useBlockchainGameReducer = () => {
     try {
       await startGame();
       dispatch({ type: 'RESET_GAME' });
+      
+      // Fetch board data after starting game
+      setTimeout(async () => {
+        await fetchBoardData();
+      }, 2000);
+      
     } catch (error) {
       console.error('Error starting game:', error);
       toast.error('Failed to start new game');
