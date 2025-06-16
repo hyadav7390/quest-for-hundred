@@ -132,9 +132,6 @@ const CONTRACT_ABI = [
   }
 ] as const;
 
-// Contract address - you'll need to update this with your deployed contract address
-const CONTRACT_ADDRESS = '0x0000000000000000000000000000000000000000'; // TODO: Update with actual contract address
-
 export interface ContractGameState {
   position: number;
   diceValue: number;
@@ -156,9 +153,19 @@ export interface LeaderboardEntry {
 }
 
 export const useContract = () => {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected, chain } = useAccount();
   const [gameState, setGameState] = useState<ContractGameState | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Get contract address from localStorage or use fallback
+  const getContractAddress = (): `0x${string}` => {
+    const saved = localStorage.getItem('contract_address');
+    return (saved && saved.startsWith('0x') && saved.length === 42) 
+      ? saved as `0x${string}` 
+      : '0x0000000000000000000000000000000000000000';
+  };
+
+  const CONTRACT_ADDRESS = getContractAddress();
   
   // Contract write operations
   const { writeContract: writeStartGame, isPending: isStartingGame } = useWriteContract();
@@ -166,32 +173,32 @@ export const useContract = () => {
 
   // Read player status
   const { data: playerStatus, refetch: refetchPlayerStatus } = useReadContract({
-    address: CONTRACT_ADDRESS as `0x${string}`,
+    address: CONTRACT_ADDRESS,
     abi: CONTRACT_ABI,
     functionName: 'getPlayerStatus',
     args: address ? [address] : undefined,
-    query: { enabled: !!address }
+    query: { enabled: !!address && CONTRACT_ADDRESS !== '0x0000000000000000000000000000000000000000' }
   });
 
   // Read game stats
   const { data: gameStats } = useReadContract({
-    address: CONTRACT_ADDRESS as `0x${string}`,
+    address: CONTRACT_ADDRESS,
     abi: CONTRACT_ABI,
     functionName: 'getGameStats',
-    query: { enabled: isConnected }
+    query: { enabled: isConnected && CONTRACT_ADDRESS !== '0x0000000000000000000000000000000000000000' }
   });
 
   // Read leaderboard
   const { data: leaderboard, refetch: refetchLeaderboard } = useReadContract({
-    address: CONTRACT_ADDRESS as `0x${string}`,
+    address: CONTRACT_ADDRESS,
     abi: CONTRACT_ABI,
     functionName: 'getLeaderboard',
-    query: { enabled: isConnected }
+    query: { enabled: isConnected && CONTRACT_ADDRESS !== '0x0000000000000000000000000000000000000000' }
   });
 
   // Watch for contract events
   useWatchContractEvent({
-    address: CONTRACT_ADDRESS as `0x${string}`,
+    address: CONTRACT_ADDRESS,
     abi: CONTRACT_ABI,
     eventName: 'GameStarted',
     onLogs: (logs) => {
@@ -204,7 +211,7 @@ export const useContract = () => {
   });
 
   useWatchContractEvent({
-    address: CONTRACT_ADDRESS as `0x${string}`,
+    address: CONTRACT_ADDRESS,
     abi: CONTRACT_ABI,
     eventName: 'RollApplied',
     onLogs: (logs) => {
@@ -219,7 +226,7 @@ export const useContract = () => {
   });
 
   useWatchContractEvent({
-    address: CONTRACT_ADDRESS as `0x${string}`,
+    address: CONTRACT_ADDRESS,
     abi: CONTRACT_ABI,
     eventName: 'RewardsClaimed',
     onLogs: (logs) => {
@@ -231,7 +238,7 @@ export const useContract = () => {
   });
 
   useWatchContractEvent({
-    address: CONTRACT_ADDRESS as `0x${string}`,
+    address: CONTRACT_ADDRESS,
     abi: CONTRACT_ABI,
     eventName: 'RollFailed',
     onLogs: (logs) => {
@@ -263,17 +270,24 @@ export const useContract = () => {
 
   // Contract interaction functions
   const startGame = async () => {
-    if (!isConnected) {
+    if (!isConnected || !chain || !address) {
       toast.error('Please connect your wallet first');
+      return;
+    }
+
+    if (CONTRACT_ADDRESS === '0x0000000000000000000000000000000000000000') {
+      toast.error('Please configure contract address first');
       return;
     }
 
     try {
       setIsLoading(true);
       await writeStartGame({
-        address: CONTRACT_ADDRESS as `0x${string}`,
+        address: CONTRACT_ADDRESS,
         abi: CONTRACT_ABI,
-        functionName: 'startGame'
+        functionName: 'startGame',
+        chain,
+        account: address
       });
     } catch (error) {
       console.error('Error starting game:', error);
@@ -283,8 +297,13 @@ export const useContract = () => {
   };
 
   const rollDice = async (expectedPosition: number) => {
-    if (!isConnected || !gameStats) {
+    if (!isConnected || !chain || !address || !gameStats) {
       toast.error('Please connect your wallet first');
+      return;
+    }
+
+    if (CONTRACT_ADDRESS === '0x0000000000000000000000000000000000000000') {
+      toast.error('Please configure contract address first');
       return;
     }
 
@@ -293,11 +312,13 @@ export const useContract = () => {
       const [, , rollFee] = gameStats;
       
       await writeRollDice({
-        address: CONTRACT_ADDRESS as `0x${string}`,
+        address: CONTRACT_ADDRESS,
         abi: CONTRACT_ABI,
         functionName: 'rollDice',
         args: [expectedPosition],
-        value: rollFee
+        value: rollFee,
+        chain,
+        account: address
       });
     } catch (error) {
       console.error('Error rolling dice:', error);
