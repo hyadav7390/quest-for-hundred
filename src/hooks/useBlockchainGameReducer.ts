@@ -66,6 +66,16 @@ const blockchainGameReducer = (state: GameState, action: GameAction): GameState 
       };
     }
 
+    case 'UPDATE_BOARD_DATA': {
+      const { giftTiles, detourTrapTiles, shortcutGateTiles } = action.payload;
+      return {
+        ...state,
+        giftTiles,
+        detourTrapTiles: detourTrapTiles.map(trap => ({ ...trap, revealed: false })),
+        shortcutGateTiles: shortcutGateTiles.map(gate => ({ ...gate, revealed: false })),
+      };
+    }
+
     case 'FINISH_TURN':
       const newTurns = state.turnsPlayed + 1;
       return {
@@ -102,7 +112,7 @@ const blockchainGameReducer = (state: GameState, action: GameAction): GameState 
 
 export const useBlockchainGameReducer = () => {
   const [state, dispatch] = useReducer(blockchainGameReducer, initialState);
-  const { gameState: contractState, isLoading, startGame, rollDice, isConnected } = useContract();
+  const { gameState: contractState, boardData, isLoading, startGame, rollDice, isConnected } = useContract();
 
   // Sync contract state with local state
   useEffect(() => {
@@ -123,6 +133,16 @@ export const useBlockchainGameReducer = () => {
       }
     }
   }, [contractState, state.gameStatus]);
+
+  // Sync board data from contract
+  useEffect(() => {
+    if (boardData) {
+      dispatch({
+        type: 'UPDATE_BOARD_DATA',
+        payload: boardData
+      });
+    }
+  }, [boardData]);
 
   // Enhanced roll dice function that interacts with contract
   const handleRollDice = async () => {
@@ -169,14 +189,14 @@ export const useBlockchainGameReducer = () => {
       isMoving: state.isMoving || isLoading,
     },
     {
-      ...dispatch,
+      dispatch,
       rollDice: handleRollDice,
       startGame: handleStartGame,
     },
     {
       contractState,
       isConnected,
-      CONTRACT_ADDRESS: '0x0000000000000000000000000000000000000000' // TODO: Update with actual address
+      CONTRACT_ADDRESS: '0x2a255fd23e3806f472ef68acba79adbc5c3ae3e8'
     }
   ] as const;
 };

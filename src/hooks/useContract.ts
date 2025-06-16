@@ -55,6 +55,23 @@ const CONTRACT_ABI = [
     "type": "function"
   },
   {
+    "inputs": [{"internalType": "address", "name": "player", "type": "address"}],
+    "name": "getBoard",
+    "outputs": [
+      {
+        "components": [
+          {"internalType": "uint256", "name": "giftValue", "type": "uint256"},
+          {"internalType": "int16", "name": "doorOffset", "type": "int16"}
+        ],
+        "internalType": "struct NGame.Tile[]",
+        "name": "board",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "getLeaderboard",
     "outputs": [
@@ -132,6 +149,9 @@ const CONTRACT_ABI = [
   }
 ] as const;
 
+// Hardcoded contract address
+const CONTRACT_ADDRESS: `0x${string}` = '0x2a255fd23e3806f472ef68acba79adbc5c3ae3e8';
+
 export interface ContractGameState {
   position: number;
   diceValue: number;
@@ -147,6 +167,12 @@ export interface ContractTile {
   doorOffset: number;
 }
 
+export interface ContractBoardData {
+  giftTiles: { index: number; points: number }[];
+  detourTrapTiles: { index: number; moveBack: number }[];
+  shortcutGateTiles: { index: number; moveForward: number }[];
+}
+
 export interface LeaderboardEntry {
   player: string;
   score: bigint;
@@ -155,17 +181,8 @@ export interface LeaderboardEntry {
 export const useContract = () => {
   const { address, isConnected, chain } = useAccount();
   const [gameState, setGameState] = useState<ContractGameState | null>(null);
+  const [boardData, setBoardData] = useState<ContractBoardData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  
-  // Get contract address from localStorage or use fallback
-  const getContractAddress = (): `0x${string}` => {
-    const saved = localStorage.getItem('contract_address');
-    return (saved && saved.startsWith('0x') && saved.length === 42) 
-      ? saved as `0x${string}` 
-      : '0x0000000000000000000000000000000000000000';
-  };
-
-  const CONTRACT_ADDRESS = getContractAddress();
   
   // Contract write operations
   const { writeContract: writeStartGame, isPending: isStartingGame } = useWriteContract();
@@ -177,7 +194,7 @@ export const useContract = () => {
     abi: CONTRACT_ABI,
     functionName: 'getPlayerStatus',
     args: address ? [address] : undefined,
-    query: { enabled: !!address && CONTRACT_ADDRESS !== '0x0000000000000000000000000000000000000000' }
+    query: { enabled: !!address }
   });
 
   // Read game stats
@@ -185,7 +202,16 @@ export const useContract = () => {
     address: CONTRACT_ADDRESS,
     abi: CONTRACT_ABI,
     functionName: 'getGameStats',
-    query: { enabled: isConnected && CONTRACT_ADDRESS !== '0x0000000000000000000000000000000000000000' }
+    query: { enabled: isConnected }
+  });
+
+  // Read board data
+  const { data: boardTiles, refetch: refetchBoard } = useReadContract({
+    address: CONTRACT_ADDRESS,
+    abi: CONTRACT_ABI,
+    functionName: 'getBoard',
+    args: address ? [address] : undefined,
+    query: { enabled: !!address }
   });
 
   // Read leaderboard
@@ -193,7 +219,7 @@ export const useContract = () => {
     address: CONTRACT_ADDRESS,
     abi: CONTRACT_ABI,
     functionName: 'getLeaderboard',
-    query: { enabled: isConnected && CONTRACT_ADDRESS !== '0x0000000000000000000000000000000000000000' }
+    query: { enabled: isConnected }
   });
 
   // Watch for contract events
@@ -206,6 +232,7 @@ export const useContract = () => {
       if (playerLog) {
         toast.success('Game started successfully!');
         refetchPlayerStatus();
+        refetchBoard();
       }
     }
   });
@@ -250,6 +277,46 @@ export const useContract = () => {
     }
   });
 
+  // Process board data from contract
+  useEffect(() => {
+    if (boardTiles && Array.isArray(boardTiles)) {
+      const giftTiles: { index: number; points: number }[] = [];
+      const detourTrapTiles: { index: number; moveBack: number }[] = [];
+      const shortcutGateTiles: { index: number; moveForward: number }[] = [];
+
+      boardTiles.forEach((tile, index) => {
+        if (index === 0) return; // Skip index 0 as contract uses 1-based indexing
+        
+        if (tile.giftValue > 0) {
+          giftTiles.push({
+            index,
+            points: Number(formatEther(tile.giftValue))
+          });
+        } else if (tile.doorOffset !== 0) {
+          if (tile.doorOffset < 0) {
+            // Detour trap (red door)
+            detourTrapTiles.push({
+              index,
+              moveBack: Math.abs(tile.doorOffset)
+            });
+          } else {
+            // Shortcut gate (green door)
+            shortcutGateTiles.push({
+              index,
+              moveForward: tile.doorOffset
+            });
+          }
+        }
+      });
+
+      setBoardData({
+        giftTiles,
+        detourTrapTiles,
+        shortcutGateTiles
+      });
+    }
+  }, [boardTiles]);
+
   // Update game state when player status changes
   useEffect(() => {
     if (playerStatus && gameStats) {
@@ -275,11 +342,6 @@ export const useContract = () => {
       return;
     }
 
-    if (CONTRACT_ADDRESS === '0x0000000000000000000000000000000000000000') {
-      toast.error('Please configure contract address first');
-      return;
-    }
-
     try {
       setIsLoading(true);
       await writeStartGame({
@@ -299,11 +361,6 @@ export const useContract = () => {
   const rollDice = async (expectedPosition: number) => {
     if (!isConnected || !chain || !address || !gameStats) {
       toast.error('Please connect your wallet first');
-      return;
-    }
-
-    if (CONTRACT_ADDRESS === '0x0000000000000000000000000000000000000000') {
-      toast.error('Please configure contract address first');
       return;
     }
 
@@ -327,19 +384,6 @@ export const useContract = () => {
     }
   };
 
-  const getTile = async (position: number): Promise<ContractTile | null> => {
-    if (!address) return null;
-
-    try {
-      // This would need to be implemented as a separate read contract call
-      // For now, return null as we'd need to restructure how tiles are handled
-      return null;
-    } catch (error) {
-      console.error('Error getting tile:', error);
-      return null;
-    }
-  };
-
   const getLeaderboardData = (): LeaderboardEntry[] => {
     return (leaderboard as LeaderboardEntry[]) || [];
   };
@@ -347,6 +391,7 @@ export const useContract = () => {
   return {
     // State
     gameState,
+    boardData,
     isLoading: isLoading || isStartingGame || isRollingDice,
     isConnected,
     leaderboard: getLeaderboardData(),
@@ -354,11 +399,11 @@ export const useContract = () => {
     // Actions
     startGame,
     rollDice,
-    getTile,
     
     // Utils
     refetchPlayerStatus,
     refetchLeaderboard,
+    refetchBoard,
     CONTRACT_ADDRESS
   };
 };

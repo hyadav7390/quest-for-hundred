@@ -1,3 +1,4 @@
+
 import { motion } from 'framer-motion';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -13,7 +14,6 @@ import { parseEther } from 'viem/utils';
 import SendMonadModal from './Sendmodal';
 
 import { useOpenConnectModal } from '@0xsequence/connect';
-import ContractConfig from '../ContractConfig';
 
 const Header = () => {
   const navigate = useNavigate();
@@ -54,7 +54,7 @@ const Header = () => {
     return location.pathname.startsWith(path);
   };
 
-  // Send transaction hookAdd commentMore actions
+  // Send transaction hook
   const { data: hash, isPending, sendTransaction } = useSendTransaction();
 
   // Track transaction status
@@ -82,7 +82,7 @@ const Header = () => {
     }
   };
 
-  // Show transaction confirmationAdd commentMore actions
+  // Show transaction confirmation
   React.useEffect(() => {
     if (isConfirmed && hash) {
       toast.success(
@@ -106,8 +106,7 @@ const Header = () => {
     }
   }, [isConfirmed, hash]);
 
-
-  // Get chain name from chainIdAdd commentMore actions
+  // Get chain name from chainId
   const getChainName = (id: number | undefined) => {
     if (!id) return 'Unknown';
     if (id === sepolia.id) return 'Sepolia';
@@ -171,7 +170,6 @@ const Header = () => {
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center space-x-2">
-            <ContractConfig />
             <button
               className='text-gray-900 bg-gray-100 hover:bg-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500'
               onClick={() => setOpenConnectModal(true)}>Connect</button>
@@ -240,8 +238,7 @@ const Header = () => {
             </nav>
 
             {/* Mobile Wallet Connection */}
-            <div className="pt-4 border-t border-gray-700 mt-4 flex items-center justify-between">
-              <ContractConfig />
+            <div className="pt-4 border-t border-gray-700 mt-4 flex items-center justify-center">
               <button
                 className='text-gray-900 bg-gray-100 hover:bg-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500'
                 onClick={() => setOpenConnectModal(true)}>Connect</button>

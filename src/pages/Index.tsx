@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useBlockchainGameReducer } from '@/hooks/useBlockchainGameReducer';
@@ -89,10 +88,7 @@ const Index = () => {
   };
 
   const toggleSound = () => {
-    // Create a proper dispatch action for toggling sound
-    if (typeof gameActions === 'object' && 'dispatch' in gameActions) {
-      (gameActions as any).dispatch({ type: 'TOGGLE_SOUND' });
-    }
+    gameActions.dispatch({ type: 'TOGGLE_SOUND' });
   };
 
   // Show wallet connection prompt if not connected
@@ -171,7 +167,7 @@ const Index = () => {
             </p>
             {contractState && (
               <p className="text-sm text-purple-400 mt-2">
-                On-chain game • Earn real NUNU tokens
+                On-chain game • Contract: {contractInfo.CONTRACT_ADDRESS}
               </p>
             )}
           </div>
