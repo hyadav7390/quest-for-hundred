@@ -436,6 +436,7 @@ export const useContract = () => {
     fetchPlayerStatus,
     fetchBoardData,
     fetchLeaderboard,
+    refetchLeaderboard: fetchLeaderboard, // Add this for backward compatibility
     
     // Utils
     CONTRACT_ADDRESS
