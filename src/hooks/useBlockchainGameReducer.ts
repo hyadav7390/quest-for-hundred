@@ -1,5 +1,4 @@
-
-import { useReducer, useEffect } from 'react';
+import { useReducer, useEffect, useCallback } from 'react';
 import { GameState, GameAction } from '@/types/game';
 import { useContract } from './useContract';
 import { toast } from 'sonner';
@@ -55,24 +54,41 @@ const blockchainGameReducer = (state: GameState, action: GameAction): GameState 
     case 'UPDATE_FROM_CONTRACT': {
       const { position, score, nunuEarned, hasFinished, diceValue } = action.payload;
       
+      // Check if player moved to trigger animations
+      const oldPosition = state.playerPosition;
+      const newPosition = position;
+      const positionChanged = oldPosition !== newPosition;
+      
       return {
         ...state,
-        playerPosition: position,
+        playerPosition: newPosition,
         score: score,
         diceValue: diceValue || state.diceValue,
         gameStatus: hasFinished ? 'won' : 'playing',
         isRolling: false,
-        isMoving: false,
+        isMoving: positionChanged,
+        turnsPlayed: diceValue && positionChanged ? state.turnsPlayed + 1 : state.turnsPlayed,
       };
     }
 
-    case 'UPDATE_BOARD_DATA': {
-      const { giftTiles, detourTrapTiles, shortcutGateTiles } = action.payload;
+    case 'COLLECT_GIFT': {
       return {
         ...state,
-        giftTiles,
-        detourTrapTiles: detourTrapTiles.map(trap => ({ ...trap, revealed: false })),
-        shortcutGateTiles: shortcutGateTiles.map(gate => ({ ...gate, revealed: false })),
+        giftsCollected: state.giftsCollected + 1,
+      };
+    }
+
+    case 'TRIGGER_DETOUR_TRAP': {
+      return {
+        ...state,
+        detourTrapsTriggered: state.detourTrapsTriggered + 1,
+      };
+    }
+
+    case 'TRIGGER_SHORTCUT_GATE': {
+      return {
+        ...state,
+        shortcutGatesTriggered: state.shortcutGatesTriggered + 1,
       };
     }
 
@@ -114,9 +130,37 @@ export const useBlockchainGameReducer = () => {
   const [state, dispatch] = useReducer(blockchainGameReducer, initialState);
   const { gameState: contractState, boardData, isLoading, startGame, rollDice, isConnected } = useContract();
 
+  // Track tile interactions
+  const checkTileInteraction = useCallback((position: number) => {
+    if (!boardData) return;
+
+    // Check for gift tiles
+    const giftTile = boardData.giftTiles.find(tile => tile.index === position);
+    if (giftTile) {
+      dispatch({ type: 'COLLECT_GIFT', payload: { tileIndex: position, points: giftTile.points } });
+      return;
+    }
+
+    // Check for detour trap tiles
+    const detourTrap = boardData.detourTrapTiles.find(tile => tile.index === position);
+    if (detourTrap) {
+      dispatch({ type: 'TRIGGER_DETOUR_TRAP', payload: { newPosition: position, penalty: detourTrap.moveBack, trapIndex: position } });
+      return;
+    }
+
+    // Check for shortcut gate tiles
+    const shortcutGate = boardData.shortcutGateTiles.find(tile => tile.index === position);
+    if (shortcutGate) {
+      dispatch({ type: 'TRIGGER_SHORTCUT_GATE', payload: { newPosition: position, bonus: shortcutGate.moveForward, gateIndex: position } });
+      return;
+    }
+  }, [boardData]);
+
   // Sync contract state with local state
   useEffect(() => {
     if (contractState) {
+      const oldPosition = state.playerPosition;
+      
       dispatch({
         type: 'UPDATE_FROM_CONTRACT',
         payload: {
@@ -128,11 +172,19 @@ export const useBlockchainGameReducer = () => {
         }
       });
 
+      // Check for tile interactions when position changes
+      if (oldPosition !== contractState.position && contractState.position > 1) {
+        setTimeout(() => {
+          checkTileInteraction(contractState.position);
+          dispatch({ type: 'FINISH_TURN' });
+        }, 1500); // Give time for movement animation
+      }
+
       if (contractState.hasFinished && state.gameStatus !== 'won') {
         dispatch({ type: 'WIN_GAME' });
       }
     }
-  }, [contractState, state.gameStatus]);
+  }, [contractState, checkTileInteraction, state.gameStatus, state.playerPosition]);
 
   // Sync board data from contract
   useEffect(() => {
@@ -154,6 +206,7 @@ export const useBlockchainGameReducer = () => {
     if (state.isRolling || isLoading) return;
 
     try {
+      // Start rolling animation with random value first
       dispatch({ type: 'ROLL_DICE', payload: Math.floor(Math.random() * 6) + 1 });
       
       // Call contract roll dice
@@ -161,7 +214,6 @@ export const useBlockchainGameReducer = () => {
       
     } catch (error) {
       console.error('Error rolling dice:', error);
-      // Reset rolling state on error
       dispatch({ type: 'FINISH_TURN' });
     }
   };

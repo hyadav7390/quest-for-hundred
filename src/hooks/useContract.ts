@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, useWatchContractEvent } from 'wagmi';
 import { parseEther, formatEther } from 'viem';
@@ -183,10 +182,20 @@ export const useContract = () => {
   const [gameState, setGameState] = useState<ContractGameState | null>(null);
   const [boardData, setBoardData] = useState<ContractBoardData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [pendingTxHash, setPendingTxHash] = useState<string | null>(null);
   
   // Contract write operations
-  const { writeContract: writeStartGame, isPending: isStartingGame } = useWriteContract();
-  const { writeContract: writeRollDice, isPending: isRollingDice } = useWriteContract();
+  const { writeContract: writeStartGame, isPending: isStartingGame, data: startGameTxHash } = useWriteContract();
+  const { writeContract: writeRollDice, isPending: isRollingDice, data: rollDiceTxHash } = useWriteContract();
+
+  // Wait for transaction receipts
+  const { isLoading: isStartGameTxLoading } = useWaitForTransactionReceipt({
+    hash: startGameTxHash,
+  });
+  
+  const { isLoading: isRollDiceTxLoading } = useWaitForTransactionReceipt({
+    hash: rollDiceTxHash,
+  });
 
   // Read player status
   const { data: playerStatus, refetch: refetchPlayerStatus } = useReadContract({
@@ -231,6 +240,7 @@ export const useContract = () => {
       const playerLog = logs.find(log => log.args.player === address);
       if (playerLog) {
         toast.success('Game started successfully!');
+        setIsLoading(false);
         refetchPlayerStatus();
         refetchBoard();
       }
@@ -245,9 +255,16 @@ export const useContract = () => {
       const playerLog = logs.find(log => log.args.player === address);
       if (playerLog && playerLog.args) {
         const { dice, newPosition, nunuEarned } = playerLog.args;
+        console.log('Roll applied event:', { dice, newPosition, nunuEarned });
+        
+        // Refetch player status to get updated state
+        setTimeout(() => {
+          refetchPlayerStatus();
+          refetchLeaderboard();
+        }, 1000);
+        
+        setIsLoading(false);
         toast.success(`Rolled ${dice}! Moved to position ${newPosition}${nunuEarned > 0 ? `. Earned ${formatEther(nunuEarned)} NUNU coins!` : ''}`);
-        refetchPlayerStatus();
-        refetchLeaderboard();
       }
     }
   });
@@ -344,13 +361,14 @@ export const useContract = () => {
 
     try {
       setIsLoading(true);
-      await writeStartGame({
+      const txHash = await writeStartGame({
         address: CONTRACT_ADDRESS,
         abi: CONTRACT_ABI,
         functionName: 'startGame',
         chain,
         account: address
       });
+      console.log('Start game transaction:', txHash);
     } catch (error) {
       console.error('Error starting game:', error);
       toast.error('Failed to start game');
@@ -368,7 +386,7 @@ export const useContract = () => {
       setIsLoading(true);
       const [, , rollFee] = gameStats;
       
-      await writeRollDice({
+      const txHash = await writeRollDice({
         address: CONTRACT_ADDRESS,
         abi: CONTRACT_ABI,
         functionName: 'rollDice',
@@ -377,6 +395,7 @@ export const useContract = () => {
         chain,
         account: address
       });
+      console.log('Roll dice transaction:', txHash);
     } catch (error) {
       console.error('Error rolling dice:', error);
       toast.error('Failed to roll dice');
@@ -392,7 +411,7 @@ export const useContract = () => {
     // State
     gameState,
     boardData,
-    isLoading: isLoading || isStartingGame || isRollingDice,
+    isLoading: isLoading || isStartingGame || isRollingDice || isStartGameTxLoading || isRollDiceTxLoading,
     isConnected,
     leaderboard: getLeaderboardData(),
     

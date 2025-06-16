@@ -6,7 +6,7 @@ import GameBoard from '@/components/GameBoard';
 import Dice from '@/components/Dice';
 import ScoreBoard from '@/components/ScoreBoard';
 import VictoryModal from '@/components/VictoryModal';
-import UserProfile from '@/components/UserProfile';
+import ContractUserProfile from '@/components/ContractUserProfile';
 import NewGameConfirmation from '@/components/NewGameConfirmation';
 import SplashAnimation from '@/components/SplashAnimation';
 import { toast } from '@/hooks/use-toast';
@@ -30,9 +30,27 @@ const Index = () => {
   const { isConnected, contractState } = contractInfo;
 
   useEffect(() => {
-    // Play start game sound
     playSound('start');
   }, []);
+
+  // Handle tile interactions for splash animations
+  useEffect(() => {
+    if (gameState.giftsCollected > 0) {
+      showSplash('gift', 10); // Show gift animation
+    }
+  }, [gameState.giftsCollected]);
+
+  useEffect(() => {
+    if (gameState.detourTrapsTriggered > 0) {
+      showSplash('detour', 5); // Show detour animation
+    }
+  }, [gameState.detourTrapsTriggered]);
+
+  useEffect(() => {
+    if (gameState.shortcutGatesTriggered > 0) {
+      showSplash('shortcut', 3); // Show shortcut animation
+    }
+  }, [gameState.shortcutGatesTriggered]);
 
   const showSplash = (type: 'gift' | 'shortcut' | 'detour', value: number) => {
     setSplash({ isVisible: true, type, value });
@@ -54,7 +72,6 @@ const Index = () => {
       return;
     }
 
-    // Use the blockchain-aware roll dice function
     gameActions.rollDice();
     playSound('diceRoll');
   };
@@ -173,13 +190,12 @@ const Index = () => {
           </div>
           
           <div className="ml-4">
-            <UserProfile />
+            <ContractUserProfile />
           </div>
         </motion.div>
 
         {/* Mobile Layout */}
         <div className="block lg:hidden space-y-6">
-          {/* Score Board - Top on mobile */}
           <ScoreBoard
             score={gameState.score}
             position={gameState.playerPosition}
@@ -191,7 +207,6 @@ const Index = () => {
             onToggleSound={toggleSound}
           />
 
-          {/* Game Board */}
           <GameBoard
             playerPosition={gameState.playerPosition}
             giftTiles={gameState.giftTiles}
@@ -202,7 +217,6 @@ const Index = () => {
             isMoving={gameState.isMoving}
           />
 
-          {/* Controls - Bottom on mobile */}
           <div className="space-y-4">
             <motion.div
               className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-6 shadow-xl border border-gray-600"
@@ -231,7 +245,6 @@ const Index = () => {
 
         {/* Desktop Layout */}
         <div className="hidden lg:grid lg:grid-cols-4 gap-6">
-          {/* Game Board - Takes up more space */}
           <div className="lg:col-span-3">
             <GameBoard
               playerPosition={gameState.playerPosition}
@@ -244,9 +257,7 @@ const Index = () => {
             />
           </div>
 
-          {/* Side Panel */}
           <div className="lg:col-span-1 space-y-3">
-            {/* Score Board */}
             <ScoreBoard
               score={gameState.score}
               position={gameState.playerPosition}
@@ -258,7 +269,6 @@ const Index = () => {
               onToggleSound={toggleSound}
             />
 
-            {/* Dice Control */}
             <motion.div
               className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-6 shadow-xl border border-gray-600"
               initial={{ opacity: 0, scale: 0.9 }}
@@ -273,7 +283,6 @@ const Index = () => {
               />
             </motion.div>
 
-            {/* Reset Button */}
             <motion.button
               onClick={handleNewGameClick}
               className="w-full py-3 bg-gradient-to-r from-red-600 to-pink-600 text-white font-bold rounded-lg shadow-lg hover:from-red-700 hover:to-pink-700 transition-all duration-200"
@@ -306,7 +315,6 @@ const Index = () => {
           onRestart={restartGame}
         />
 
-        {/* New Game Confirmation */}
         <NewGameConfirmation
           isOpen={showNewGameConfirmation}
           onConfirm={restartGame}
