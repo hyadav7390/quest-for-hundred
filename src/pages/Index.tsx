@@ -89,7 +89,10 @@ const Index = () => {
   };
 
   const toggleSound = () => {
-    gameActions({ type: 'TOGGLE_SOUND' });
+    // Create a proper dispatch action for toggling sound
+    if (typeof gameActions === 'object' && 'dispatch' in gameActions) {
+      (gameActions as any).dispatch({ type: 'TOGGLE_SOUND' });
+    }
   };
 
   // Show wallet connection prompt if not connected
