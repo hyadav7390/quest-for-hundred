@@ -294,7 +294,7 @@ export const useContract = () => {
   });
 
   // Process board data from contract when it changes
-  const processBoardData = (boardTiles: any[]) => {
+  const processBoardData = (boardTiles: readonly { giftValue: bigint; doorOffset: number; }[]) => {
     if (!boardTiles || !Array.isArray(boardTiles)) {
       console.log('⚠️ No valid board tiles received');
       return;
@@ -305,7 +305,10 @@ export const useContract = () => {
     const detourTrapTiles: { index: number; moveBack: number }[] = [];
     const shortcutGateTiles: { index: number; moveForward: number }[] = [];
 
-    boardTiles.forEach((tile, index) => {
+    // Convert readonly array to mutable array for processing
+    const mutableBoardTiles = [...boardTiles];
+    
+    mutableBoardTiles.forEach((tile, index) => {
       if (index === 0) return; // Skip index 0 as contract uses 1-based indexing
       
       if (tile.giftValue > 0) {
