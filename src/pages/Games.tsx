@@ -1,6 +1,6 @@
 
 import { motion } from 'framer-motion';
-import { Play, Lock, Star, Users, Trophy } from 'lucide-react';
+import { Play, Lock, Star, Users, Trophy, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { GameInfo } from '@/types/game';
@@ -29,6 +29,12 @@ const Games = () => {
   const handleGameClick = (game: GameInfo) => {
     if (game.isAvailable) {
       navigate(`/games/${game.id}`);
+    }
+  };
+
+  const handleLaunchGame = (gameId: string) => {
+    if (gameId === 'hundredth-tile') {
+      navigate('/game');
     }
   };
 
@@ -91,13 +97,12 @@ const Games = () => {
             <motion.div
               key={game.id}
               className={`bg-gray-800 rounded-2xl overflow-hidden shadow-xl border border-gray-700 ${
-                game.isAvailable ? 'hover:border-purple-500 cursor-pointer' : 'opacity-75'
+                game.isAvailable ? 'hover:border-purple-500' : 'opacity-75'
               } transition-all duration-300`}
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: index * 0.2 }}
               whileHover={game.isAvailable ? { scale: 1.02 } : {}}
-              onClick={() => handleGameClick(game)}
             >
               <div className="p-8">
                 <div className="text-center mb-6">
@@ -106,19 +111,33 @@ const Games = () => {
                   <p className="text-gray-300">{game.description}</p>
                 </div>
 
-                <div className="flex justify-center">
+                <div className="flex gap-3 justify-center">
                   {game.isAvailable ? (
-                    <Button
-                      size="lg"
-                      className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-8 py-3 font-bold rounded-xl"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleGameClick(game);
-                      }}
-                    >
-                      <Play className="w-5 h-5 mr-2" />
-                      View Game
-                    </Button>
+                    <>
+                      <Button
+                        size="lg"
+                        className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-6 py-3 font-bold rounded-xl"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleLaunchGame(game.id);
+                        }}
+                      >
+                        <ExternalLink className="w-5 h-5 mr-2" />
+                        Launch Game
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="lg"
+                        className="border-purple-500 text-purple-400 hover:bg-purple-500/10 px-6 py-3 font-bold rounded-xl"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleGameClick(game);
+                        }}
+                      >
+                        <Play className="w-5 h-5 mr-2" />
+                        View Details
+                      </Button>
+                    </>
                   ) : (
                     <Button
                       disabled

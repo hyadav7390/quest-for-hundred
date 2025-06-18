@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, useWatchContractEvent } from 'wagmi';
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
 import { parseEther, formatEther } from 'viem';
 import { toast } from 'sonner';
 
@@ -87,60 +87,6 @@ const CONTRACT_ABI = [
     "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
     "stateMutability": "view",
     "type": "function"
-  },
-  {
-    "anonymous": false,
-    "inputs": [{"indexed": true, "internalType": "address", "name": "player", "type": "address"}],
-    "name": "GameStarted",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {"indexed": true, "internalType": "address", "name": "player", "type": "address"},
-      {"indexed": false, "internalType": "uint8", "name": "expectedPosition", "type": "uint8"},
-      {"indexed": false, "internalType": "uint256", "name": "sentValue", "type": "uint256"}
-    ],
-    "name": "RollInitiated",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {"indexed": true, "internalType": "address", "name": "player", "type": "address"},
-      {"indexed": false, "internalType": "uint8", "name": "dice", "type": "uint8"},
-      {"indexed": false, "internalType": "uint8", "name": "newPosition", "type": "uint8"},
-      {"indexed": false, "internalType": "uint256", "name": "nunuEarned", "type": "uint256"}
-    ],
-    "name": "RollApplied",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {"indexed": true, "internalType": "address", "name": "player", "type": "address"},
-      {"indexed": false, "internalType": "string", "name": "reason", "type": "string"}
-    ],
-    "name": "RollFailed",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {"indexed": true, "internalType": "address", "name": "player", "type": "address"},
-      {"indexed": false, "internalType": "uint256", "name": "amount", "type": "uint256"}
-    ],
-    "name": "RewardsClaimed",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {"indexed": true, "internalType": "uint256", "name": "requestId", "type": "uint256"},
-      {"indexed": true, "internalType": "address", "name": "player", "type": "address"}
-    ],
-    "name": "VRFRequestedLog",
-    "type": "event"
   }
 ] as const;
 
@@ -183,9 +129,27 @@ export const useContract = () => {
   const [playerRank, setPlayerRank] = useState<number>(0);
   const [gameStats, setGameStats] = useState<any>(null);
   
-  // Contract write operations
-  const { writeContract: writeStartGame, isPending: isStartingGame } = useWriteContract();
-  const { writeContract: writeRollDice, isPending: isRollingDice } = useWriteContract();
+  // Contract write operations with transaction receipt waiting
+  const { 
+    writeContract: writeStartGame, 
+    isPending: isStartingGame, 
+    data: startGameHash 
+  } = useWriteContract();
+  
+  const { 
+    writeContract: writeRollDice, 
+    isPending: isRollingDice, 
+    data: rollDiceHash 
+  } = useWriteContract();
+
+  // Wait for transaction receipts
+  const { isLoading: isStartGameConfirming } = useWaitForTransactionReceipt({
+    hash: startGameHash,
+  });
+
+  const { isLoading: isRollDiceConfirming } = useWaitForTransactionReceipt({
+    hash: rollDiceHash,
+  });
 
   // Manual read operations - all disabled auto-fetch to prevent excessive calls
   const { refetch: refetchPlayerStatus } = useReadContract({
@@ -251,142 +215,6 @@ export const useContract = () => {
     }
   });
 
-  // Event listeners for contract events with improved logging
-  useWatchContractEvent({
-    address: CONTRACT_ADDRESS,
-    abi: CONTRACT_ABI,
-    eventName: 'GameStarted',
-    onLogs: (logs) => {
-      console.log('🎮 [CONTRACT EVENT] GameStarted received:', logs);
-      const playerLog = logs.find(log => log.args.player === address);
-      if (playerLog) {
-        console.log('✅ [GAME STARTED] Game started for current player');
-        toast.success('Game started successfully! Board generated on-chain.');
-        setIsLoading(false);
-        
-        // Fetch game data after a short delay to ensure contract state is updated
-        setTimeout(() => {
-          console.log('📋 [FETCH] Fetching game data after GameStarted event...');
-          fetchAllGameData();
-        }, 2000);
-      }
-    },
-    onError: (error) => {
-      console.error('❌ [EVENT ERROR] GameStarted event error:', error);
-    }
-  });
-
-  useWatchContractEvent({
-    address: CONTRACT_ADDRESS,
-    abi: CONTRACT_ABI,
-    eventName: 'RollInitiated',
-    onLogs: (logs) => {
-      console.log('🎲 [CONTRACT EVENT] RollInitiated received:', logs);
-      const playerLog = logs.find(log => log.args.player === address);
-      if (playerLog) {
-        console.log('⏳ [ROLL INITIATED] VRF request sent, waiting for result...');
-        setIsWaitingForVRF(true);
-        toast.info('Dice roll initiated! Waiting for blockchain result...');
-      }
-    },
-    onError: (error) => {
-      console.error('❌ [EVENT ERROR] RollInitiated event error:', error);
-    }
-  });
-
-  useWatchContractEvent({
-    address: CONTRACT_ADDRESS,
-    abi: CONTRACT_ABI,
-    eventName: 'VRFRequestedLog',
-    onLogs: (logs) => {
-      console.log('🔮 [CONTRACT EVENT] VRFRequestedLog received:', logs);
-      const playerLog = logs.find(log => log.args.player === address);
-      if (playerLog) {
-        console.log('🔮 [VRF REQUESTED] Chainlink VRF request sent, waiting for randomness...');
-        toast.info('Waiting for Chainlink VRF result...', { duration: 5000 });
-      }
-    },
-    onError: (error) => {
-      console.error('❌ [EVENT ERROR] VRFRequestedLog event error:', error);
-    }
-  });
-
-  useWatchContractEvent({
-    address: CONTRACT_ADDRESS,
-    abi: CONTRACT_ABI,
-    eventName: 'RollApplied',
-    onLogs: (logs) => {
-      console.log('🎯 [CONTRACT EVENT] RollApplied received:', logs);
-      const playerLog = logs.find(log => log.args.player === address);
-      if (playerLog && playerLog.args) {
-        const { dice, newPosition, nunuEarned } = playerLog.args;
-        console.log('✅ [ROLL APPLIED] Roll applied for current player:', { dice, newPosition, nunuEarned });
-        
-        setIsWaitingForVRF(false);
-        setIsLoading(false);
-        
-        const earnedTokens = Number(formatEther(nunuEarned));
-        if (earnedTokens > 0) {
-          toast.success(`🎲 Rolled ${dice}! Moved to position ${newPosition}. Earned ${earnedTokens.toFixed(2)} NUNU tokens!`);
-        } else {
-          toast.success(`🎲 Rolled ${dice}! Moved to position ${newPosition}.`);
-        }
-        
-        // Fetch updated game state
-        setTimeout(() => {
-          console.log('📊 [FETCH] Fetching updated game state after RollApplied...');
-          fetchPlayerStatus();
-        }, 1000);
-      }
-    },
-    onError: (error) => {
-      console.error('❌ [EVENT ERROR] RollApplied event error:', error);
-    }
-  });
-
-  useWatchContractEvent({
-    address: CONTRACT_ADDRESS,
-    abi: CONTRACT_ABI,
-    eventName: 'RollFailed',
-    onLogs: (logs) => {
-      console.log('❌ [CONTRACT EVENT] RollFailed received:', logs);
-      const playerLog = logs.find(log => log.args.player === address);
-      if (playerLog && playerLog.args) {
-        console.log('🚫 [ROLL FAILED] Roll failed for current player:', playerLog.args.reason);
-        toast.error(`Roll failed: ${playerLog.args.reason}`);
-        setIsLoading(false);
-        setIsWaitingForVRF(false);
-      }
-    },
-    onError: (error) => {
-      console.error('❌ [EVENT ERROR] RollFailed event error:', error);
-    }
-  });
-
-  useWatchContractEvent({
-    address: CONTRACT_ADDRESS,
-    abi: CONTRACT_ABI,
-    eventName: 'RewardsClaimed',
-    onLogs: (logs) => {
-      console.log('🎁 [CONTRACT EVENT] RewardsClaimed received:', logs);
-      const playerLog = logs.find(log => log.args.player === address);
-      if (playerLog && playerLog.args) {
-        const amount = Number(formatEther(playerLog.args.amount));
-        console.log('💰 [REWARDS CLAIMED] Rewards claimed:', amount);
-        toast.success(`🎉 Congratulations! You earned ${amount.toFixed(2)} NUNU tokens!`);
-        
-        // Update leaderboard and rank
-        setTimeout(() => {
-          fetchLeaderboard();
-          fetchPlayerRank();
-        }, 1000);
-      }
-    },
-    onError: (error) => {
-      console.error('❌ [EVENT ERROR] RewardsClaimed event error:', error);
-    }
-  });
-
   // Process board data from contract with better validation
   const processBoardData = useCallback((boardTiles: readonly { giftValue: bigint; doorOffset: number; }[]) => {
     if (!boardTiles || !Array.isArray(boardTiles)) {
@@ -401,23 +229,21 @@ export const useContract = () => {
 
     // Process each tile - contract uses 0-based indexing in array but 1-based for game logic
     boardTiles.forEach((tile, arrayIndex) => {
-      const gameIndex = arrayIndex; // Use array index directly since contract returns full board
-      
-      if (gameIndex === 0) return; // Skip index 0 as it's not used in the game
+      if (arrayIndex === 0) return; // Skip index 0 as it's not used in the game
       
       if (tile.giftValue > 0) {
         const points = Number(formatEther(tile.giftValue));
-        giftTiles.push({ index: gameIndex, points });
-        console.log(`🎁 [TILE] Gift tile at position ${gameIndex}: ${points} NUNU tokens`);
+        giftTiles.push({ index: arrayIndex, points });
+        console.log(`🎁 [TILE] Gift tile at position ${arrayIndex}: ${points} NUNU tokens`);
       } else if (tile.doorOffset !== 0) {
         if (tile.doorOffset < 0) {
           const moveBack = Math.abs(tile.doorOffset);
-          detourTrapTiles.push({ index: gameIndex, moveBack });
-          console.log(`🚪❌ [TILE] Detour trap at position ${gameIndex}: move back ${moveBack}`);
+          detourTrapTiles.push({ index: arrayIndex, moveBack });
+          console.log(`🚪❌ [TILE] Detour trap at position ${arrayIndex}: move back ${moveBack}`);
         } else {
           const moveForward = tile.doorOffset;
-          shortcutGateTiles.push({ index: gameIndex, moveForward });
-          console.log(`🚪✅ [TILE] Shortcut gate at position ${gameIndex}: move forward ${moveForward}`);
+          shortcutGateTiles.push({ index: arrayIndex, moveForward });
+          console.log(`🚪✅ [TILE] Shortcut gate at position ${arrayIndex}: move forward ${moveForward}`);
         }
       }
     });
@@ -445,7 +271,7 @@ export const useContract = () => {
     }
 
     try {
-      console.log('📊 [FETCH] Starting fetchPlayerStatus...');
+      console.log('📊 [BLOCKCHAIN READ] Starting fetchPlayerStatus...');
       const result = await refetchPlayerStatus();
       
       if (result.data && gameStats) {
@@ -462,15 +288,15 @@ export const useContract = () => {
           rollFee
         };
 
-        console.log('✅ [FETCH] Player status updated:', newGameState);
+        console.log('✅ [BLOCKCHAIN READ] Player status updated:', newGameState);
         setGameState(newGameState);
         return newGameState;
       }
       
-      console.log('⚠️ [FETCH] Player status fetch completed but no valid data');
+      console.log('⚠️ [BLOCKCHAIN READ] Player status fetch completed but no valid data');
       return result;
     } catch (error) {
-      console.error('❌ [FETCH] Error fetching player status:', error);
+      console.error('❌ [BLOCKCHAIN READ] Error fetching player status:', error);
       return null;
     }
   }, [address, refetchPlayerStatus, gameStats]);
@@ -482,36 +308,36 @@ export const useContract = () => {
     }
 
     try {
-      console.log('📋 [FETCH] Starting fetchBoardData...');
+      console.log('📋 [BLOCKCHAIN READ] Starting fetchBoardData...');
       const result = await refetchBoard();
       
       if (result.data) {
-        console.log('📋 [FETCH] Board data received from contract, processing...');
+        console.log('📋 [BLOCKCHAIN READ] Board data received from contract, processing...');
         processBoardData(result.data);
       } else {
-        console.log('⚠️ [FETCH] Board data fetch completed but no data received');
+        console.log('⚠️ [BLOCKCHAIN READ] Board data fetch completed but no data received');
       }
       
       return result;
     } catch (error) {
-      console.error('❌ [FETCH] Error fetching board data:', error);
+      console.error('❌ [BLOCKCHAIN READ] Error fetching board data:', error);
       return null;
     }
   }, [address, refetchBoard, processBoardData]);
 
   const fetchLeaderboard = useCallback(async () => {
     try {
-      console.log('🏆 [FETCH] Starting fetchLeaderboard...');
+      console.log('🏆 [BLOCKCHAIN READ] Starting fetchLeaderboard...');
       const result = await refetchLeaderboard();
       
       if (result.data) {
-        console.log('✅ [FETCH] Leaderboard updated:', result.data.length, 'entries');
+        console.log('✅ [BLOCKCHAIN READ] Leaderboard updated:', result.data.length, 'entries');
         setLeaderboard(result.data as LeaderboardEntry[]);
       }
       
       return result;
     } catch (error) {
-      console.error('❌ [FETCH] Error fetching leaderboard:', error);
+      console.error('❌ [BLOCKCHAIN READ] Error fetching leaderboard:', error);
       return null;
     }
   }, [refetchLeaderboard]);
@@ -520,41 +346,41 @@ export const useContract = () => {
     if (!address) return null;
 
     try {
-      console.log('🏅 [FETCH] Starting fetchPlayerRank...');
+      console.log('🏅 [BLOCKCHAIN READ] Starting fetchPlayerRank...');
       const result = await refetchPlayerRank();
       
       if (result.data) {
         const rank = Number(result.data);
-        console.log('✅ [FETCH] Player rank updated:', rank);
+        console.log('✅ [BLOCKCHAIN READ] Player rank updated:', rank);
         setPlayerRank(rank);
       }
       
       return result;
     } catch (error) {
-      console.error('❌ [FETCH] Error fetching player rank:', error);
+      console.error('❌ [BLOCKCHAIN READ] Error fetching player rank:', error);
       return null;
     }
   }, [address, refetchPlayerRank]);
 
   const fetchGameStats = useCallback(async () => {
     try {
-      console.log('📈 [FETCH] Starting fetchGameStats...');
+      console.log('📈 [BLOCKCHAIN READ] Starting fetchGameStats...');
       const result = await refetchGameStats();
       
       if (result.data) {
-        console.log('✅ [FETCH] Game stats updated:', result.data);
+        console.log('✅ [BLOCKCHAIN READ] Game stats updated:', result.data);
         setGameStats(result.data);
       }
       
       return result;
     } catch (error) {
-      console.error('❌ [FETCH] Error fetching game stats:', error);
+      console.error('❌ [BLOCKCHAIN READ] Error fetching game stats:', error);
       return null;
     }
   }, [refetchGameStats]);
 
   const fetchAllGameData = useCallback(async () => {
-    console.log('🔄 [FETCH] Starting fetchAllGameData...');
+    console.log('🔄 [BLOCKCHAIN READ] Starting fetchAllGameData...');
     
     // First fetch game stats as other functions depend on it
     await fetchGameStats();
@@ -567,19 +393,69 @@ export const useContract = () => {
       fetchPlayerRank()
     ]);
     
-    console.log('✅ [FETCH] All game data fetched complete');
+    console.log('✅ [BLOCKCHAIN READ] All game data fetched complete');
   }, [fetchGameStats, fetchPlayerStatus, fetchBoardData, fetchLeaderboard, fetchPlayerRank]);
+
+  // Manual polling after transactions
+  const pollAfterTransaction = useCallback(async (action: string, maxAttempts = 10) => {
+    console.log(`🔄 [POLLING] Starting polling after ${action}...`);
+    
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      console.log(`📊 [POLLING] Attempt ${attempt}/${maxAttempts} for ${action}`);
+      
+      // Wait a bit before each attempt
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      const oldState = gameState;
+      await fetchAllGameData();
+      
+      // Check if state has changed significantly
+      if (action === 'startGame' && gameState?.boardGenerated && !oldState?.boardGenerated) {
+        console.log('✅ [POLLING] Game started successfully detected');
+        setIsLoading(false);
+        toast.success('Game started successfully! Board generated on-chain.');
+        break;
+      } else if (action === 'rollDice' && gameState?.diceValue && gameState.diceValue !== oldState?.diceValue) {
+        console.log('✅ [POLLING] Dice roll result detected');
+        setIsWaitingForVRF(false);
+        setIsLoading(false);
+        toast.success(`🎲 Rolled ${gameState.diceValue}! Moved to position ${gameState.position}.`);
+        break;
+      }
+      
+      if (attempt === maxAttempts) {
+        console.log(`⚠️ [POLLING] Max attempts reached for ${action}`);
+        setIsLoading(false);
+        setIsWaitingForVRF(false);
+      }
+    }
+  }, [gameState, fetchAllGameData]);
+
+  // Watch for transaction confirmations
+  useEffect(() => {
+    if (startGameHash && !isStartGameConfirming) {
+      console.log('✅ [BLOCKCHAIN WRITE] Start game transaction confirmed');
+      pollAfterTransaction('startGame');
+    }
+  }, [startGameHash, isStartGameConfirming, pollAfterTransaction]);
+
+  useEffect(() => {
+    if (rollDiceHash && !isRollDiceConfirming) {
+      console.log('✅ [BLOCKCHAIN WRITE] Roll dice transaction confirmed');
+      pollAfterTransaction('rollDice');
+    }
+  }, [rollDiceHash, isRollDiceConfirming, pollAfterTransaction]);
 
   // Contract interaction functions with improved logging
   const startGame = async () => {
     if (!isConnected || !chain || !address) {
-      console.log('⚠️ [ACTION] Wallet not connected for game start');
+      console.log('⚠️ [BLOCKCHAIN WRITE] Wallet not connected for game start');
       toast.error('Please connect your wallet first');
       return;
     }
 
     try {
-      console.log('🎮 [ACTION] Starting startGame transaction...');
+      console.log('🎮 [BLOCKCHAIN WRITE] Starting startGame transaction...');
       setIsLoading(true);
       
       await writeStartGame({
@@ -590,9 +466,9 @@ export const useContract = () => {
         account: address
       });
       
-      console.log('✅ [ACTION] Start game transaction sent successfully');
+      console.log('✅ [BLOCKCHAIN WRITE] Start game transaction sent successfully');
     } catch (error) {
-      console.error('❌ [ACTION] Error starting game:', error);
+      console.error('❌ [BLOCKCHAIN WRITE] Error starting game:', error);
       toast.error('Failed to start game');
       setIsLoading(false);
     }
@@ -600,17 +476,18 @@ export const useContract = () => {
 
   const rollDice = async (expectedPosition: number) => {
     if (!isConnected || !chain || !address || !gameStats) {
-      console.log('⚠️ [ACTION] Wallet not connected or game stats not available for dice roll');
+      console.log('⚠️ [BLOCKCHAIN WRITE] Wallet not connected or game stats not available for dice roll');
       toast.error('Please connect your wallet first');
       return;
     }
 
     try {
-      console.log('🎲 [ACTION] Starting rollDice transaction with expected position:', expectedPosition);
+      console.log('🎲 [BLOCKCHAIN WRITE] Starting rollDice transaction with expected position:', expectedPosition);
       setIsLoading(true);
+      setIsWaitingForVRF(true);
       const rollFee = gameStats[2]; // rollFee is third element in gameStats
       
-      console.log('💰 [ACTION] Roll fee required:', formatEther(rollFee), 'ETH');
+      console.log('💰 [BLOCKCHAIN WRITE] Roll fee required:', formatEther(rollFee), 'ETH');
       
       await writeRollDice({
         address: CONTRACT_ADDRESS,
@@ -622,9 +499,9 @@ export const useContract = () => {
         account: address
       });
       
-      console.log('✅ [ACTION] Roll dice transaction sent successfully');
+      console.log('✅ [BLOCKCHAIN WRITE] Roll dice transaction sent successfully');
     } catch (error) {
-      console.error('❌ [ACTION] Error rolling dice:', error);
+      console.error('❌ [BLOCKCHAIN WRITE] Error rolling dice:', error);
       toast.error('Failed to roll dice');
       setIsLoading(false);
       setIsWaitingForVRF(false);
@@ -643,7 +520,7 @@ export const useContract = () => {
     // State
     gameState,
     boardData,
-    isLoading: isLoading || isStartingGame || isRollingDice,
+    isLoading: isLoading || isStartingGame || isRollingDice || isStartGameConfirming || isRollDiceConfirming,
     isWaitingForVRF,
     isConnected,
     leaderboard,
