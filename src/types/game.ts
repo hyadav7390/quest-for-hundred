@@ -20,16 +20,10 @@ export interface GameState {
 }
 
 export type GameAction =
-  | { type: 'ROLL_DICE'; payload: number }
+  | { type: 'START_DICE_ANIMATION' }
+  | { type: 'STOP_DICE_ANIMATION'; payload: number }
   | { type: 'START_MOVING' }
-  | { type: 'MOVE_PLAYER'; payload: number }
-  | { type: 'COLLECT_GIFT'; payload: { tileIndex: number; points: number } }
-  | { type: 'REGENERATE_GIFT'; payload: { index: number; points: number } }
-  | { type: 'TRIGGER_DETOUR_TRAP'; payload: { newPosition: number; penalty: number; trapIndex: number } }
-  | { type: 'TRIGGER_SHORTCUT_GATE'; payload: { newPosition: number; bonus: number; gateIndex: number } }
-  | { type: 'REVEAL_TRAP'; payload: number }
-  | { type: 'REVEAL_GATE'; payload: number }
-  | { type: 'FINISH_TURN' }
+  | { type: 'STOP_MOVING' }
   | { type: 'WIN_GAME' }
   | { type: 'RESET_GAME' }
   | { type: 'TOGGLE_SOUND' }

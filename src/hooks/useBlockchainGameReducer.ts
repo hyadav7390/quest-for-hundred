@@ -4,7 +4,7 @@ import { GameState, GameAction } from '@/types/game';
 import { useContract } from './useContract';
 import { toast } from 'sonner';
 
-// Modified initial state for blockchain integration
+// Pure UI state - no game logic, just UI animations and display
 const initialState: GameState = {
   playerPosition: 1,
   score: 0,
@@ -27,42 +27,55 @@ const initialState: GameState = {
 
 const blockchainGameReducer = (state: GameState, action: GameAction): GameState => {
   switch (action.type) {
-    case 'ROLL_DICE':
-      console.log('🎲 UI: Starting dice roll animation');
+    case 'START_DICE_ANIMATION':
+      console.log('🎲 [UI] Starting dice roll animation');
       return {
         ...state,
-        diceValue: action.payload,
         isRolling: true,
-        diceRolled: true,
+        diceValue: null,
       };
 
-    case 'START_MOVING':
-      console.log('🚶 UI: Starting player movement');
+    case 'STOP_DICE_ANIMATION':
+      console.log('🎲 [UI] Stopping dice roll animation with value:', action.payload);
       return {
         ...state,
         isRolling: false,
+        diceValue: action.payload,
+      };
+
+    case 'START_MOVING':
+      console.log('🚶 [UI] Starting player movement animation');
+      return {
+        ...state,
         isMoving: true,
       };
 
-    case 'MOVE_PLAYER': {
-      const newPosition = Math.min(action.payload, 100);
-      console.log('📍 UI: Moving player to position:', newPosition);
-      
+    case 'STOP_MOVING':
+      console.log('🚶 [UI] Stopping player movement animation');
       return {
         ...state,
-        playerPosition: newPosition,
         isMoving: false,
       };
-    }
 
     case 'UPDATE_FROM_CONTRACT': {
       const { position, score, nunuEarned, hasFinished, diceValue } = action.payload;
-      console.log('📊 UI: Updating from contract:', action.payload);
+      console.log('📊 [UI] Updating from contract:', action.payload);
       
       // Check if player moved to trigger animations
       const oldPosition = state.playerPosition;
       const newPosition = position;
       const positionChanged = oldPosition !== newPosition;
+      
+      // Calculate UI stats based on contract data
+      const giftTilesOnPath = state.giftTiles.filter(
+        tile => tile.index > oldPosition && tile.index <= newPosition
+      );
+      const detourTrapsOnPath = state.detourTrapTiles.filter(
+        trap => trap.index > oldPosition && trap.index <= newPosition
+      );
+      const shortcutGatesOnPath = state.shortcutGateTiles.filter(
+        gate => gate.index > oldPosition && gate.index <= newPosition
+      );
       
       return {
         ...state,
@@ -70,15 +83,18 @@ const blockchainGameReducer = (state: GameState, action: GameAction): GameState 
         score: score,
         diceValue: diceValue || state.diceValue,
         gameStatus: hasFinished ? 'won' : 'playing',
-        isRolling: false, // Stop dice rolling when we get contract data
         isMoving: positionChanged,
         turnsPlayed: diceValue && positionChanged ? state.turnsPlayed + 1 : state.turnsPlayed,
+        giftsCollected: state.giftsCollected + giftTilesOnPath.length,
+        detourTrapsTriggered: state.detourTrapsTriggered + detourTrapsOnPath.length,
+        shortcutGatesTriggered: state.shortcutGatesTriggered + shortcutGatesOnPath.length,
+        diceRolled: diceValue > 0,
       };
     }
 
     case 'UPDATE_BOARD_DATA': {
       const { giftTiles, detourTrapTiles, shortcutGateTiles } = action.payload;
-      console.log('📋 UI: Updating board data:', {
+      console.log('📋 [UI] Updating board data:', {
         gifts: giftTiles.length,
         detours: detourTrapTiles.length,
         shortcuts: shortcutGateTiles.length
@@ -92,47 +108,13 @@ const blockchainGameReducer = (state: GameState, action: GameAction): GameState 
       };
     }
 
-    case 'COLLECT_GIFT': {
-      console.log('🎁 UI: Gift collected at position:', action.payload.tileIndex);
-      return {
-        ...state,
-        giftsCollected: state.giftsCollected + 1,
-        isMoving: false,
-      };
-    }
-
-    case 'TRIGGER_DETOUR_TRAP': {
-      console.log('🚪❌ UI: Detour trap triggered at position:', action.payload.trapIndex);
-      return {
-        ...state,
-        detourTrapsTriggered: state.detourTrapsTriggered + 1,
-        isMoving: false,
-      };
-    }
-
-    case 'TRIGGER_SHORTCUT_GATE': {
-      console.log('🚪✅ UI: Shortcut gate triggered at position:', action.payload.gateIndex);
-      return {
-        ...state,
-        shortcutGatesTriggered: state.shortcutGatesTriggered + 1,
-        isMoving: false,
-      };
-    }
-
-    case 'FINISH_TURN':
-      console.log('✅ UI: Turn finished');
-      return {
-        ...state,
-        isMoving: false,
-        isRolling: false,
-      };
-
     case 'WIN_GAME':
-      console.log('🏆 UI: Game won!');
+      console.log('🏆 [UI] Game won!');
       return {
         ...state,
         gameStatus: 'won',
         isMoving: false,
+        isRolling: false,
       };
 
     case 'TOGGLE_SOUND':
@@ -142,7 +124,7 @@ const blockchainGameReducer = (state: GameState, action: GameAction): GameState 
       };
 
     case 'RESET_GAME': {
-      console.log('🔄 UI: Resetting game state');
+      console.log('🔄 [UI] Resetting game state');
       return {
         ...initialState,
         isSoundMuted: state.isSoundMuted, // Preserve sound setting
@@ -158,62 +140,25 @@ export const useBlockchainGameReducer = () => {
   const [state, dispatch] = useReducer(blockchainGameReducer, initialState);
   const { 
     gameState: contractState, 
-    boardData, 
-    isLoading, 
+    boardData,
+    isLoading,
+    isWaitingForVRF,
     startGame, 
     rollDice, 
     isConnected,
-    fetchPlayerStatus,
-    fetchBoardData
+    fetchAllGameData,
+    playerRank
   } = useContract();
 
-  // Track tile interactions
-  const checkTileInteraction = useCallback((position: number) => {
-    if (!boardData) {
-      console.log('⚠️ No board data available for tile interaction check');
-      return;
-    }
-
-    console.log('🔍 Checking tile interaction for position:', position);
-
-    // Check for gift tiles
-    const giftTile = boardData.giftTiles.find(tile => tile.index === position);
-    if (giftTile) {
-      console.log('🎁 Gift tile interaction:', giftTile);
-      dispatch({ type: 'COLLECT_GIFT', payload: { tileIndex: position, points: giftTile.points } });
-      return;
-    }
-
-    // Check for detour trap tiles
-    const detourTrap = boardData.detourTrapTiles.find(tile => tile.index === position);
-    if (detourTrap) {
-      console.log('🚪❌ Detour trap interaction:', detourTrap);
-      dispatch({ type: 'TRIGGER_DETOUR_TRAP', payload: { newPosition: position, penalty: detourTrap.moveBack, trapIndex: position } });
-      return;
-    }
-
-    // Check for shortcut gate tiles
-    const shortcutGate = boardData.shortcutGateTiles.find(tile => tile.index === position);
-    if (shortcutGate) {
-      console.log('🚪✅ Shortcut gate interaction:', shortcutGate);
-      dispatch({ type: 'TRIGGER_SHORTCUT_GATE', payload: { newPosition: position, bonus: shortcutGate.moveForward, gateIndex: position } });
-      return;
-    }
-
-    console.log('⚪ No special tile at position:', position);
-  }, [boardData]);
-
-  // Sync contract state with local state
+  // Sync contract state with UI state
   useEffect(() => {
     if (contractState) {
-      const oldPosition = state.playerPosition;
+      console.log('🔄 [SYNC] Syncing contract state to UI:', contractState);
       
-      console.log('🔄 Syncing contract state to UI:', {
-        oldPosition,
-        newPosition: contractState.position,
-        diceValue: contractState.diceValue,
-        gameScore: contractState.gameScore
-      });
+      // Stop dice animation when we get actual dice value from contract
+      if (contractState.diceValue > 0 && state.isRolling) {
+        dispatch({ type: 'STOP_DICE_ANIMATION', payload: contractState.diceValue });
+      }
       
       dispatch({
         type: 'UPDATE_FROM_CONTRACT',
@@ -226,25 +171,26 @@ export const useBlockchainGameReducer = () => {
         }
       });
 
-      // Check for tile interactions when position changes and player moved forward
-      if (oldPosition !== contractState.position && contractState.position > oldPosition) {
-        console.log('📍 Player moved from', oldPosition, 'to', contractState.position);
+      // Handle game completion
+      if (contractState.hasFinished && state.gameStatus !== 'won') {
         setTimeout(() => {
-          checkTileInteraction(contractState.position);
-          dispatch({ type: 'FINISH_TURN' });
-        }, 1500); // Give time for movement animation
+          dispatch({ type: 'WIN_GAME' });
+        }, 2000); // Wait for animations to complete
       }
 
-      if (contractState.hasFinished && state.gameStatus !== 'won') {
-        dispatch({ type: 'WIN_GAME' });
+      // Stop movement animation after some time
+      if (state.isMoving) {
+        setTimeout(() => {
+          dispatch({ type: 'STOP_MOVING' });
+        }, 2000);
       }
     }
-  }, [contractState, checkTileInteraction, state.gameStatus, state.playerPosition]);
+  }, [contractState, state.isRolling, state.gameStatus, state.isMoving]);
 
   // Sync board data from contract
   useEffect(() => {
     if (boardData) {
-      console.log('📋 Syncing board data to UI');
+      console.log('📋 [SYNC] Syncing board data to UI');
       dispatch({
         type: 'UPDATE_BOARD_DATA',
         payload: boardData
@@ -252,71 +198,63 @@ export const useBlockchainGameReducer = () => {
     }
   }, [boardData]);
 
-  // Enhanced roll dice function that interacts with contract
-  const handleRollDice = async () => {
+  // Enhanced roll dice function that only handles UI animations
+  const handleRollDice = useCallback(async () => {
     if (!isConnected) {
-      console.log('⚠️ Wallet not connected for dice roll');
+      console.log('⚠️ [ACTION] Wallet not connected for dice roll');
       toast.error('Please connect your wallet to play');
       return;
     }
 
-    if (state.isRolling || isLoading) {
-      console.log('⚠️ Already rolling or loading, ignoring dice roll request');
+    if (state.isRolling || isLoading || isWaitingForVRF) {
+      console.log('⚠️ [ACTION] Already rolling or loading, ignoring dice roll request');
+      return;
+    }
+
+    if (!contractState?.boardGenerated) {
+      console.log('⚠️ [ACTION] Game not started');
+      toast.error('Please start a game first');
       return;
     }
 
     try {
-      console.log('🎲 Starting dice roll sequence...');
+      console.log('🎲 [ACTION] Starting dice roll sequence...');
       
-      // Start rolling animation with random value first
-      dispatch({ type: 'ROLL_DICE', payload: Math.floor(Math.random() * 6) + 1 });
+      // Start UI dice animation immediately
+      dispatch({ type: 'START_DICE_ANIMATION' });
       
-      // Call contract roll dice
-      await rollDice(state.playerPosition);
+      // Call contract roll dice - this will trigger VRF and events
+      await rollDice(contractState.position);
       
     } catch (error) {
-      console.error('❌ Error in dice roll sequence:', error);
-      dispatch({ type: 'FINISH_TURN' });
+      console.error('❌ [ACTION] Error in dice roll sequence:', error);
+      dispatch({ type: 'STOP_DICE_ANIMATION', payload: 1 });
     }
-  };
+  }, [isConnected, state.isRolling, isLoading, isWaitingForVRF, contractState, rollDice]);
 
   // Enhanced start game function
-  const handleStartGame = async () => {
+  const handleStartGame = useCallback(async () => {
     if (!isConnected) {
-      console.log('⚠️ Wallet not connected for game start');
+      console.log('⚠️ [ACTION] Wallet not connected for game start');
       toast.error('Please connect your wallet to start a new game');
       return;
     }
 
     try {
-      console.log('🎮 Starting new game sequence...');
-      await startGame();
+      console.log('🎮 [ACTION] Starting new game sequence...');
       dispatch({ type: 'RESET_GAME' });
-      
-      // Fetch board data after starting game
-      setTimeout(async () => {
-        console.log('📋 Fetching board data after game start...');
-        await fetchBoardData();
-      }, 2000);
+      await startGame();
       
     } catch (error) {
-      console.error('❌ Error in start game sequence:', error);
+      console.error('❌ [ACTION] Error in start game sequence:', error);
       toast.error('Failed to start new game');
     }
-  };
-
-  // Initial data fetch when connected and board is generated
-  useEffect(() => {
-    if (isConnected && contractState?.boardGenerated && !boardData) {
-      console.log('🔄 Initial fetch of board data on connection');
-      fetchBoardData();
-    }
-  }, [isConnected, contractState?.boardGenerated, boardData, fetchBoardData]);
+  }, [isConnected, startGame]);
 
   return [
     {
       ...state,
-      isRolling: state.isRolling || isLoading,
+      isRolling: state.isRolling || isWaitingForVRF,
       isMoving: state.isMoving,
     },
     {
@@ -327,6 +265,9 @@ export const useBlockchainGameReducer = () => {
     {
       contractState,
       isConnected,
+      isLoading,
+      isWaitingForVRF,
+      playerRank,
       CONTRACT_ADDRESS: '0x2a255fd23e3806f472ef68acba79adbc5c3ae3e8'
     }
   ] as const;

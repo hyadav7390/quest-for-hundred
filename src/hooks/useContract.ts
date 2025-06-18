@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, useWatchContractEvent } from 'wagmi';
 import { parseEther, formatEther } from 'viem';
 import { toast } from 'sonner';
@@ -102,6 +102,13 @@ const CONTRACT_ABI = [
     "type": "function"
   },
   {
+    "inputs": [{"internalType": "address", "name": "who", "type": "address"}],
+    "name": "getPlayerRank",
+    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "anonymous": false,
     "inputs": [{"indexed": true, "internalType": "address", "name": "player", "type": "address"}],
     "name": "GameStarted",
@@ -111,20 +118,10 @@ const CONTRACT_ABI = [
     "anonymous": false,
     "inputs": [
       {"indexed": true, "internalType": "address", "name": "player", "type": "address"},
-      {"indexed": false, "internalType": "uint8", "name": "dice", "type": "uint8"},
-      {"indexed": false, "internalType": "uint8", "name": "newPosition", "type": "uint8"},
-      {"indexed": false, "internalType": "uint256", "name": "nunuEarned", "type": "uint256"}
+      {"indexed": false, "internalType": "uint8", "name": "expectedPosition", "type": "uint8"},
+      {"indexed": false, "internalType": "uint256", "name": "sentValue", "type": "uint256"}
     ],
-    "name": "DiceRolled",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {"indexed": true, "internalType": "address", "name": "player", "type": "address"},
-      {"indexed": false, "internalType": "uint256", "name": "amount", "type": "uint256"}
-    ],
-    "name": "RewardsClaimed",
+    "name": "RollInitiated",
     "type": "event"
   },
   {
@@ -145,6 +142,30 @@ const CONTRACT_ABI = [
       {"indexed": false, "internalType": "string", "name": "reason", "type": "string"}
     ],
     "name": "RollFailed",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {"indexed": true, "internalType": "address", "name": "player", "type": "address"},
+      {"indexed": false, "internalType": "uint256", "name": "amount", "type": "uint256"}
+    ],
+    "name": "RewardsClaimed",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [],
+    "name": "TransfersEnabled",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {"indexed": true, "internalType": "uint256", "name": "requestId", "type": "uint256"},
+      {"indexed": true, "internalType": "address", "name": "player", "type": "address"}
+    ],
+    "name": "VRFRequestedLog",
     "type": "event"
   }
 ] as const;
@@ -184,22 +205,20 @@ export const useContract = () => {
   const [boardData, setBoardData] = useState<ContractBoardData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const [isPlayerStatusFetching, setIsPlayerStatusFetching] = useState(false);
+  const [isWaitingForVRF, setIsWaitingForVRF] = useState(false);
+  const [playerRank, setPlayerRank] = useState<number>(0);
   
   // Contract write operations
   const { writeContract: writeStartGame, isPending: isStartingGame } = useWriteContract();
   const { writeContract: writeRollDice, isPending: isRollingDice } = useWriteContract();
 
-  // Read game stats - only auto-fetch this once
-  const { data: gameStats } = useReadContract({
+  // Read game stats - only fetch when needed
+  const { data: gameStats, refetch: refetchGameStats } = useReadContract({
     address: CONTRACT_ADDRESS,
     abi: CONTRACT_ABI,
     functionName: 'getGameStats',
     query: { 
-      enabled: isConnected,
-      staleTime: 60000, // Cache for 1 minute
-      refetchOnWindowFocus: false,
-      refetchOnReconnect: false
+      enabled: false
     }
   });
 
@@ -210,7 +229,7 @@ export const useContract = () => {
     functionName: 'getPlayerStatus',
     args: address ? [address] : undefined,
     query: { 
-      enabled: false // Completely disable auto-fetch
+      enabled: false
     }
   });
 
@@ -220,7 +239,7 @@ export const useContract = () => {
     functionName: 'getBoard',
     args: address ? [address] : undefined,
     query: { 
-      enabled: false // Completely disable auto-fetch
+      enabled: false
     }
   });
 
@@ -229,29 +248,67 @@ export const useContract = () => {
     abi: CONTRACT_ABI,
     functionName: 'getLeaderboard',
     query: { 
-      enabled: false // Completely disable auto-fetch
+      enabled: false
     }
   });
 
-  // Watch for contract events
+  const { refetch: refetchPlayerRank } = useReadContract({
+    address: CONTRACT_ADDRESS,
+    abi: CONTRACT_ABI,
+    functionName: 'getPlayerRank',
+    args: address ? [address] : undefined,
+    query: { 
+      enabled: false
+    }
+  });
+
+  // Event listeners for contract events
   useWatchContractEvent({
     address: CONTRACT_ADDRESS,
     abi: CONTRACT_ABI,
     eventName: 'GameStarted',
     onLogs: (logs) => {
-      console.log('🎮 GameStarted event received:', logs);
+      console.log('🎮 [CONTRACT EVENT] GameStarted:', logs);
       const playerLog = logs.find(log => log.args.player === address);
       if (playerLog) {
-        console.log('✅ Game started for current player');
-        toast.success('Game started successfully!');
+        console.log('✅ [GAME STARTED] Game started for current player');
+        toast.success('Game started successfully! Board generated on-chain.');
         setIsLoading(false);
         
-        // Fetch board data after game starts
+        // Fetch initial game data
         setTimeout(() => {
-          console.log('📋 Fetching board data after game start...');
-          fetchBoardData();
-          fetchPlayerStatus();
+          console.log('📋 [FETCH] Fetching initial game data after start...');
+          fetchAllGameData();
         }, 1000);
+      }
+    }
+  });
+
+  useWatchContractEvent({
+    address: CONTRACT_ADDRESS,
+    abi: CONTRACT_ABI,
+    eventName: 'RollInitiated',
+    onLogs: (logs) => {
+      console.log('🎲 [CONTRACT EVENT] RollInitiated:', logs);
+      const playerLog = logs.find(log => log.args.player === address);
+      if (playerLog) {
+        console.log('⏳ [ROLL INITIATED] VRF request sent, waiting for result...');
+        setIsWaitingForVRF(true);
+        toast.info('Dice roll initiated! Waiting for blockchain result...');
+      }
+    }
+  });
+
+  useWatchContractEvent({
+    address: CONTRACT_ADDRESS,
+    abi: CONTRACT_ABI,
+    eventName: 'VRFRequestedLog',
+    onLogs: (logs) => {
+      console.log('🔮 [CONTRACT EVENT] VRFRequestedLog:', logs);
+      const playerLog = logs.find(log => log.args.player === address);
+      if (playerLog) {
+        console.log('🔮 [VRF REQUESTED] Chainlink VRF request sent, waiting for randomness...');
+        toast.info('Waiting for Chainlink VRF result...', { duration: 5000 });
       }
     }
   });
@@ -261,17 +318,25 @@ export const useContract = () => {
     abi: CONTRACT_ABI,
     eventName: 'RollApplied',
     onLogs: (logs) => {
-      console.log('🎲 RollApplied event received:', logs);
+      console.log('🎯 [CONTRACT EVENT] RollApplied:', logs);
       const playerLog = logs.find(log => log.args.player === address);
       if (playerLog && playerLog.args) {
         const { dice, newPosition, nunuEarned } = playerLog.args;
-        console.log('✅ Roll applied for current player:', { dice, newPosition, nunuEarned });
+        console.log('✅ [ROLL APPLIED] Roll applied for current player:', { dice, newPosition, nunuEarned });
         
-        toast.success(`Rolled ${dice}! Moved to position ${newPosition}${nunuEarned > 0 ? `. Earned ${formatEther(nunuEarned)} NUNU coins!` : ''}`);
+        setIsWaitingForVRF(false);
+        setIsLoading(false);
         
-        // Fetch updated player status after dice roll
-        console.log('📊 Fetching player status after dice roll...');
+        const earnedTokens = Number(formatEther(nunuEarned));
+        if (earnedTokens > 0) {
+          toast.success(`🎲 Rolled ${dice}! Moved to position ${newPosition}. Earned ${earnedTokens.toFixed(2)} NUNU tokens!`);
+        } else {
+          toast.success(`🎲 Rolled ${dice}! Moved to position ${newPosition}.`);
+        }
+        
+        // Fetch updated game state
         setTimeout(() => {
+          console.log('📊 [FETCH] Fetching updated game state after roll...');
           fetchPlayerStatus();
         }, 500);
       }
@@ -283,24 +348,56 @@ export const useContract = () => {
     abi: CONTRACT_ABI,
     eventName: 'RollFailed',
     onLogs: (logs) => {
-      console.log('❌ RollFailed event received:', logs);
+      console.log('❌ [CONTRACT EVENT] RollFailed:', logs);
       const playerLog = logs.find(log => log.args.player === address);
       if (playerLog && playerLog.args) {
-        console.log('🚫 Roll failed for current player:', playerLog.args.reason);
+        console.log('🚫 [ROLL FAILED] Roll failed for current player:', playerLog.args.reason);
         toast.error(`Roll failed: ${playerLog.args.reason}`);
         setIsLoading(false);
+        setIsWaitingForVRF(false);
       }
     }
   });
 
-  // Process board data from contract when it changes
-  const processBoardData = (boardTiles: readonly { giftValue: bigint; doorOffset: number; }[]) => {
+  useWatchContractEvent({
+    address: CONTRACT_ADDRESS,
+    abi: CONTRACT_ABI,
+    eventName: 'RewardsClaimed',
+    onLogs: (logs) => {
+      console.log('🎁 [CONTRACT EVENT] RewardsClaimed:', logs);
+      const playerLog = logs.find(log => log.args.player === address);
+      if (playerLog && playerLog.args) {
+        const amount = Number(formatEther(playerLog.args.amount));
+        console.log('💰 [REWARDS CLAIMED] Rewards claimed:', amount);
+        toast.success(`🎉 Congratulations! You earned ${amount.toFixed(2)} NUNU tokens!`);
+        
+        // Update leaderboard and rank
+        setTimeout(() => {
+          fetchLeaderboard();
+          fetchPlayerRank();
+        }, 1000);
+      }
+    }
+  });
+
+  useWatchContractEvent({
+    address: CONTRACT_ADDRESS,
+    abi: CONTRACT_ABI,
+    eventName: 'TransfersEnabled',
+    onLogs: (logs) => {
+      console.log('🔓 [CONTRACT EVENT] TransfersEnabled:', logs);
+      toast.success('🔓 NUNU token transfers are now enabled! Max supply reached.');
+    }
+  });
+
+  // Process board data from contract
+  const processBoardData = useCallback((boardTiles: readonly { giftValue: bigint; doorOffset: number; }[]) => {
     if (!boardTiles || !Array.isArray(boardTiles)) {
-      console.log('⚠️ No valid board tiles received');
+      console.log('⚠️ [BOARD] No valid board tiles received');
       return;
     }
 
-    console.log('📋 Processing board tiles:', boardTiles.length, 'tiles');
+    console.log('📋 [BOARD] Processing board tiles:', boardTiles.length, 'tiles');
     const giftTiles: { index: number; points: number }[] = [];
     const detourTrapTiles: { index: number; moveBack: number }[] = [];
     const shortcutGateTiles: { index: number; moveForward: number }[] = [];
@@ -314,16 +411,16 @@ export const useContract = () => {
       if (tile.giftValue > 0) {
         const points = Number(formatEther(tile.giftValue));
         giftTiles.push({ index, points });
-        console.log(`🎁 Gift tile at position ${index}: ${points} points`);
+        console.log(`🎁 [TILE] Gift tile at position ${index}: ${points} NUNU tokens`);
       } else if (tile.doorOffset !== 0) {
         if (tile.doorOffset < 0) {
           const moveBack = Math.abs(tile.doorOffset);
           detourTrapTiles.push({ index, moveBack });
-          console.log(`🚪❌ Detour trap at position ${index}: move back ${moveBack}`);
+          console.log(`🚪❌ [TILE] Detour trap at position ${index}: move back ${moveBack}`);
         } else {
           const moveForward = tile.doorOffset;
           shortcutGateTiles.push({ index, moveForward });
-          console.log(`🚪✅ Shortcut gate at position ${index}: move forward ${moveForward}`);
+          console.log(`🚪✅ [TILE] Shortcut gate at position ${index}: move forward ${moveForward}`);
         }
       }
     });
@@ -334,25 +431,24 @@ export const useContract = () => {
       shortcutGateTiles
     };
 
-    console.log('✅ Board data processed:', {
+    console.log('✅ [BOARD] Board data processed:', {
       gifts: giftTiles.length,
       detours: detourTrapTiles.length,
       shortcuts: shortcutGateTiles.length
     });
     
     setBoardData(processedBoardData);
-  };
+  }, []);
 
   // Manual fetch functions
-  const fetchPlayerStatus = async () => {
+  const fetchPlayerStatus = useCallback(async () => {
     if (!address) {
-      console.log('⚠️ No address available for player status fetch');
+      console.log('⚠️ [FETCH] No address available for player status fetch');
       return null;
     }
 
     try {
-      console.log('📊 Fetching player status...');
-      setIsPlayerStatusFetching(true);
+      console.log('📊 [FETCH] Fetching player status...');
       const result = await refetchPlayerStatus();
       
       if (result.data && gameStats) {
@@ -369,29 +465,25 @@ export const useContract = () => {
           rollFee
         };
 
-        console.log('✅ Player status updated:', newGameState);
+        console.log('✅ [FETCH] Player status updated:', newGameState);
         setGameState(newGameState);
-        setIsLoading(false); // Stop loading when we get the status
       }
       
-      setIsPlayerStatusFetching(false);
       return result;
     } catch (error) {
-      console.error('❌ Error fetching player status:', error);
-      setIsPlayerStatusFetching(false);
-      setIsLoading(false);
+      console.error('❌ [FETCH] Error fetching player status:', error);
       return null;
     }
-  };
+  }, [address, refetchPlayerStatus, gameStats]);
 
-  const fetchBoardData = async () => {
+  const fetchBoardData = useCallback(async () => {
     if (!address) {
-      console.log('⚠️ No address available for board data fetch');
+      console.log('⚠️ [FETCH] No address available for board data fetch');
       return null;
     }
 
     try {
-      console.log('📋 Fetching board data...');
+      console.log('📋 [FETCH] Fetching board data...');
       const result = await refetchBoard();
       
       if (result.data) {
@@ -400,38 +492,81 @@ export const useContract = () => {
       
       return result;
     } catch (error) {
-      console.error('❌ Error fetching board data:', error);
+      console.error('❌ [FETCH] Error fetching board data:', error);
       return null;
     }
-  };
+  }, [address, refetchBoard, processBoardData]);
 
-  const fetchLeaderboard = async () => {
+  const fetchLeaderboard = useCallback(async () => {
     try {
-      console.log('🏆 Fetching leaderboard...');
+      console.log('🏆 [FETCH] Fetching leaderboard...');
       const result = await refetchLeaderboard();
       
       if (result.data) {
-        console.log('✅ Leaderboard updated:', result.data.length, 'entries');
+        console.log('✅ [FETCH] Leaderboard updated:', result.data.length, 'entries');
         setLeaderboard(result.data as LeaderboardEntry[]);
       }
       
       return result;
     } catch (error) {
-      console.error('❌ Error fetching leaderboard:', error);
+      console.error('❌ [FETCH] Error fetching leaderboard:', error);
       return null;
     }
-  };
+  }, [refetchLeaderboard]);
+
+  const fetchPlayerRank = useCallback(async () => {
+    if (!address) return null;
+
+    try {
+      console.log('🏅 [FETCH] Fetching player rank...');
+      const result = await refetchPlayerRank();
+      
+      if (result.data) {
+        const rank = Number(result.data);
+        console.log('✅ [FETCH] Player rank updated:', rank);
+        setPlayerRank(rank);
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('❌ [FETCH] Error fetching player rank:', error);
+      return null;
+    }
+  }, [address, refetchPlayerRank]);
+
+  const fetchGameStats = useCallback(async () => {
+    try {
+      console.log('📈 [FETCH] Fetching game stats...');
+      const result = await refetchGameStats();
+      return result;
+    } catch (error) {
+      console.error('❌ [FETCH] Error fetching game stats:', error);
+      return null;
+    }
+  }, [refetchGameStats]);
+
+  const fetchAllGameData = useCallback(async () => {
+    console.log('🔄 [FETCH] Fetching all game data...');
+    await Promise.all([
+      fetchGameStats(),
+      fetchPlayerStatus(),
+      fetchBoardData(),
+      fetchLeaderboard(),
+      fetchPlayerRank()
+    ]);
+    console.log('✅ [FETCH] All game data fetched');
+  }, [fetchGameStats, fetchPlayerStatus, fetchBoardData, fetchLeaderboard, fetchPlayerRank]);
 
   // Contract interaction functions
   const startGame = async () => {
     if (!isConnected || !chain || !address) {
-      console.log('⚠️ Wallet not connected for game start');
+      console.log('⚠️ [ACTION] Wallet not connected for game start');
       toast.error('Please connect your wallet first');
       return;
     }
 
     try {
-      console.log('🎮 Starting new game...');
+      console.log('🎮 [ACTION] Starting new game...');
       setIsLoading(true);
       await writeStartGame({
         address: CONTRACT_ADDRESS,
@@ -440,9 +575,9 @@ export const useContract = () => {
         chain,
         account: address
       });
-      console.log('✅ Start game transaction sent');
+      console.log('✅ [ACTION] Start game transaction sent');
     } catch (error) {
-      console.error('❌ Error starting game:', error);
+      console.error('❌ [ACTION] Error starting game:', error);
       toast.error('Failed to start game');
       setIsLoading(false);
     }
@@ -450,13 +585,13 @@ export const useContract = () => {
 
   const rollDice = async (expectedPosition: number) => {
     if (!isConnected || !chain || !address || !gameStats) {
-      console.log('⚠️ Wallet not connected or game stats not available for dice roll');
+      console.log('⚠️ [ACTION] Wallet not connected or game stats not available for dice roll');
       toast.error('Please connect your wallet first');
       return;
     }
 
     try {
-      console.log('🎲 Rolling dice with expected position:', expectedPosition);
+      console.log('🎲 [ACTION] Rolling dice with expected position:', expectedPosition);
       setIsLoading(true);
       const [, , rollFee] = gameStats;
       
@@ -469,21 +604,32 @@ export const useContract = () => {
         chain,
         account: address
       });
-      console.log('✅ Roll dice transaction sent');
+      console.log('✅ [ACTION] Roll dice transaction sent');
     } catch (error) {
-      console.error('❌ Error rolling dice:', error);
+      console.error('❌ [ACTION] Error rolling dice:', error);
       toast.error('Failed to roll dice');
       setIsLoading(false);
+      setIsWaitingForVRF(false);
     }
   };
+
+  // Initialize game data when connected
+  useEffect(() => {
+    if (isConnected && address) {
+      console.log('🔄 [INIT] Wallet connected, fetching initial game data...');
+      fetchAllGameData();
+    }
+  }, [isConnected, address, fetchAllGameData]);
 
   return {
     // State
     gameState,
     boardData,
-    isLoading: isLoading || isStartingGame || isRollingDice || isPlayerStatusFetching,
+    isLoading: isLoading || isStartingGame || isRollingDice,
+    isWaitingForVRF,
     isConnected,
     leaderboard,
+    playerRank,
     
     // Actions
     startGame,
@@ -493,7 +639,8 @@ export const useContract = () => {
     fetchPlayerStatus,
     fetchBoardData,
     fetchLeaderboard,
-    refetchLeaderboard: fetchLeaderboard, // Add this for backward compatibility
+    fetchPlayerRank,
+    fetchAllGameData,
     
     // Utils
     CONTRACT_ADDRESS

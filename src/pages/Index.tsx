@@ -12,7 +12,7 @@ import NewGameConfirmation from '@/components/NewGameConfirmation';
 import SplashAnimation from '@/components/SplashAnimation';
 import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { Wallet } from 'lucide-react';
+import { Wallet, RefreshCw } from 'lucide-react';
 
 const Index = () => {
   const [gameState, gameActions, contractInfo] = useBlockchainGameReducer();
@@ -28,7 +28,7 @@ const Index = () => {
     value: 0
   });
 
-  const { isConnected, contractState } = contractInfo;
+  const { isConnected, contractState, isLoading, isWaitingForVRF, playerRank } = contractInfo;
 
   useEffect(() => {
     playSound('start');
@@ -37,19 +37,19 @@ const Index = () => {
   // Handle tile interactions for splash animations
   useEffect(() => {
     if (gameState.giftsCollected > 0) {
-      showSplash('gift', 10); // Show gift animation
+      showSplash('gift', 10);
     }
   }, [gameState.giftsCollected]);
 
   useEffect(() => {
     if (gameState.detourTrapsTriggered > 0) {
-      showSplash('detour', 5); // Show detour animation
+      showSplash('detour', 5);
     }
   }, [gameState.detourTrapsTriggered]);
 
   useEffect(() => {
     if (gameState.shortcutGatesTriggered > 0) {
-      showSplash('shortcut', 3); // Show shortcut animation
+      showSplash('shortcut', 3);
     }
   }, [gameState.shortcutGatesTriggered]);
 
@@ -62,12 +62,21 @@ const Index = () => {
   };
 
   const rollDice = () => {
-    if (gameState.isRolling || gameState.isMoving) return;
+    if (gameState.isRolling || isLoading || isWaitingForVRF) return;
     
     if (!isConnected) {
       toast({
         title: "Wallet Required",
         description: "Please connect your wallet to play on-chain",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!contractState?.boardGenerated) {
+      toast({
+        title: "Game Not Started",
+        description: "Please start a new game first",
         variant: "destructive",
       });
       return;
@@ -87,7 +96,7 @@ const Index = () => {
       return;
     }
 
-    if (gameState.diceRolled) {
+    if (gameState.diceRolled && !gameState.gameStatus) {
       setShowNewGameConfirmation(true);
     } else {
       restartGame();
@@ -100,7 +109,7 @@ const Index = () => {
     setShowNewGameConfirmation(false);
     toast({
       title: "New Game Started!",
-      description: "Good luck on your quest to tile 100!",
+      description: "Your game board is being generated on-chain. Please wait...",
       variant: "default",
     });
   };
@@ -152,14 +161,21 @@ const Index = () => {
               <h2 className="text-2xl font-bold text-white mb-4">Start Your Game</h2>
               <p className="text-gray-300 mb-6">
                 Ready to begin your journey to tile 100? Your game board will be generated on-chain 
-                with unique gifts and challenges.
+                with unique gifts and challenges using Chainlink VRF for randomness.
               </p>
               <Button
                 onClick={restartGame}
                 className="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold rounded-lg shadow-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-200"
-                disabled={gameState.isRolling}
+                disabled={isLoading}
               >
-                {gameState.isRolling ? 'Starting Game...' : 'Start New Game'}
+                {isLoading ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Starting Game...
+                  </>
+                ) : (
+                  'Start New Game'
+                )}
               </Button>
             </motion.div>
           </div>
@@ -167,6 +183,21 @@ const Index = () => {
       </div>
     );
   }
+
+  const getRollButtonText = () => {
+    if (isWaitingForVRF) return 'Waiting for VRF...';
+    if (isLoading) return 'Rolling...';
+    if (gameState.isRolling) return 'Rolling...';
+    return 'Roll Dice';
+  };
+
+  const isDiceDisabled = () => {
+    return gameState.isRolling || 
+           isLoading || 
+           isWaitingForVRF || 
+           gameState.gameStatus === 'won' || 
+           !contractState?.boardGenerated;
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 p-4">
@@ -184,9 +215,12 @@ const Index = () => {
               Roll the dice, collect NUNU tokens, and reach tile 100 on-chain!
             </p>
             {contractState && (
-              <p className="text-sm text-purple-400 mt-2">
-                On-chain game • Contract: {contractInfo.CONTRACT_ADDRESS}
-              </p>
+              <div className="text-sm text-purple-400 mt-2 space-y-1">
+                <p>On-chain game • Contract: {contractInfo.CONTRACT_ADDRESS}</p>
+                {playerRank > 0 && (
+                  <p className="text-yellow-400">🏅 Your Rank: #{playerRank}</p>
+                )}
+              </div>
             )}
           </div>
           
@@ -194,6 +228,22 @@ const Index = () => {
             <ContractUserProfile />
           </div>
         </motion.div>
+
+        {/* VRF Waiting Indicator */}
+        {isWaitingForVRF && (
+          <motion.div
+            className="bg-yellow-600/20 border border-yellow-600/40 rounded-lg p-4 mb-6 text-center"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <div className="flex items-center justify-center space-x-2">
+              <RefreshCw className="w-5 h-5 animate-spin text-yellow-400" />
+              <span className="text-yellow-200">
+                Waiting for Chainlink VRF result... This may take a few moments.
+              </span>
+            </div>
+          </motion.div>
+        )}
 
         {/* Mobile Layout */}
         <div className="block lg:hidden space-y-6">
@@ -227,19 +277,25 @@ const Index = () => {
             >
               <Dice
                 value={gameState.diceValue}
-                isRolling={gameState.isRolling}
+                isRolling={gameState.isRolling || isWaitingForVRF}
                 onRoll={rollDice}
-                disabled={gameState.isRolling || gameState.isMoving || gameState.gameStatus === 'won'}
+                disabled={isDiceDisabled()}
               />
+              {isWaitingForVRF && (
+                <p className="text-center text-yellow-400 text-sm mt-2">
+                  ⏳ Waiting for blockchain randomness...
+                </p>
+              )}
             </motion.div>
 
             <motion.button
               onClick={handleNewGameClick}
-              className="w-full py-3 bg-gradient-to-r from-red-600 to-pink-600 text-white font-bold rounded-lg shadow-lg hover:from-red-700 hover:to-pink-700 transition-all duration-200"
+              className="w-full py-3 bg-gradient-to-r from-red-600 to-pink-600 text-white font-bold rounded-lg shadow-lg hover:from-red-700 hover:to-pink-700 transition-all duration-200 disabled:opacity-50"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
+              disabled={isLoading}
             >
-              New Game
+              {isLoading ? 'Starting Game...' : 'New Game'}
             </motion.button>
           </div>
         </div>
@@ -278,19 +334,25 @@ const Index = () => {
             >
               <Dice
                 value={gameState.diceValue}
-                isRolling={gameState.isRolling}
+                isRolling={gameState.isRolling || isWaitingForVRF}
                 onRoll={rollDice}
-                disabled={gameState.isRolling || gameState.isMoving || gameState.gameStatus === 'won'}
+                disabled={isDiceDisabled()}
               />
+              {isWaitingForVRF && (
+                <p className="text-center text-yellow-400 text-sm mt-2">
+                  ⏳ Waiting for blockchain randomness...
+                </p>
+              )}
             </motion.div>
 
             <motion.button
               onClick={handleNewGameClick}
-              className="w-full py-3 bg-gradient-to-r from-red-600 to-pink-600 text-white font-bold rounded-lg shadow-lg hover:from-red-700 hover:to-pink-700 transition-all duration-200"
+              className="w-full py-3 bg-gradient-to-r from-red-600 to-pink-600 text-white font-bold rounded-lg shadow-lg hover:from-red-700 hover:to-pink-700 transition-all duration-200 disabled:opacity-50"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
+              disabled={isLoading}
             >
-              New Game
+              {isLoading ? 'Starting Game...' : 'New Game'}
             </motion.button>
           </div>
         </div>
