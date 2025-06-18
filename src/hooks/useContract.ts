@@ -90,7 +90,7 @@ const CONTRACT_ABI = [
 ] as const;
 
 // Hardcoded contract address
-const CONTRACT_ADDRESS: `0x${string}` = '0xf6ce799ea420d489f8e99d869e9a065ae5412e8a';
+const CONTRACT_ADDRESS: `0x${string}` = '0x36ecd320e8d7561889e38538cda2295a0133174a';
 
 export interface ContractGameState {
   position: number;
@@ -296,7 +296,7 @@ export const useContract = () => {
       console.log('gameStats', gameStats);
       if (result.isSuccess) {
         const [position, diceValue, nunuEarned, gameScore, hasFinished, boardGenerated] = result.data;
-        const rollFee = 100000; // rollFee is third element
+        const rollFee = 1000000; // rollFee is third element
         
         const newGameState = {
           position: Number(position),
