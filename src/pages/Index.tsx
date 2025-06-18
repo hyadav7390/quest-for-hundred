@@ -18,6 +18,8 @@ const Index = () => {
   const [gameState, gameActions, contractInfo] = useBlockchainGameReducer();
   const { playSound } = useSoundEffects(gameState.isSoundMuted);
   const [showNewGameConfirmation, setShowNewGameConfirmation] = useState(false);
+  const [isDiceRolling, setIsDiceRolling] = useState(false);
+  const [isStartingGame, setIsStartingGame] = useState(false);
   const [splash, setSplash] = useState<{
     isVisible: boolean;
     type: 'gift' | 'shortcut' | 'detour';
@@ -61,10 +63,16 @@ const Index = () => {
     setSplash({ isVisible: false, type: 'gift', value: 0 });
   };
 
-  const rollDice = () => {
-    if (gameState.isRolling || isLoading || isWaitingForVRF) return;
+  const rollDice = async () => {
+    console.log('🎲 [UI] Roll dice button clicked');
+    
+    if (isDiceRolling || isLoading || isWaitingForVRF) {
+      console.log('⚠️ [UI] Dice roll blocked - already in progress');
+      return;
+    }
     
     if (!isConnected) {
+      console.log('⚠️ [UI] Dice roll blocked - wallet not connected');
       toast({
         title: "Wallet Required",
         description: "Please connect your wallet to play on-chain",
@@ -74,6 +82,7 @@ const Index = () => {
     }
 
     if (!contractState?.boardGenerated) {
+      console.log('⚠️ [UI] Dice roll blocked - game not started');
       toast({
         title: "Game Not Started",
         description: "Please start a new game first",
@@ -82,12 +91,26 @@ const Index = () => {
       return;
     }
 
-    gameActions.rollDice();
+    setIsDiceRolling(true);
+    await gameActions.rollDice();
     playSound('diceRoll');
+    
+    // Reset dice rolling state after animation
+    setTimeout(() => {
+      setIsDiceRolling(false);
+    }, 3000);
   };
 
-  const handleNewGameClick = () => {
+  const handleNewGameClick = async () => {
+    console.log('🎮 [UI] New game button clicked');
+    
+    if (isStartingGame || isLoading) {
+      console.log('⚠️ [UI] New game blocked - already in progress');
+      return;
+    }
+    
     if (!isConnected) {
+      console.log('⚠️ [UI] New game blocked - wallet not connected');
       toast({
         title: "Wallet Required",
         description: "Please connect your wallet to start a new game",
@@ -96,22 +119,34 @@ const Index = () => {
       return;
     }
 
-    if (gameState.diceRolled && !gameState.gameStatus) {
+    if (gameState.diceRolled && gameState.gameStatus === 'playing') {
+      console.log('🤔 [UI] Game in progress, showing confirmation');
       setShowNewGameConfirmation(true);
     } else {
-      restartGame();
+      await restartGame();
     }
   };
 
   const restartGame = async () => {
-    await gameActions.startGame();
-    playSound('start');
+    console.log('🔄 [UI] Restarting game...');
+    setIsStartingGame(true);
     setShowNewGameConfirmation(false);
-    toast({
-      title: "New Game Started!",
-      description: "Your game board is being generated on-chain. Please wait...",
-      variant: "default",
-    });
+    
+    try {
+      await gameActions.startGame();
+      playSound('start');
+      toast({
+        title: "New Game Started!",
+        description: "Your game board is being generated on-chain. Please wait...",
+        variant: "default",
+      });
+    } catch (error) {
+      console.error('❌ [UI] Error restarting game:', error);
+    } finally {
+      setTimeout(() => {
+        setIsStartingGame(false);
+      }, 5000);
+    }
   };
 
   const toggleSound = () => {
@@ -166,9 +201,9 @@ const Index = () => {
               <Button
                 onClick={restartGame}
                 className="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold rounded-lg shadow-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-200"
-                disabled={isLoading}
+                disabled={isStartingGame || isLoading}
               >
-                {isLoading ? (
+                {isStartingGame || isLoading ? (
                   <>
                     <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
                     Starting Game...
@@ -186,17 +221,20 @@ const Index = () => {
 
   const getRollButtonText = () => {
     if (isWaitingForVRF) return 'Waiting for VRF...';
-    if (isLoading) return 'Rolling...';
-    if (gameState.isRolling) return 'Rolling...';
+    if (isDiceRolling || isLoading) return 'Rolling...';
     return 'Roll Dice';
   };
 
   const isDiceDisabled = () => {
-    return gameState.isRolling || 
+    return isDiceRolling || 
            isLoading || 
            isWaitingForVRF || 
            gameState.gameStatus === 'won' || 
            !contractState?.boardGenerated;
+  };
+
+  const isNewGameDisabled = () => {
+    return isStartingGame || isLoading;
   };
 
   return (
@@ -291,11 +329,11 @@ const Index = () => {
             <motion.button
               onClick={handleNewGameClick}
               className="w-full py-3 bg-gradient-to-r from-red-600 to-pink-600 text-white font-bold rounded-lg shadow-lg hover:from-red-700 hover:to-pink-700 transition-all duration-200 disabled:opacity-50"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              disabled={isLoading}
+              whileHover={{ scale: isNewGameDisabled() ? 1 : 1.02 }}
+              whileTap={{ scale: isNewGameDisabled() ? 1 : 0.98 }}
+              disabled={isNewGameDisabled()}
             >
-              {isLoading ? 'Starting Game...' : 'New Game'}
+              {isStartingGame || isLoading ? 'Starting Game...' : 'New Game'}
             </motion.button>
           </div>
         </div>
@@ -348,11 +386,11 @@ const Index = () => {
             <motion.button
               onClick={handleNewGameClick}
               className="w-full py-3 bg-gradient-to-r from-red-600 to-pink-600 text-white font-bold rounded-lg shadow-lg hover:from-red-700 hover:to-pink-700 transition-all duration-200 disabled:opacity-50"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              disabled={isLoading}
+              whileHover={{ scale: isNewGameDisabled() ? 1 : 1.02 }}
+              whileTap={{ scale: isNewGameDisabled() ? 1 : 0.98 }}
+              disabled={isNewGameDisabled()}
             >
-              {isLoading ? 'Starting Game...' : 'New Game'}
+              {isStartingGame || isLoading ? 'Starting Game...' : 'New Game'}
             </motion.button>
           </div>
         </div>

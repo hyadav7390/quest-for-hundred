@@ -28,7 +28,7 @@ const initialState: GameState = {
 const blockchainGameReducer = (state: GameState, action: GameAction): GameState => {
   switch (action.type) {
     case 'START_DICE_ANIMATION':
-      console.log('🎲 [UI] Starting dice roll animation');
+      console.log('🎲 [UI REDUCER] Starting dice roll animation');
       return {
         ...state,
         isRolling: true,
@@ -36,7 +36,7 @@ const blockchainGameReducer = (state: GameState, action: GameAction): GameState 
       };
 
     case 'STOP_DICE_ANIMATION':
-      console.log('🎲 [UI] Stopping dice roll animation with value:', action.payload);
+      console.log('🎲 [UI REDUCER] Stopping dice roll animation with value:', action.payload);
       return {
         ...state,
         isRolling: false,
@@ -44,14 +44,14 @@ const blockchainGameReducer = (state: GameState, action: GameAction): GameState 
       };
 
     case 'START_MOVING':
-      console.log('🚶 [UI] Starting player movement animation');
+      console.log('🚶 [UI REDUCER] Starting player movement animation');
       return {
         ...state,
         isMoving: true,
       };
 
     case 'STOP_MOVING':
-      console.log('🚶 [UI] Stopping player movement animation');
+      console.log('🚶 [UI REDUCER] Stopping player movement animation');
       return {
         ...state,
         isMoving: false,
@@ -59,23 +59,12 @@ const blockchainGameReducer = (state: GameState, action: GameAction): GameState 
 
     case 'UPDATE_FROM_CONTRACT': {
       const { position, score, nunuEarned, hasFinished, diceValue } = action.payload;
-      console.log('📊 [UI] Updating from contract:', action.payload);
+      console.log('📊 [UI REDUCER] Updating from contract data:', action.payload);
       
       // Check if player moved to trigger animations
       const oldPosition = state.playerPosition;
       const newPosition = position;
       const positionChanged = oldPosition !== newPosition;
-      
-      // Calculate UI stats based on contract data
-      const giftTilesOnPath = state.giftTiles.filter(
-        tile => tile.index > oldPosition && tile.index <= newPosition
-      );
-      const detourTrapsOnPath = state.detourTrapTiles.filter(
-        trap => trap.index > oldPosition && trap.index <= newPosition
-      );
-      const shortcutGatesOnPath = state.shortcutGateTiles.filter(
-        gate => gate.index > oldPosition && gate.index <= newPosition
-      );
       
       return {
         ...state,
@@ -85,16 +74,13 @@ const blockchainGameReducer = (state: GameState, action: GameAction): GameState 
         gameStatus: hasFinished ? 'won' : 'playing',
         isMoving: positionChanged,
         turnsPlayed: diceValue && positionChanged ? state.turnsPlayed + 1 : state.turnsPlayed,
-        giftsCollected: state.giftsCollected + giftTilesOnPath.length,
-        detourTrapsTriggered: state.detourTrapsTriggered + detourTrapsOnPath.length,
-        shortcutGatesTriggered: state.shortcutGatesTriggered + shortcutGatesOnPath.length,
         diceRolled: diceValue > 0,
       };
     }
 
     case 'UPDATE_BOARD_DATA': {
       const { giftTiles, detourTrapTiles, shortcutGateTiles } = action.payload;
-      console.log('📋 [UI] Updating board data:', {
+      console.log('📋 [UI REDUCER] Updating board data from contract:', {
         gifts: giftTiles.length,
         detours: detourTrapTiles.length,
         shortcuts: shortcutGateTiles.length
@@ -109,7 +95,7 @@ const blockchainGameReducer = (state: GameState, action: GameAction): GameState 
     }
 
     case 'WIN_GAME':
-      console.log('🏆 [UI] Game won!');
+      console.log('🏆 [UI REDUCER] Game won!');
       return {
         ...state,
         gameStatus: 'won',
@@ -118,13 +104,14 @@ const blockchainGameReducer = (state: GameState, action: GameAction): GameState 
       };
 
     case 'TOGGLE_SOUND':
+      console.log('🔊 [UI REDUCER] Toggling sound:', !state.isSoundMuted);
       return {
         ...state,
         isSoundMuted: !state.isSoundMuted,
       };
 
     case 'RESET_GAME': {
-      console.log('🔄 [UI] Resetting game state');
+      console.log('🔄 [UI REDUCER] Resetting game state');
       return {
         ...initialState,
         isSoundMuted: state.isSoundMuted, // Preserve sound setting
@@ -153,7 +140,7 @@ export const useBlockchainGameReducer = () => {
   // Sync contract state with UI state
   useEffect(() => {
     if (contractState) {
-      console.log('🔄 [SYNC] Syncing contract state to UI:', contractState);
+      console.log('🔄 [SYNC] Syncing contract state to UI reducer:', contractState);
       
       // Stop dice animation when we get actual dice value from contract
       if (contractState.diceValue > 0 && state.isRolling) {
@@ -173,6 +160,7 @@ export const useBlockchainGameReducer = () => {
 
       // Handle game completion
       if (contractState.hasFinished && state.gameStatus !== 'won') {
+        console.log('🎉 [SYNC] Game completed, showing win state');
         setTimeout(() => {
           dispatch({ type: 'WIN_GAME' });
         }, 2000); // Wait for animations to complete
@@ -190,7 +178,7 @@ export const useBlockchainGameReducer = () => {
   // Sync board data from contract
   useEffect(() => {
     if (boardData) {
-      console.log('📋 [SYNC] Syncing board data to UI');
+      console.log('📋 [SYNC] Syncing board data to UI reducer');
       dispatch({
         type: 'UPDATE_BOARD_DATA',
         payload: boardData
@@ -218,7 +206,7 @@ export const useBlockchainGameReducer = () => {
     }
 
     try {
-      console.log('🎲 [ACTION] Starting dice roll sequence...');
+      console.log('🎲 [ACTION] Starting dice roll sequence from UI...');
       
       // Start UI dice animation immediately
       dispatch({ type: 'START_DICE_ANIMATION' });
@@ -241,7 +229,7 @@ export const useBlockchainGameReducer = () => {
     }
 
     try {
-      console.log('🎮 [ACTION] Starting new game sequence...');
+      console.log('🎮 [ACTION] Starting new game sequence from UI...');
       dispatch({ type: 'RESET_GAME' });
       await startGame();
       
