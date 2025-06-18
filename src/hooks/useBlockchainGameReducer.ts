@@ -327,7 +327,7 @@ export const useBlockchainGameReducer = () => {
       isLoading,
       isWaitingForVRF,
       playerRank,
-      CONTRACT_ADDRESS: '0xfc5ff9594f425fa9bd85eb0a40875a0b30be4958'
+      CONTRACT_ADDRESS: '0x4739a630aB48fE9eA6918399f26378f004bED9e7'
     }
   ] as const;
 };
