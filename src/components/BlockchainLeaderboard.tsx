@@ -6,17 +6,17 @@ import { useContract, LeaderboardEntry } from '@/hooks/useContract';
 import { formatEther } from 'viem';
 
 const BlockchainLeaderboard = () => {
-  const { leaderboard, refetchLeaderboard } = useContract();
+  const { leaderboard, fetchLeaderboard } = useContract();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
-      await refetchLeaderboard();
+      await fetchLeaderboard();
       setIsLoading(false);
     };
     fetchData();
-  }, [refetchLeaderboard]);
+  }, [fetchLeaderboard]);
 
   const getRankIcon = (rank: number) => {
     switch (rank) {
@@ -60,7 +60,7 @@ const BlockchainLeaderboard = () => {
             The Hundredth Tile Leaderboard
           </h2>
           <button
-            onClick={() => refetchLeaderboard()}
+            onClick={() => fetchLeaderboard()}
             className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
           >
             Refresh
