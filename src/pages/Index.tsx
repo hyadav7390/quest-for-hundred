@@ -1,8 +1,9 @@
-
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useBlockchainGameReducer } from '@/hooks/useBlockchainGameReducer';
 import { useSoundEffects } from '@/hooks/useSoundEffects';
+import { useSplashAnimations } from '@/hooks/useSplashAnimations';
+import { useSequenceWallet } from '@/hooks/useSequenceWallet';
 import GameBoard from '@/components/GameBoard';
 import Dice from '@/components/Dice';
 import ScoreBoard from '@/components/ScoreBoard';
@@ -17,57 +18,57 @@ import { Wallet, RefreshCw } from 'lucide-react';
 const Index = () => {
   const [gameState, gameActions, contractInfo] = useBlockchainGameReducer();
   const { playSound } = useSoundEffects(gameState.isSoundMuted);
+  const { splash, hideSplash, triggerGiftSplash, triggerDetourSplash, triggerShortcutSplash } = useSplashAnimations();
+  const { ensureSequenceWallet, isSequenceWalletCreated } = useSequenceWallet();
   const [showNewGameConfirmation, setShowNewGameConfirmation] = useState(false);
   const [isDiceRolling, setIsDiceRolling] = useState(false);
   const [isStartingGame, setIsStartingGame] = useState(false);
-  const [splash, setSplash] = useState<{
-    isVisible: boolean;
-    type: 'gift' | 'shortcut' | 'detour';
-    value: number;
-  }>({
-    isVisible: false,
-    type: 'gift',
-    value: 0
-  });
 
   const { isConnected, contractState, isLoading, isWaitingForVRF, playerRank } = contractInfo;
 
   useEffect(() => {
     playSound('start');
+    // Ensure Sequence wallet on app load
+    ensureSequenceWallet();
   }, []);
 
-  // Handle tile interactions for splash animations
+  // Handle tile interactions for splash animations based on position changes
   useEffect(() => {
-    if (gameState.giftsCollected > 0) {
-      showSplash('gift', 10);
+    if (contractState && gameState.playerPosition !== contractState.position) {
+      const currentPosition = contractState.position;
+      
+      // Check for gift tiles
+      const giftTile = gameState.giftTiles.find(tile => tile.index === currentPosition);
+      if (giftTile) {
+        console.log('🎁 [SPLASH] Triggered gift splash at position', currentPosition);
+        triggerGiftSplash(giftTile.points);
+        playSound('gift');
+      }
+      
+      // Check for detour traps
+      const detourTile = gameState.detourTrapTiles.find(tile => tile.index === currentPosition);
+      if (detourTile) {
+        console.log('🚪❌ [SPLASH] Triggered detour splash at position', currentPosition);
+        triggerDetourSplash(detourTile.moveBack);
+        playSound('detourTrap');
+      }
+      
+      // Check for shortcut gates
+      const shortcutTile = gameState.shortcutGateTiles.find(tile => tile.index === currentPosition);
+      if (shortcutTile) {
+        console.log('🚪✅ [SPLASH] Triggered shortcut splash at position', currentPosition);
+        triggerShortcutSplash(shortcutTile.moveForward);
+        playSound('gift');
+      }
     }
-  }, [gameState.giftsCollected]);
-
-  useEffect(() => {
-    if (gameState.detourTrapsTriggered > 0) {
-      showSplash('detour', 5);
-    }
-  }, [gameState.detourTrapsTriggered]);
-
-  useEffect(() => {
-    if (gameState.shortcutGatesTriggered > 0) {
-      showSplash('shortcut', 3);
-    }
-  }, [gameState.shortcutGatesTriggered]);
-
-  const showSplash = (type: 'gift' | 'shortcut' | 'detour', value: number) => {
-    setSplash({ isVisible: true, type, value });
-  };
-
-  const hideSplash = () => {
-    setSplash({ isVisible: false, type: 'gift', value: 0 });
-  };
+  }, [contractState?.position, gameState.giftTiles, gameState.detourTrapTiles, gameState.shortcutGateTiles]);
 
   const rollDice = async () => {
     console.log('🎲 [UI] Roll dice button clicked');
     
-    if (isDiceRolling || isLoading || isWaitingForVRF) {
-      console.log('⚠️ [UI] Dice roll blocked - already in progress');
+    // Prevent accidental double clicks
+    if (isDiceRolling || isLoading || isWaitingForVRF || isStartingGame) {
+      console.log('⚠️ [UI] Dice roll blocked - operation in progress');
       return;
     }
     
@@ -98,14 +99,15 @@ const Index = () => {
     // Reset dice rolling state after animation
     setTimeout(() => {
       setIsDiceRolling(false);
-    }, 3000);
+    }, 5000); // Increased timeout for VRF
   };
 
   const handleNewGameClick = async () => {
     console.log('🎮 [UI] New game button clicked');
     
-    if (isStartingGame || isLoading) {
-      console.log('⚠️ [UI] New game blocked - already in progress');
+    // Prevent accidental double clicks
+    if (isStartingGame || isLoading || isDiceRolling) {
+      console.log('⚠️ [UI] New game blocked - operation in progress');
       return;
     }
     
@@ -145,7 +147,7 @@ const Index = () => {
     } finally {
       setTimeout(() => {
         setIsStartingGame(false);
-      }, 5000);
+      }, 8000); // Increased timeout for contract interaction
     }
   };
 
@@ -171,9 +173,15 @@ const Index = () => {
                 To play The Hundredth Tile on-chain, you need to connect your wallet. 
                 Your progress will be stored on the blockchain and you'll earn real NUNU tokens!
               </p>
-              <p className="text-sm text-gray-400">
-                Use the "Connect" button in the header to get started.
+              <p className="text-sm text-gray-400 mb-4">
+                We recommend using Sequence wallet for the best gaming experience - no transaction popups!
               </p>
+              <Button
+                onClick={ensureSequenceWallet}
+                className="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold rounded-lg shadow-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-200"
+              >
+                Connect Sequence Wallet
+              </Button>
             </motion.div>
           </div>
         </div>
@@ -198,6 +206,11 @@ const Index = () => {
                 Ready to begin your journey to tile 100? Your game board will be generated on-chain 
                 with unique gifts and challenges using Chainlink VRF for randomness.
               </p>
+              {isSequenceWalletCreated && (
+                <p className="text-sm text-green-400 mb-4">
+                  ✅ Sequence wallet ready - seamless gameplay ahead!
+                </p>
+              )}
               <Button
                 onClick={restartGame}
                 className="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold rounded-lg shadow-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-200"
@@ -219,22 +232,17 @@ const Index = () => {
     );
   }
 
-  const getRollButtonText = () => {
-    if (isWaitingForVRF) return 'Waiting for VRF...';
-    if (isDiceRolling || isLoading) return 'Rolling...';
-    return 'Roll Dice';
-  };
-
   const isDiceDisabled = () => {
     return isDiceRolling || 
            isLoading || 
            isWaitingForVRF || 
+           isStartingGame ||
            gameState.gameStatus === 'won' || 
            !contractState?.boardGenerated;
   };
 
   const isNewGameDisabled = () => {
-    return isStartingGame || isLoading;
+    return isStartingGame || isLoading || isDiceRolling;
   };
 
   return (
@@ -257,6 +265,9 @@ const Index = () => {
                 <p>On-chain game • Contract: {contractInfo.CONTRACT_ADDRESS}</p>
                 {playerRank > 0 && (
                   <p className="text-yellow-400">🏅 Your Rank: #{playerRank}</p>
+                )}
+                {isSequenceWalletCreated && (
+                  <p className="text-green-400">✅ Sequence wallet active</p>
                 )}
               </div>
             )}
@@ -318,6 +329,7 @@ const Index = () => {
                 isRolling={gameState.isRolling || isWaitingForVRF}
                 onRoll={rollDice}
                 disabled={isDiceDisabled()}
+                contractValue={contractState?.diceValue}
               />
               {isWaitingForVRF && (
                 <p className="text-center text-yellow-400 text-sm mt-2">
@@ -375,6 +387,7 @@ const Index = () => {
                 isRolling={gameState.isRolling || isWaitingForVRF}
                 onRoll={rollDice}
                 disabled={isDiceDisabled()}
+                contractValue={contractState?.diceValue}
               />
               {isWaitingForVRF && (
                 <p className="text-center text-yellow-400 text-sm mt-2">

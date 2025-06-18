@@ -25,6 +25,39 @@ const initialState: GameState = {
   diceRolled: false,
 };
 
+// Game statistics management in localStorage
+const getGameStats = () => {
+  try {
+    const stats = localStorage.getItem('hundredthTileGameStats');
+    return stats ? JSON.parse(stats) : {
+      totalGamesPlayed: 0,
+      totalDiceRolled: 0,
+      totalGiftsCollected: 0,
+      totalDetourTrapsTriggered: 0,
+      totalShortcutGatesTriggered: 0
+    };
+  } catch {
+    return {
+      totalGamesPlayed: 0,
+      totalDiceRolled: 0,
+      totalGiftsCollected: 0,
+      totalDetourTrapsTriggered: 0,
+      totalShortcutGatesTriggered: 0
+    };
+  }
+};
+
+const updateGameStats = (key: string, increment: number = 1) => {
+  try {
+    const stats = getGameStats();
+    stats[key] = (stats[key] || 0) + increment;
+    localStorage.setItem('hundredthTileGameStats', JSON.stringify(stats));
+    console.log(`📊 [STATS] Updated ${key} to ${stats[key]}`);
+  } catch (error) {
+    console.error('❌ [STATS] Failed to update game stats:', error);
+  }
+};
+
 const blockchainGameReducer = (state: GameState, action: GameAction): GameState => {
   switch (action.type) {
     case 'START_DICE_ANIMATION':
@@ -37,6 +70,7 @@ const blockchainGameReducer = (state: GameState, action: GameAction): GameState 
 
     case 'STOP_DICE_ANIMATION':
       console.log('🎲 [UI REDUCER] Stopping dice roll animation with value:', action.payload);
+      updateGameStats('totalDiceRolled');
       return {
         ...state,
         isRolling: false,
@@ -66,6 +100,34 @@ const blockchainGameReducer = (state: GameState, action: GameAction): GameState 
       const newPosition = position;
       const positionChanged = oldPosition !== newPosition;
       
+      // Check for special tiles at new position
+      let triggeredGift = false;
+      let triggeredDetour = false;
+      let triggeredShortcut = false;
+      
+      if (positionChanged && newPosition > oldPosition) {
+        // Check if landed on a gift tile
+        const giftTile = state.giftTiles.find(tile => tile.index === newPosition);
+        if (giftTile) {
+          triggeredGift = true;
+          updateGameStats('totalGiftsCollected');
+        }
+        
+        // Check if landed on a detour trap
+        const detourTile = state.detourTrapTiles.find(tile => tile.index === oldPosition + 1 || tile.index === newPosition);
+        if (detourTile && newPosition < oldPosition + (diceValue || 0)) {
+          triggeredDetour = true;
+          updateGameStats('totalDetourTrapsTriggered');
+        }
+        
+        // Check if landed on a shortcut gate
+        const shortcutTile = state.shortcutGateTiles.find(tile => tile.index === oldPosition + 1 || tile.index === newPosition);
+        if (shortcutTile && newPosition > oldPosition + (diceValue || 0)) {
+          triggeredShortcut = true;
+          updateGameStats('totalShortcutGatesTriggered');
+        }
+      }
+      
       return {
         ...state,
         playerPosition: newPosition,
@@ -75,6 +137,9 @@ const blockchainGameReducer = (state: GameState, action: GameAction): GameState 
         isMoving: positionChanged,
         turnsPlayed: diceValue && positionChanged ? state.turnsPlayed + 1 : state.turnsPlayed,
         diceRolled: diceValue > 0,
+        giftsCollected: triggeredGift ? state.giftsCollected + 1 : state.giftsCollected,
+        detourTrapsTriggered: triggeredDetour ? state.detourTrapsTriggered + 1 : state.detourTrapsTriggered,
+        shortcutGatesTriggered: triggeredShortcut ? state.shortcutGatesTriggered + 1 : state.shortcutGatesTriggered,
       };
     }
 
@@ -112,6 +177,7 @@ const blockchainGameReducer = (state: GameState, action: GameAction): GameState 
 
     case 'RESET_GAME': {
       console.log('🔄 [UI REDUCER] Resetting game state');
+      updateGameStats('totalGamesPlayed');
       return {
         ...initialState,
         isSoundMuted: state.isSoundMuted, // Preserve sound setting
@@ -217,6 +283,7 @@ export const useBlockchainGameReducer = () => {
     } catch (error) {
       console.error('❌ [ACTION] Error in dice roll sequence:', error);
       dispatch({ type: 'STOP_DICE_ANIMATION', payload: 1 });
+      toast.error('Failed to roll dice. Please try again.');
     }
   }, [isConnected, state.isRolling, isLoading, isWaitingForVRF, contractState, rollDice]);
 
@@ -235,7 +302,7 @@ export const useBlockchainGameReducer = () => {
       
     } catch (error) {
       console.error('❌ [ACTION] Error in start game sequence:', error);
-      toast.error('Failed to start new game');
+      toast.error('Failed to start new game. Please try again.');
     }
   }, [isConnected, startGame]);
 
@@ -244,6 +311,7 @@ export const useBlockchainGameReducer = () => {
       ...state,
       isRolling: state.isRolling || isWaitingForVRF,
       isMoving: state.isMoving,
+      gameStats: getGameStats(), // Expose game stats
     },
     {
       dispatch,

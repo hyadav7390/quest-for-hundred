@@ -7,9 +7,10 @@ interface DiceProps {
   isRolling: boolean;
   onRoll: () => void;
   disabled: boolean;
+  contractValue?: number | null; // New prop for contract result
 }
 
-const Dice = ({ value, isRolling, onRoll, disabled }: DiceProps) => {
+const Dice = ({ value, isRolling, onRoll, disabled, contractValue }: DiceProps) => {
   const [animationValue, setAnimationValue] = useState(1);
 
   useEffect(() => {
@@ -28,18 +29,30 @@ const Dice = ({ value, isRolling, onRoll, disabled }: DiceProps) => {
 
   useEffect(() => {
     if (isRolling) {
+      // Show random animation while waiting for contract result
       const interval = setInterval(() => {
         setAnimationValue(Math.floor(Math.random() * 6) + 1);
       }, 100);
 
-      setTimeout(() => {
+      // If we get the contract value, stop on that value immediately
+      if (contractValue && contractValue > 0) {
+        console.log('🎲 [DICE] Contract value received, stopping animation on:', contractValue);
         clearInterval(interval);
-        setAnimationValue(value || 1);
-      }, 1000);
+        setAnimationValue(contractValue);
+      } else {
+        // If no contract value after 3 seconds, stop on random value
+        setTimeout(() => {
+          clearInterval(interval);
+          setAnimationValue(value || Math.floor(Math.random() * 6) + 1);
+        }, 3000);
+      }
 
       return () => clearInterval(interval);
+    } else if (value) {
+      // When not rolling, show the actual value
+      setAnimationValue(value);
     }
-  }, [isRolling, value]);
+  }, [isRolling, value, contractValue]);
 
   const getDiceDots = (num: number) => {
     const dotPatterns = {
@@ -54,6 +67,12 @@ const Dice = ({ value, isRolling, onRoll, disabled }: DiceProps) => {
     return dotPatterns[num as keyof typeof dotPatterns] || [[1, 1]];
   };
 
+  const getRollButtonText = () => {
+    if (disabled && isRolling) return 'Rolling...';
+    if (disabled) return 'Roll Dice';
+    return 'Roll Dice';
+  };
+
   return (
     <div className="flex flex-col items-center space-y-3">
       <motion.div
@@ -61,10 +80,12 @@ const Dice = ({ value, isRolling, onRoll, disabled }: DiceProps) => {
         animate={{
           rotateX: isRolling ? 360 : 0,
           rotateY: isRolling ? 360 : 0,
+          scale: isRolling ? [1, 1.1, 1] : 1,
         }}
         transition={{
-          duration: isRolling ? 1 : 0,
-          ease: "easeOut",
+          duration: isRolling ? 0.3 : 0,
+          repeat: isRolling ? Infinity : 0,
+          ease: "easeInOut",
         }}
       >
         <div className="absolute inset-2 grid grid-cols-3 grid-rows-3">
@@ -77,7 +98,7 @@ const Dice = ({ value, isRolling, onRoll, disabled }: DiceProps) => {
             return (
               <div
                 key={i}
-                className={`flex items-center justify-center ${
+                className={`flex items-center justify-center transition-all duration-150 ${
                   hasDot ? 'bg-gray-800 rounded-full' : ''
                 }`}
               />
@@ -93,8 +114,14 @@ const Dice = ({ value, isRolling, onRoll, disabled }: DiceProps) => {
         whileHover={{ scale: disabled ? 1 : 1.05 }}
         whileTap={{ scale: disabled ? 1 : 0.95 }}
       >
-        {isRolling ? 'Rolling...' : 'Roll Dice'}
+        {getRollButtonText()}
       </motion.button>
+      
+      {isRolling && (
+        <p className="text-sm text-yellow-400 text-center">
+          🎲 Waiting for blockchain result...
+        </p>
+      )}
     </div>
   );
 };
