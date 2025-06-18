@@ -11,6 +11,7 @@ interface DiceProps {
 }
 
 const Dice = ({ value, isRolling, onRoll, disabled, contractValue }: DiceProps) => {
+  console.log('value, isRolling, disabled, contractValue', value, isRolling, disabled, contractValue);
   const [animationValue, setAnimationValue] = useState(1);
 
   useEffect(() => {

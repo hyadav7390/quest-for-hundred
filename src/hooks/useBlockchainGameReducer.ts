@@ -203,6 +203,9 @@ export const useBlockchainGameReducer = () => {
     playerRank
   } = useContract();
 
+  console.log('contractState', contractState, isLoading,
+    isWaitingForVRF);
+
   // Sync contract state with UI state
   useEffect(() => {
     if (contractState) {

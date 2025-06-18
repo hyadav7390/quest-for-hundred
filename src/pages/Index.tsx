@@ -32,6 +32,10 @@ const Index = () => {
     ensureSequenceWallet();
   }, []);
 
+  useEffect(() => {
+    setIsDiceRolling(false);
+  }, [gameState.playerPosition])
+
   // Handle tile interactions for splash animations based on position changes
   useEffect(() => {
     if (contractState && gameState.playerPosition !== contractState.position) {
@@ -233,6 +237,7 @@ const Index = () => {
   }
 
   const isDiceDisabled = () => {
+    console.log('isDiceRolling,isLoading,isWaitingForVRF, isStartingGame, gameState, contractState', isDiceRolling,isLoading,isWaitingForVRF, isStartingGame, gameState, contractState);
     return isDiceRolling || 
            isLoading || 
            isWaitingForVRF || 

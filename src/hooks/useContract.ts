@@ -429,11 +429,11 @@ export const useContract = () => {
   const pollAfterTransaction = useCallback(async (action: string, maxAttempts = 3) => {
     console.log(`🔄 [POLLING] Starting polling after ${action}...`);
     
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-      console.log(`📊 [POLLING] Attempt ${attempt}/${maxAttempts} for ${action}`);
+    // for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      // console.log(`📊 [POLLING] Attempt ${attempt}/${maxAttempts} for ${action}`);
       
       // Wait longer between attempts to allow VRF to complete
-      await new Promise(resolve => setTimeout(resolve, action === 'rollDice' ? 5000 : 3000));
+      // await new Promise(resolve => setTimeout(resolve, action === 'rollDice' ? 5000 : 3000));
       
       const oldState = gameState;
       await fetchAllGameData();
@@ -443,24 +443,26 @@ export const useContract = () => {
         console.log('✅ [POLLING] Game started successfully detected');
         setIsLoading(false);
         toast.success('Game started successfully! Board generated on-chain.');
-        break;
+        // break;
       } else if (action === 'rollDice' && gameState?.diceValue && gameState.diceValue !== oldState?.diceValue) {
         console.log('✅ [POLLING] Dice roll result detected');
         setIsWaitingForVRF(false);
         setIsLoading(false);
         toast.success(`🎲 Rolled ${gameState.diceValue}! Moved to position ${gameState.position}.`);
-        break;
+        // break;
       }
+      setIsLoading(false);
+      setIsWaitingForVRF(false);
 
-      if (attempt === maxAttempts) {
-        console.log(`⚠️ [POLLING] Max attempts reached for ${action}`);
-        setIsLoading(false);
-        setIsWaitingForVRF(false);
-        if (action === 'rollDice') {
-          toast.error('Dice roll result not received. Please check your transaction.');
-        }
-      }
-    }
+      // if (attempt === maxAttempts) {
+      //   console.log(`⚠️ [POLLING] Max attempts reached for ${action}`);
+      //   setIsLoading(false);
+      //   setIsWaitingForVRF(false);
+      //   if (action === 'rollDice') {
+      //     toast.error('Dice roll result not received. Please check your transaction.');
+      //   }
+      // }
+    // }
   }, [gameState, fetchAllGameData]);
 
   // Watch for transaction confirmations
@@ -469,14 +471,14 @@ export const useContract = () => {
       console.log('✅ [BLOCKCHAIN WRITE] Start game transaction confirmed, hash:', startGameHash);
       pollAfterTransaction('startGame');
     }
-  }, [startGameHash, isStartGameConfirming, pollAfterTransaction]);
+  }, [startGameHash, isStartGameConfirming]);
 
   useEffect(() => {
     if (rollDiceHash && !isRollDiceConfirming) {
       console.log('✅ [BLOCKCHAIN WRITE] Roll dice transaction confirmed, hash:', rollDiceHash);
       pollAfterTransaction('rollDice');
     }
-  }, [rollDiceHash, isRollDiceConfirming, pollAfterTransaction]);
+  }, [rollDiceHash, isRollDiceConfirming]);
 
   // Contract interaction functions with improved logging and error handling
   const startGame = async () => {
