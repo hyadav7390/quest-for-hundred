@@ -91,7 +91,7 @@ const CONTRACT_ABI = [
 ] as const;
 
 // Hardcoded contract address
-const CONTRACT_ADDRESS: `0x${string}` = '0x2a255fd23e3806f472ef68acba79adbc5c3ae3e8';
+const CONTRACT_ADDRESS: `0x${string}` = '0xf6ce799ea420d489f8e99d869e9a065ae5412e8a';
 
 export interface ContractGameState {
   position: number;
@@ -273,10 +273,11 @@ export const useContract = () => {
     try {
       console.log('📊 [BLOCKCHAIN READ] Starting fetchPlayerStatus...');
       const result = await refetchPlayerStatus();
-      
-      if (result.data && gameStats) {
+      console.log('result', result);
+      console.log('gameStats', gameStats);
+      if (result.isSuccess) {
         const [position, diceValue, nunuEarned, gameScore, hasFinished, boardGenerated] = result.data;
-        const rollFee = gameStats[2]; // rollFee is third element
+        const rollFee = 100000; // rollFee is third element
         
         const newGameState = {
           position: Number(position),
@@ -289,7 +290,16 @@ export const useContract = () => {
         };
 
         console.log('✅ [BLOCKCHAIN READ] Player status updated:', newGameState);
-        setGameState(newGameState);
+        // setGameState(newGameState);
+        setGameState({
+          ...gameState,
+          position: Number(position),
+          diceValue: Number(diceValue),
+          nunuEarned: Number(formatEther(nunuEarned)),
+          gameScore: Number(gameScore),
+          hasFinished,
+          boardGenerated,
+        })
         return newGameState;
       }
       
@@ -397,14 +407,14 @@ export const useContract = () => {
   }, [fetchGameStats, fetchPlayerStatus, fetchBoardData, fetchLeaderboard, fetchPlayerRank]);
 
   // Manual polling after transactions
-  const pollAfterTransaction = useCallback(async (action: string, maxAttempts = 10) => {
+  const pollAfterTransaction = useCallback(async (action: string, maxAttempts = 2) => {
     console.log(`🔄 [POLLING] Starting polling after ${action}...`);
     
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-      console.log(`📊 [POLLING] Attempt ${attempt}/${maxAttempts} for ${action}`);
+    // for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      // console.log(`📊 [POLLING] Attempt ${attempt}/${maxAttempts} for ${action}`);
       
       // Wait a bit before each attempt
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // await new Promise(resolve => setTimeout(resolve, 2000));
       
       const oldState = gameState;
       await fetchAllGameData();
@@ -414,21 +424,24 @@ export const useContract = () => {
         console.log('✅ [POLLING] Game started successfully detected');
         setIsLoading(false);
         toast.success('Game started successfully! Board generated on-chain.');
-        break;
+        // break;
       } else if (action === 'rollDice' && gameState?.diceValue && gameState.diceValue !== oldState?.diceValue) {
         console.log('✅ [POLLING] Dice roll result detected');
         setIsWaitingForVRF(false);
         setIsLoading(false);
         toast.success(`🎲 Rolled ${gameState.diceValue}! Moved to position ${gameState.position}.`);
-        break;
+        // break;
       }
+
+      setIsLoading(false);
+      setIsWaitingForVRF(false);
       
-      if (attempt === maxAttempts) {
-        console.log(`⚠️ [POLLING] Max attempts reached for ${action}`);
-        setIsLoading(false);
-        setIsWaitingForVRF(false);
-      }
-    }
+      // if (attempt === maxAttempts) {
+      //   console.log(`⚠️ [POLLING] Max attempts reached for ${action}`);
+      //   setIsLoading(false);
+      //   setIsWaitingForVRF(false);
+      // }
+    // }
   }, [gameState, fetchAllGameData]);
 
   // Watch for transaction confirmations
@@ -437,14 +450,14 @@ export const useContract = () => {
       console.log('✅ [BLOCKCHAIN WRITE] Start game transaction confirmed');
       pollAfterTransaction('startGame');
     }
-  }, [startGameHash, isStartGameConfirming, pollAfterTransaction]);
+  }, [startGameHash, isStartGameConfirming]);
 
   useEffect(() => {
     if (rollDiceHash && !isRollDiceConfirming) {
       console.log('✅ [BLOCKCHAIN WRITE] Roll dice transaction confirmed');
       pollAfterTransaction('rollDice');
     }
-  }, [rollDiceHash, isRollDiceConfirming, pollAfterTransaction]);
+  }, [rollDiceHash, isRollDiceConfirming]);
 
   // Contract interaction functions with improved logging
   const startGame = async () => {
