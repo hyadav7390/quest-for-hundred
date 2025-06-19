@@ -15,12 +15,10 @@ export const useSplashAnimations = () => {
   });
 
   const showSplash = useCallback((type: 'gift' | 'shortcut' | 'detour', value: number) => {
-    console.log(`✨ [SPLASH] Showing ${type} splash with value ${value}`);
     setSplash({ isVisible: true, type, value });
   }, []);
 
   const hideSplash = useCallback(() => {
-    console.log('✨ [SPLASH] Hiding splash animation');
     setSplash(prev => ({ ...prev, isVisible: false }));
   }, []);
 

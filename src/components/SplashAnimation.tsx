@@ -41,6 +41,9 @@ const SplashAnimation = ({ isVisible, type, value, onComplete }: SplashAnimation
           glow: 'shadow-red-400/50',
           particles: 'bg-red-300'
         };
+      default:
+        // Fallback colors to prevent undefined
+        return {};
     }
   };
 
@@ -69,7 +72,7 @@ const SplashAnimation = ({ isVisible, type, value, onComplete }: SplashAnimation
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
           />
-          
+
           <motion.div
             className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
             initial={{ opacity: 0 }}
@@ -83,21 +86,21 @@ const SplashAnimation = ({ isVisible, type, value, onComplete }: SplashAnimation
             {[...Array(3)].map((_, i) => (
               <motion.div
                 key={i}
-                className={`absolute w-32 h-32 rounded-full bg-gradient-to-r ${colors.gradient} opacity-20`}
+                className={`absolute w-32 h-32 rounded-full bg-gradient-to-r ${colors?.gradient} opacity-20`}
                 style={{
                   top: '50%',
                   left: '50%',
                   transform: 'translate(-50%, -50%)',
                 }}
                 initial={{ scale: 0, opacity: 0.6 }}
-                animate={{ 
-                  scale: [0, 3, 6], 
-                  opacity: [0.6, 0.3, 0] 
+                animate={{
+                  scale: [0, 3, 6],
+                  opacity: [0.6, 0.3, 0]
                 }}
-                transition={{ 
-                  duration: 2, 
+                transition={{
+                  duration: 2,
                   delay: i * 0.2,
-                  ease: "easeOut" 
+                  ease: "easeOut"
                 }}
               />
             ))}
@@ -122,14 +125,14 @@ const SplashAnimation = ({ isVisible, type, value, onComplete }: SplashAnimation
                     transform: `translate(-50%, -100%) rotate(${i * 45}deg)`,
                   }}
                   initial={{ scaleY: 0, opacity: 0 }}
-                  animate={{ 
-                    scaleY: [0, 1.5, 0.8], 
-                    opacity: [0, 1, 0.7] 
+                  animate={{
+                    scaleY: [0, 1.5, 0.8],
+                    opacity: [0, 1, 0.7]
                   }}
-                  transition={{ 
-                    duration: 1.2, 
+                  transition={{
+                    duration: 1.2,
                     delay: 0.3 + i * 0.05,
-                    ease: "easeOut" 
+                    ease: "easeOut"
                   }}
                 />
               ))}
@@ -141,29 +144,29 @@ const SplashAnimation = ({ isVisible, type, value, onComplete }: SplashAnimation
               initial={{ scale: 0, y: 50, rotateY: 180 }}
               animate={{ scale: 1, y: 0, rotateY: 0 }}
               exit={{ scale: 0, y: -50, rotateY: 180 }}
-              transition={{ 
-                type: "spring", 
-                stiffness: 200, 
+              transition={{
+                type: "spring",
+                stiffness: 200,
                 damping: 15,
-                delay: 0.2 
+                delay: 0.2
               }}
             >
               <div className="text-center">
                 <motion.div
                   className="mb-6"
-                  animate={{ 
+                  animate={{
                     rotateY: [0, 360],
-                    scale: [1, 1.3, 1] 
+                    scale: [1, 1.3, 1]
                   }}
-                  transition={{ 
-                    duration: 1.5, 
+                  transition={{
+                    duration: 1.5,
                     repeat: 1,
-                    ease: "easeInOut" 
+                    ease: "easeInOut"
                   }}
                 >
                   {getIcon()}
                 </motion.div>
-                
+
                 <motion.h2
                   className="text-2xl sm:text-3xl font-bold text-white drop-shadow-lg leading-tight"
                   initial={{ opacity: 0, y: 20 }}
@@ -184,7 +187,7 @@ const SplashAnimation = ({ isVisible, type, value, onComplete }: SplashAnimation
                   top: '50%',
                   left: '50%',
                 }}
-                initial={{ 
+                initial={{
                   scale: 0,
                   x: 0,
                   y: 0,

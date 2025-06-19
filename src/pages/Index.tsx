@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { useBlockchainGameReducer } from '@/hooks/useBlockchainGameReducer';
 import { useSoundEffects } from '@/hooks/useSoundEffects';
 import { useSplashAnimations } from '@/hooks/useSplashAnimations';
-import { useSequenceWallet } from '@/hooks/useSequenceWallet';
 import GameBoard from '@/components/GameBoard';
 import Dice from '@/components/Dice';
 import ScoreBoard from '@/components/ScoreBoard';
@@ -19,7 +18,6 @@ const Index = () => {
   const [gameState, gameActions, contractInfo] = useBlockchainGameReducer();
   const { playSound } = useSoundEffects(gameState.isSoundMuted);
   const { splash, hideSplash, triggerGiftSplash, triggerDetourSplash, triggerShortcutSplash } = useSplashAnimations();
-  const { ensureSequenceWallet, isSequenceWalletCreated } = useSequenceWallet();
   const [showNewGameConfirmation, setShowNewGameConfirmation] = useState(false);
   const [isDiceRolling, setIsDiceRolling] = useState(false);
   const [isStartingGame, setIsStartingGame] = useState(false);
@@ -28,8 +26,6 @@ const Index = () => {
 
   useEffect(() => {
     playSound('start');
-    // Ensure Sequence wallet on app load
-    ensureSequenceWallet();
   }, []);
 
   useEffect(() => {
@@ -44,7 +40,6 @@ const Index = () => {
       // Check for gift tiles
       const giftTile = gameState.giftTiles.find(tile => tile.index === currentPosition);
       if (giftTile) {
-        console.log('🎁 [SPLASH] Triggered gift splash at position', currentPosition);
         triggerGiftSplash(giftTile.points);
         playSound('gift');
       }
@@ -52,7 +47,6 @@ const Index = () => {
       // Check for detour traps
       const detourTile = gameState.detourTrapTiles.find(tile => tile.index === currentPosition);
       if (detourTile) {
-        console.log('🚪❌ [SPLASH] Triggered detour splash at position', currentPosition);
         triggerDetourSplash(detourTile.moveBack);
         playSound('detourTrap');
       }
@@ -60,7 +54,6 @@ const Index = () => {
       // Check for shortcut gates
       const shortcutTile = gameState.shortcutGateTiles.find(tile => tile.index === currentPosition);
       if (shortcutTile) {
-        console.log('🚪✅ [SPLASH] Triggered shortcut splash at position', currentPosition);
         triggerShortcutSplash(shortcutTile.moveForward);
         playSound('gift');
       }
@@ -68,7 +61,6 @@ const Index = () => {
   }, [contractState?.position, gameState.giftTiles, gameState.detourTrapTiles, gameState.shortcutGateTiles]);
 
   const rollDice = async () => {
-    console.log('🎲 [UI] Roll dice button clicked');
     
     // Prevent accidental double clicks
     if (isDiceRolling || isLoading || isWaitingForVRF || isStartingGame) {
@@ -77,7 +69,6 @@ const Index = () => {
     }
     
     if (!isConnected) {
-      console.log('⚠️ [UI] Dice roll blocked - wallet not connected');
       toast({
         title: "Wallet Required",
         description: "Please connect your wallet to play on-chain",
@@ -87,7 +78,6 @@ const Index = () => {
     }
 
     if (!contractState?.boardGenerated) {
-      console.log('⚠️ [UI] Dice roll blocked - game not started');
       toast({
         title: "Game Not Started",
         description: "Please start a new game first",
@@ -107,7 +97,6 @@ const Index = () => {
   };
 
   const handleNewGameClick = async () => {
-    console.log('🎮 [UI] New game button clicked');
     
     // Prevent accidental double clicks
     if (isStartingGame || isLoading || isDiceRolling) {
@@ -116,7 +105,6 @@ const Index = () => {
     }
     
     if (!isConnected) {
-      console.log('⚠️ [UI] New game blocked - wallet not connected');
       toast({
         title: "Wallet Required",
         description: "Please connect your wallet to start a new game",
@@ -126,7 +114,6 @@ const Index = () => {
     }
 
     if (gameState.diceRolled && gameState.gameStatus === 'playing') {
-      console.log('🤔 [UI] Game in progress, showing confirmation');
       setShowNewGameConfirmation(true);
     } else {
       await restartGame();
@@ -134,7 +121,6 @@ const Index = () => {
   };
 
   const restartGame = async () => {
-    console.log('🔄 [UI] Restarting game...');
     setIsStartingGame(true);
     setShowNewGameConfirmation(false);
     
@@ -177,15 +163,6 @@ const Index = () => {
                 To play The Hundredth Tile on-chain, you need to connect your wallet. 
                 Your progress will be stored on the blockchain and you'll earn real NUNU tokens!
               </p>
-              <p className="text-sm text-gray-400 mb-4">
-                We recommend using Sequence wallet for the best gaming experience - no transaction popups!
-              </p>
-              <Button
-                onClick={ensureSequenceWallet}
-                className="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold rounded-lg shadow-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-200"
-              >
-                Connect Sequence Wallet
-              </Button>
             </motion.div>
           </div>
         </div>
@@ -210,11 +187,6 @@ const Index = () => {
                 Ready to begin your journey to tile 100? Your game board will be generated on-chain 
                 with unique gifts and challenges using Chainlink VRF for randomness.
               </p>
-              {isSequenceWalletCreated && (
-                <p className="text-sm text-green-400 mb-4">
-                  ✅ Sequence wallet ready - seamless gameplay ahead!
-                </p>
-              )}
               <Button
                 onClick={restartGame}
                 className="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold rounded-lg shadow-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-200"
@@ -237,7 +209,6 @@ const Index = () => {
   }
 
   const isDiceDisabled = () => {
-    console.log('isDiceRolling,isLoading,isWaitingForVRF, isStartingGame, gameState, contractState', isDiceRolling,isLoading,isWaitingForVRF, isStartingGame, gameState, contractState);
     return isDiceRolling || 
            isLoading || 
            isWaitingForVRF || 
@@ -270,9 +241,6 @@ const Index = () => {
                 <p>On-chain game • Contract: {contractInfo.CONTRACT_ADDRESS}</p>
                 {playerRank > 0 && (
                   <p className="text-yellow-400">🏅 Your Rank: #{playerRank}</p>
-                )}
-                {isSequenceWalletCreated && (
-                  <p className="text-green-400">✅ Sequence wallet active</p>
                 )}
               </div>
             )}
@@ -415,9 +383,10 @@ const Index = () => {
 
         {/* Splash Animation */}
         <SplashAnimation
-          isVisible={splash.isVisible}
-          type={splash.type}
-          value={splash.value}
+          // isVisible={splash.isVisible}
+          // type={splash.type}
+          // value={splash.value}
+          {...splash}
           onComplete={hideSplash}
         />
 

@@ -11,7 +11,6 @@ interface DiceProps {
 }
 
 const Dice = ({ value, isRolling, onRoll, disabled, contractValue }: DiceProps) => {
-  console.log('value, isRolling, disabled, contractValue', value, isRolling, disabled, contractValue);
   const [animationValue, setAnimationValue] = useState(1);
 
   useEffect(() => {
@@ -37,7 +36,6 @@ const Dice = ({ value, isRolling, onRoll, disabled, contractValue }: DiceProps) 
 
       // If we get the contract value, stop on that value immediately
       if (contractValue && contractValue > 0) {
-        console.log('🎲 [DICE] Contract value received, stopping animation on:', contractValue);
         clearInterval(interval);
         setAnimationValue(contractValue);
       } else {
