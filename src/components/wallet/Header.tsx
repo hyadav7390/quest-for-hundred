@@ -29,7 +29,7 @@ const Header = () => {
 
   const [embeddedWallet, setEmbeddedWallet] = useState(null);
 
-  // Set embedded wallet as active when available
+  // Force use of embedded wallet only
   useEffect(() => {
     console.log('🔄 [HEADER] Checking wallets:', { 
       walletsReady, 
@@ -38,7 +38,7 @@ const Header = () => {
     });
     
     if (walletsReady && authenticated && wallets.length > 0) {
-      // Find the embedded wallet
+      // Find and prioritize the embedded wallet
       const embedded = wallets.find((wallet) => wallet.connectorType === 'embedded');
       console.log('🔍 [HEADER] Found embedded wallet:', embedded);
       
@@ -47,12 +47,25 @@ const Header = () => {
         setActiveWallet(embedded);
         setEmbeddedWallet(embedded);
       } else {
-        // If no embedded wallet, use the first available wallet
-        console.log('⚠️ [HEADER] No embedded wallet found, using first wallet');
-        setActiveWallet(wallets[0]);
+        // If no embedded wallet found, disconnect everything and show error
+        console.warn('⚠️ [HEADER] No embedded wallet found, logging out');
+        logout();
+        toast.error('Embedded wallet required. Please reconnect.');
       }
     }
-  }, [wallets, walletsReady, authenticated, setActiveWallet]);
+  }, [wallets, walletsReady, authenticated, setActiveWallet, logout]);
+
+  // Monitor address changes to ensure it's from embedded wallet
+  useEffect(() => {
+    if (isConnected && address && embeddedWallet) {
+      const embeddedAddress = embeddedWallet.address;
+      if (address !== embeddedAddress) {
+        console.warn('⚠️ [HEADER] Address mismatch - not using embedded wallet');
+        logout();
+        toast.error('Please use the embedded wallet only.');
+      }
+    }
+  }, [address, isConnected, embeddedWallet, logout]);
 
   console.log('📊 [HEADER] Current state:', { 
     ready, 
@@ -180,6 +193,14 @@ const Header = () => {
     return `${parseFloat(formatEther(balance.value)).toFixed(4)} MON`;
   };
 
+  const handleLogout = () => {
+    console.log('🔌 [HEADER] Disconnecting wallet and clearing state');
+    setEmbeddedWallet(null);
+    logout();
+    // Navigate to home to clear any game state
+    navigate('/');
+  };
+
   return (
     <motion.header
       className="bg-gray-900 border-b border-gray-700 sticky top-0 z-40"
@@ -218,7 +239,7 @@ const Header = () => {
                   <span>{item.label}</span>
                 </Button>
               ))}
-            {isConnected && (
+            {isConnected && embeddedWallet && (
               <Button
                 variant="outline"
                 onClick={() => setIsModalOpen(true)}
@@ -231,7 +252,7 @@ const Header = () => {
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center space-x-3">
-            {ready && authenticated ? (
+            {ready && authenticated && embeddedWallet ? (
               <>
                 {/* Balance Display */}
                 <div className="flex items-center space-x-2 bg-gray-800 px-3 py-2 rounded-lg">
@@ -246,10 +267,7 @@ const Header = () => {
                 
                 <button
                   className='text-gray-900 bg-gray-100 hover:bg-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500'
-                  onClick={() => {
-                    console.log('🔌 [HEADER] Disconnecting wallet');
-                    logout();
-                  }}
+                  onClick={handleLogout}
                 >
                   Disconnect
                 </button>
@@ -318,7 +336,7 @@ const Header = () => {
                 ))}
 
               {/* Send MON Button (only visible when connected) */}
-              {isConnected && (
+              {isConnected && embeddedWallet && (
                 <Button
                   variant="outline"
                   onClick={() => setIsModalOpen(true)}
@@ -331,7 +349,7 @@ const Header = () => {
 
             {/* Mobile Wallet Connection */}
             <div className="pt-4 border-t border-gray-700 mt-4 flex flex-col items-center space-y-2">
-              {ready && authenticated ? (
+              {ready && authenticated && embeddedWallet ? (
                 <>
                   {/* Mobile Balance Display */}
                   <div className="flex items-center space-x-2 bg-gray-800 px-3 py-2 rounded-lg">
@@ -341,7 +359,7 @@ const Header = () => {
                   
                   <button
                     className='text-gray-900 bg-gray-100 hover:bg-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500'
-                    onClick={logout}
+                    onClick={handleLogout}
                   >
                     Disconnect
                   </button>

@@ -128,6 +128,7 @@ export const useContract = () => {
   const [isWaitingForVRF, setIsWaitingForVRF] = useState(false);
   const [playerRank, setPlayerRank] = useState<number>(0);
   const [gameStats, setGameStats] = useState<any>(null);
+  const [transactionError, setTransactionError] = useState<string | null>(null);
   
   console.log('🎮 [CONTRACT] Hook initialized with address:', address);
   
@@ -136,30 +137,34 @@ export const useContract = () => {
     writeContract: writeStartGame, 
     isPending: isStartingGame, 
     data: startGameHash,
-    error: startGameError
+    error: startGameError,
+    reset: resetStartGame
   } = useWriteContract();
   
   const { 
     writeContract: writeRollDice, 
     isPending: isRollingDice, 
     data: rollDiceHash,
-    error: rollDiceError
+    error: rollDiceError,
+    reset: resetRollDice
   } = useWriteContract();
 
   // Wait for transaction receipts
-  const { isLoading: isStartGameConfirming, isSuccess: isStartGameSuccess } = useWaitForTransactionReceipt({
+  const { isLoading: isStartGameConfirming, isSuccess: isStartGameSuccess, isError: isStartGameFailed } = useWaitForTransactionReceipt({
     hash: startGameHash,
   });
 
-  const { isLoading: isRollDiceConfirming, isSuccess: isRollDiceSuccess } = useWaitForTransactionReceipt({
+  const { isLoading: isRollDiceConfirming, isSuccess: isRollDiceSuccess, isError: isRollDiceFailed } = useWaitForTransactionReceipt({
     hash: rollDiceHash,
   });
 
-  // Handle transaction errors
+  // Handle transaction errors with proper UI feedback
   useEffect(() => {
     if (startGameError) {
       console.error('❌ [CONTRACT ERROR] Start game failed:', startGameError);
-      toast.error(`Failed to start game: ${startGameError.message || 'Unknown error'}`);
+      const errorMessage = `Failed to start game: ${startGameError.message || 'Unknown error'}`;
+      setTransactionError(errorMessage);
+      toast.error(errorMessage);
       setIsLoading(false);
     }
   }, [startGameError]);
@@ -167,11 +172,35 @@ export const useContract = () => {
   useEffect(() => {
     if (rollDiceError) {
       console.error('❌ [CONTRACT ERROR] Roll dice failed:', rollDiceError);
-      toast.error(`Failed to roll dice: ${rollDiceError.message || 'Unknown error'}`);
+      const errorMessage = `Failed to roll dice: ${rollDiceError.message || 'Unknown error'}`;
+      setTransactionError(errorMessage);
+      toast.error(errorMessage);
       setIsLoading(false);
       setIsWaitingForVRF(false);
     }
   }, [rollDiceError]);
+
+  // Handle transaction failures (receipt errors)
+  useEffect(() => {
+    if (isStartGameFailed) {
+      console.error('❌ [CONTRACT] Start game transaction failed');
+      const errorMessage = 'Transaction failed: Start game transaction was reverted';
+      setTransactionError(errorMessage);
+      toast.error(errorMessage);
+      setIsLoading(false);
+    }
+  }, [isStartGameFailed]);
+
+  useEffect(() => {
+    if (isRollDiceFailed) {
+      console.error('❌ [CONTRACT] Roll dice transaction failed');
+      const errorMessage = 'Transaction failed: Roll dice transaction was reverted';
+      setTransactionError(errorMessage);
+      toast.error(errorMessage);
+      setIsLoading(false);
+      setIsWaitingForVRF(false);
+    }
+  }, [isRollDiceFailed]);
 
   // Manual read operations - all disabled auto-fetch to prevent excessive calls
   const { refetch: refetchPlayerStatus } = useReadContract({
@@ -401,6 +430,11 @@ export const useContract = () => {
   }, [refetchGameStats]);
 
   const fetchAllGameData = useCallback(async () => {
+    if (!address || !isConnected) {
+      console.log('⚠️ [CONTRACT] Not connected, skipping data fetch');
+      return;
+    }
+    
     console.log('🔄 [CONTRACT] Fetching all game data');
     
     // First fetch game stats as other functions depend on it
@@ -415,17 +449,17 @@ export const useContract = () => {
     ]);
     
     console.log('✅ [CONTRACT] All game data fetched');
-  }, [fetchGameStats, fetchPlayerStatus, fetchBoardData, fetchLeaderboard, fetchPlayerRank]);
+  }, [fetchGameStats, fetchPlayerStatus, fetchBoardData, fetchLeaderboard, fetchPlayerRank, address, isConnected]);
 
-  // Manual polling after transactions with improved timing and logging
-  const pollAfterTransaction = useCallback(async (action: string, maxAttempts = 5) => {
+  // Enhanced polling with better timeout handling
+  const pollAfterTransaction = useCallback(async (action: string, maxAttempts = 6) => {
     console.log(`🔄 [CONTRACT] Starting polling for ${action} (max ${maxAttempts} attempts)`);
     
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       console.log(`📊 [CONTRACT] Polling attempt ${attempt}/${maxAttempts} for ${action}`);
       
       // Wait longer between attempts to allow VRF to complete
-      await new Promise(resolve => setTimeout(resolve, action === 'rollDice' ? 3000 : 2000));
+      await new Promise(resolve => setTimeout(resolve, action === 'rollDice' ? 4000 : 3000));
       
       const oldState = gameState;
       await fetchAllGameData();
@@ -461,6 +495,7 @@ export const useContract = () => {
   useEffect(() => {
     if (startGameHash && isStartGameSuccess) {
       console.log('✅ [CONTRACT] Start game transaction confirmed:', startGameHash);
+      setTransactionError(null); // Clear any previous errors
       pollAfterTransaction('startGame');
     }
   }, [startGameHash, isStartGameSuccess, pollAfterTransaction]);
@@ -468,6 +503,7 @@ export const useContract = () => {
   useEffect(() => {
     if (rollDiceHash && isRollDiceSuccess) {
       console.log('✅ [CONTRACT] Roll dice transaction confirmed:', rollDiceHash);
+      setTransactionError(null); // Clear any previous errors
       pollAfterTransaction('rollDice');
     }
   }, [rollDiceHash, isRollDiceSuccess, pollAfterTransaction]);
@@ -484,6 +520,8 @@ export const useContract = () => {
 
     try {
       setIsLoading(true);
+      setTransactionError(null);
+      resetStartGame(); // Clear previous transaction state
       console.log('📤 [CONTRACT] Sending start game transaction');
       
       const result = await writeStartGame({
@@ -500,9 +538,13 @@ export const useContract = () => {
       
       // Check for insufficient balance
       if (error.message?.includes('insufficient funds') || error.message?.includes('not enough balance')) {
-        toast.error('Insufficient balance to pay for transaction fees. Please add funds to your wallet.');
+        const errorMessage = 'Insufficient balance to pay for transaction fees. Please add funds to your wallet.';
+        setTransactionError(errorMessage);
+        toast.error(errorMessage);
       } else {
-        toast.error(`Failed to start game: ${error.message || 'Unknown error'}`);
+        const errorMessage = `Failed to start game: ${error.message || 'Unknown error'}`;
+        setTransactionError(errorMessage);
+        toast.error(errorMessage);
       }
       
       setIsLoading(false);
@@ -521,6 +563,8 @@ export const useContract = () => {
     try {
       setIsLoading(true);
       setIsWaitingForVRF(true);
+      setTransactionError(null);
+      resetRollDice(); // Clear previous transaction state
       const rollFee = gameStats[2]; // rollFee is third element in gameStats
       
       console.log('📤 [CONTRACT] Sending roll dice transaction with fee:', rollFee);
@@ -541,15 +585,34 @@ export const useContract = () => {
       
       // Check for insufficient balance
       if (error.message?.includes('insufficient funds') || error.message?.includes('not enough balance')) {
-        toast.error('Insufficient balance to pay for dice roll fee. Please add funds to your wallet.');
+        const errorMessage = 'Insufficient balance to pay for dice roll fee. Please add funds to your wallet.';
+        setTransactionError(errorMessage);
+        toast.error(errorMessage);
       } else {
-        toast.error(`Failed to roll dice: ${error.message || 'Unknown error'}`);
+        const errorMessage = `Failed to roll dice: ${error.message || 'Unknown error'}`;
+        setTransactionError(errorMessage);
+        toast.error(errorMessage);
       }
       
       setIsLoading(false);
       setIsWaitingForVRF(false);
     }
   };
+
+  // Clear game state when wallet disconnects
+  useEffect(() => {
+    if (!isConnected || !address) {
+      console.log('🔌 [CONTRACT] Wallet disconnected, clearing game state');
+      setGameState(null);
+      setBoardData(null);
+      setLeaderboard([]);
+      setPlayerRank(0);
+      setGameStats(null);
+      setIsLoading(false);
+      setIsWaitingForVRF(false);
+      setTransactionError(null);
+    }
+  }, [isConnected, address]);
 
   // Initialize game data when connected - only once
   useEffect(() => {
@@ -568,6 +631,7 @@ export const useContract = () => {
     isConnected,
     leaderboard,
     playerRank,
+    transactionError,
     
     // Actions
     startGame,

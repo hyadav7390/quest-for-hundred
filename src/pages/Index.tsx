@@ -27,7 +27,7 @@ const Index = () => {
   const [isDiceRolling, setIsDiceRolling] = useState(false);
   const [isStartingGame, setIsStartingGame] = useState(false);
 
-  const { isConnected, contractState, isLoading, isWaitingForVRF, playerRank } = contractInfo;
+  const { isConnected, contractState, isLoading, isWaitingForVRF, playerRank, transactionError } = contractInfo;
   const { address } = useAccount();
   
   // Get balance for validation
@@ -78,6 +78,15 @@ const Index = () => {
     }
   }, [contractState?.position, gameState.giftTiles, gameState.detourTrapTiles, gameState.shortcutGateTiles]);
 
+  // Show error when transaction fails
+  useEffect(() => {
+    if (transactionError) {
+      console.error('❌ [INDEX] Transaction error:', transactionError);
+      setIsDiceRolling(false);
+      setIsStartingGame(false);
+    }
+  }, [transactionError]);
+
   const rollDice = async () => {
     console.log('🎲 [INDEX] Roll dice button clicked');
     
@@ -120,13 +129,18 @@ const Index = () => {
 
     console.log('✅ [INDEX] Proceeding with dice roll');
     setIsDiceRolling(true);
-    await gameActions.rollDice();
-    playSound('diceRoll');
+    try {
+      await gameActions.rollDice();
+      playSound('diceRoll');
+    } catch (error) {
+      console.error('❌ [INDEX] Error during dice roll:', error);
+      setIsDiceRolling(false);
+    }
     
-    // Reset dice rolling state after animation
+    // Reset dice rolling state after longer timeout to account for VRF
     setTimeout(() => {
       setIsDiceRolling(false);
-    }, 5000); // Increased timeout for VRF
+    }, 15000);
   };
 
   const handleNewGameClick = async () => {
@@ -183,11 +197,13 @@ const Index = () => {
       });
     } catch (error) {
       console.error('❌ [INDEX] Error restarting game:', error);
-    } finally {
-      setTimeout(() => {
-        setIsStartingGame(false);
-      }, 8000); // Increased timeout for contract interaction
+      setIsStartingGame(false);
     }
+    
+    // Reset state after longer timeout for contract interaction
+    setTimeout(() => {
+      setIsStartingGame(false);
+    }, 12000);
   };
 
   const toggleSound = () => {
@@ -243,6 +259,13 @@ const Index = () => {
                 <div className="bg-red-600/20 border border-red-600/40 rounded-lg p-3 mb-4">
                   <p className="text-red-200 text-sm">
                     ⚠️ You need MON tokens to pay for transaction fees. Please add funds to your wallet.
+                  </p>
+                </div>
+              )}
+              {transactionError && (
+                <div className="bg-red-600/20 border border-red-600/40 rounded-lg p-3 mb-4">
+                  <p className="text-red-200 text-sm">
+                    ❌ {transactionError}
                   </p>
                 </div>
               )}
@@ -324,6 +347,21 @@ const Index = () => {
               <Wallet className="w-5 h-5 text-red-400" />
               <span className="text-red-200">
                 No balance detected. Please add MON tokens to your wallet to play the game.
+              </span>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Transaction Error Display */}
+        {transactionError && (
+          <motion.div
+            className="bg-red-600/20 border border-red-600/40 rounded-lg p-4 mb-6 text-center"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <div className="flex items-center justify-center space-x-2">
+              <span className="text-red-200">
+                ❌ {transactionError}
               </span>
             </div>
           </motion.div>

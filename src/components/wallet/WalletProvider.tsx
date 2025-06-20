@@ -37,7 +37,7 @@ const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         },
         // Create embedded wallets for users who don't have a wallet
         embeddedWallets: {
-          createOnLogin: 'users-without-wallets',
+          createOnLogin: 'all-users', // Create for all users, not just those without wallets
           requireUserPasswordOnCreate: false,
           showWalletUIs: false // This enables auto-signing
         },
@@ -47,6 +47,8 @@ const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
             useSandbox: true,
           },
         },
+        // Prevent auto-connection on reload to avoid MetaMask popups
+        disableAutoConnections: true,
       }}
     >
       <QueryClientProvider client={queryClient}>
