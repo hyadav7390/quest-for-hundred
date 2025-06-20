@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
 import { parseEther, formatEther } from 'viem';
@@ -128,6 +129,8 @@ export const useContract = () => {
   const [playerRank, setPlayerRank] = useState<number>(0);
   const [gameStats, setGameStats] = useState<any>(null);
   
+  console.log('🎮 [CONTRACT] Hook initialized with address:', address);
+  
   // Contract write operations with transaction receipt waiting
   const { 
     writeContract: writeStartGame, 
@@ -144,27 +147,27 @@ export const useContract = () => {
   } = useWriteContract();
 
   // Wait for transaction receipts
-  const { isLoading: isStartGameConfirming } = useWaitForTransactionReceipt({
+  const { isLoading: isStartGameConfirming, isSuccess: isStartGameSuccess } = useWaitForTransactionReceipt({
     hash: startGameHash,
   });
 
-  const { isLoading: isRollDiceConfirming } = useWaitForTransactionReceipt({
+  const { isLoading: isRollDiceConfirming, isSuccess: isRollDiceSuccess } = useWaitForTransactionReceipt({
     hash: rollDiceHash,
   });
 
   // Handle transaction errors
   useEffect(() => {
     if (startGameError) {
-      console.error('❌ [BLOCKCHAIN ERROR] Start game failed:', startGameError);
-      toast.error('Failed to start game: ' + (startGameError.message || 'Unknown error'));
+      console.error('❌ [CONTRACT ERROR] Start game failed:', startGameError);
+      toast.error(`Failed to start game: ${startGameError.message || 'Unknown error'}`);
       setIsLoading(false);
     }
   }, [startGameError]);
 
   useEffect(() => {
     if (rollDiceError) {
-      console.error('❌ [BLOCKCHAIN ERROR] Roll dice failed:', rollDiceError);
-      toast.error('Failed to roll dice: ' + (rollDiceError.message || 'Unknown error'));
+      console.error('❌ [CONTRACT ERROR] Roll dice failed:', rollDiceError);
+      toast.error(`Failed to roll dice: ${rollDiceError.message || 'Unknown error'}`);
       setIsLoading(false);
       setIsWaitingForVRF(false);
     }
@@ -236,9 +239,13 @@ export const useContract = () => {
 
   // Process board data from contract with better validation
   const processBoardData = useCallback((boardTiles: readonly { giftValue: bigint; doorOffset: number; }[]) => {
+    console.log('🏗️ [CONTRACT] Processing board data:', boardTiles);
+    
     if (!boardTiles || !Array.isArray(boardTiles)) {
+      console.warn('⚠️ [CONTRACT] Invalid board tiles data');
       return;
     }
+    
     const giftTiles: { index: number; points: number }[] = [];
     const detourTrapTiles: { index: number; moveBack: number }[] = [];
     const shortcutGateTiles: { index: number; moveForward: number }[] = [];
@@ -250,13 +257,16 @@ export const useContract = () => {
       if (tile.giftValue > 0) {
         const points = Number(formatEther(tile.giftValue));
         giftTiles.push({ index: arrayIndex, points });
+        console.log(`🎁 [CONTRACT] Gift tile at position ${arrayIndex}: ${points} points`);
       } else if (tile.doorOffset !== 0) {
         if (tile.doorOffset < 0) {
           const moveBack = Math.abs(tile.doorOffset);
           detourTrapTiles.push({ index: arrayIndex, moveBack });
+          console.log(`🚪 [CONTRACT] Detour trap at position ${arrayIndex}: move back ${moveBack}`);
         } else {
           const moveForward = tile.doorOffset;
           shortcutGateTiles.push({ index: arrayIndex, moveForward });
+          console.log(`⚡ [CONTRACT] Shortcut gate at position ${arrayIndex}: move forward ${moveForward}`);
         }
       }
     });
@@ -267,20 +277,23 @@ export const useContract = () => {
       shortcutGateTiles
     };
     
+    console.log('✅ [CONTRACT] Board data processed:', processedBoardData);
     setBoardData(processedBoardData);
   }, []);
 
-  // Manual fetch functions with improved error handling
+  // Manual fetch functions with improved error handling and logging
   const fetchPlayerStatus = useCallback(async () => {
     if (!address) {
+      console.log('⚠️ [CONTRACT] No address for player status fetch');
       return null;
     }
 
+    console.log('📊 [CONTRACT] Fetching player status for:', address);
+    
     try {
       const result = await refetchPlayerStatus();
-      if (result.isSuccess) {
+      if (result.isSuccess && result.data) {
         const [position, diceValue, nunuEarned, gameScore, hasFinished, boardGenerated] = result.data;
-        const rollFee = 1000000; // rollFee is third element
         
         const newGameState = {
           position: Number(position),
@@ -289,62 +302,61 @@ export const useContract = () => {
           gameScore: Number(gameScore),
           hasFinished,
           boardGenerated,
-          rollFee
+          rollFee: gameStats ? gameStats[2] : BigInt(0)
         };
 
-        // setGameState(newGameState);
-        setGameState({
-          ...gameState,
-          position: Number(position),
-          diceValue: Number(diceValue),
-          nunuEarned: Number(formatEther(nunuEarned)),
-          gameScore: Number(gameScore),
-          hasFinished,
-          boardGenerated,
-        })
+        console.log('✅ [CONTRACT] Player status fetched:', newGameState);
+        setGameState(newGameState);
         return newGameState;
       }
       
+      console.log('⚠️ [CONTRACT] Player status fetch unsuccessful:', result);
       return result;
     } catch (error) {
-      console.error('❌ [BLOCKCHAIN READ] Error fetching player status:', error);
+      console.error('❌ [CONTRACT] Error fetching player status:', error);
       return null;
     }
   }, [address, refetchPlayerStatus, gameStats]);
 
   const fetchBoardData = useCallback(async () => {
     if (!address) {
-      console.log('⚠️ [FETCH] No address available for board data fetch');
+      console.log('⚠️ [CONTRACT] No address for board data fetch');
       return null;
     }
 
+    console.log('🏗️ [CONTRACT] Fetching board data for:', address);
+    
     try {
       const result = await refetchBoard();
       
       if (result.data) {
+        console.log('✅ [CONTRACT] Board data fetched successfully');
         processBoardData(result.data);
       } else {
-        console.log('⚠️ [BLOCKCHAIN READ] Board data fetch completed but no data received');
+        console.log('⚠️ [CONTRACT] Board data fetch completed but no data received');
       }
       
       return result;
     } catch (error) {
-      console.error('❌ [BLOCKCHAIN READ] Error fetching board data:', error);
+      console.error('❌ [CONTRACT] Error fetching board data:', error);
       return null;
     }
   }, [address, refetchBoard, processBoardData]);
 
   const fetchLeaderboard = useCallback(async () => {
+    console.log('🏆 [CONTRACT] Fetching leaderboard');
+    
     try {
       const result = await refetchLeaderboard();
       
       if (result.data) {
+        console.log('✅ [CONTRACT] Leaderboard fetched:', result.data);
         setLeaderboard(result.data as LeaderboardEntry[]);
       }
       
       return result;
     } catch (error) {
-      console.error('❌ [BLOCKCHAIN READ] Error fetching leaderboard:', error);
+      console.error('❌ [CONTRACT] Error fetching leaderboard:', error);
       return null;
     }
   }, [refetchLeaderboard]);
@@ -352,37 +364,44 @@ export const useContract = () => {
   const fetchPlayerRank = useCallback(async () => {
     if (!address) return null;
 
+    console.log('🏅 [CONTRACT] Fetching player rank for:', address);
+    
     try {
       const result = await refetchPlayerRank();
       
       if (result.data) {
         const rank = Number(result.data);
+        console.log('✅ [CONTRACT] Player rank fetched:', rank);
         setPlayerRank(rank);
       }
       
       return result;
     } catch (error) {
-      console.error('❌ [BLOCKCHAIN READ] Error fetching player rank:', error);
+      console.error('❌ [CONTRACT] Error fetching player rank:', error);
       return null;
     }
   }, [address, refetchPlayerRank]);
 
   const fetchGameStats = useCallback(async () => {
+    console.log('📈 [CONTRACT] Fetching game stats');
+    
     try {
       const result = await refetchGameStats();
       
       if (result.data) {
+        console.log('✅ [CONTRACT] Game stats fetched:', result.data);
         setGameStats(result.data);
       }
       
       return result;
     } catch (error) {
-      console.error('❌ [BLOCKCHAIN READ] Error fetching game stats:', error);
+      console.error('❌ [CONTRACT] Error fetching game stats:', error);
       return null;
     }
   }, [refetchGameStats]);
 
   const fetchAllGameData = useCallback(async () => {
+    console.log('🔄 [CONTRACT] Fetching all game data');
     
     // First fetch game stats as other functions depend on it
     await fetchGameStats();
@@ -394,67 +413,78 @@ export const useContract = () => {
       fetchLeaderboard(),
       fetchPlayerRank()
     ]);
+    
+    console.log('✅ [CONTRACT] All game data fetched');
   }, [fetchGameStats, fetchPlayerStatus, fetchBoardData, fetchLeaderboard, fetchPlayerRank]);
 
-  // Manual polling after transactions with improved timing
-  const pollAfterTransaction = useCallback(async (action: string, maxAttempts = 3) => {
+  // Manual polling after transactions with improved timing and logging
+  const pollAfterTransaction = useCallback(async (action: string, maxAttempts = 5) => {
+    console.log(`🔄 [CONTRACT] Starting polling for ${action} (max ${maxAttempts} attempts)`);
     
-    // for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-      // console.log(`📊 [POLLING] Attempt ${attempt}/${maxAttempts} for ${action}`);
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      console.log(`📊 [CONTRACT] Polling attempt ${attempt}/${maxAttempts} for ${action}`);
       
       // Wait longer between attempts to allow VRF to complete
-      // await new Promise(resolve => setTimeout(resolve, action === 'rollDice' ? 5000 : 3000));
+      await new Promise(resolve => setTimeout(resolve, action === 'rollDice' ? 3000 : 2000));
       
       const oldState = gameState;
       await fetchAllGameData();
       
       // Check if state has changed significantly
       if (action === 'startGame' && gameState?.boardGenerated && !oldState?.boardGenerated) {
+        console.log('✅ [CONTRACT] Start game polling successful - board generated');
         setIsLoading(false);
         toast.success('Game started successfully! Board generated on-chain.');
-        // break;
+        break;
       } else if (action === 'rollDice' && gameState?.diceValue && gameState.diceValue !== oldState?.diceValue) {
+        console.log(`✅ [CONTRACT] Roll dice polling successful - dice value: ${gameState.diceValue}`);
         setIsWaitingForVRF(false);
         setIsLoading(false);
         toast.success(`🎲 Rolled ${gameState.diceValue}! Moved to position ${gameState.position}.`);
-        // break;
+        break;
       }
-      setIsLoading(false);
-      setIsWaitingForVRF(false);
 
-      // if (attempt === maxAttempts) {
-      //   console.log(`⚠️ [POLLING] Max attempts reached for ${action}`);
-      //   setIsLoading(false);
-      //   setIsWaitingForVRF(false);
-      //   if (action === 'rollDice') {
-      //     toast.error('Dice roll result not received. Please check your transaction.');
-      //   }
-      // }
-    // }
+      if (attempt === maxAttempts) {
+        console.log(`⚠️ [CONTRACT] Max polling attempts reached for ${action}`);
+        setIsLoading(false);
+        setIsWaitingForVRF(false);
+        if (action === 'rollDice') {
+          toast.error('Dice roll result not received. Please refresh and try again.');
+        } else {
+          toast.error('Transaction completed but state update not confirmed. Please refresh.');
+        }
+      }
+    }
   }, [gameState, fetchAllGameData]);
 
-  // Watch for transaction confirmations
+  // Watch for transaction confirmations with logging
   useEffect(() => {
-    if (startGameHash && !isStartGameConfirming) {
+    if (startGameHash && isStartGameSuccess) {
+      console.log('✅ [CONTRACT] Start game transaction confirmed:', startGameHash);
       pollAfterTransaction('startGame');
     }
-  }, [startGameHash, isStartGameConfirming]);
+  }, [startGameHash, isStartGameSuccess, pollAfterTransaction]);
 
   useEffect(() => {
-    if (rollDiceHash && !isRollDiceConfirming) {
+    if (rollDiceHash && isRollDiceSuccess) {
+      console.log('✅ [CONTRACT] Roll dice transaction confirmed:', rollDiceHash);
       pollAfterTransaction('rollDice');
     }
-  }, [rollDiceHash, isRollDiceConfirming]);
+  }, [rollDiceHash, isRollDiceSuccess, pollAfterTransaction]);
 
   // Contract interaction functions with improved logging and error handling
   const startGame = async () => {
+    console.log('🎮 [CONTRACT] Starting game transaction');
+    
     if (!isConnected || !chain || !address) {
+      console.error('❌ [CONTRACT] Not connected - cannot start game');
       toast.error('Please connect your wallet first');
       return;
     }
 
     try {
       setIsLoading(true);
+      console.log('📤 [CONTRACT] Sending start game transaction');
       
       const result = await writeStartGame({
         address: CONTRACT_ADDRESS,
@@ -463,16 +493,28 @@ export const useContract = () => {
         chain,
         account: address
       });
-    } catch (error) {
-      console.error('❌ [BLOCKCHAIN WRITE] Error starting game:', error);
-      toast.error('Failed to start game: ' + (error.message || 'Unknown error'));
+      
+      console.log('✅ [CONTRACT] Start game transaction sent:', result);
+    } catch (error: any) {
+      console.error('❌ [CONTRACT] Error starting game:', error);
+      
+      // Check for insufficient balance
+      if (error.message?.includes('insufficient funds') || error.message?.includes('not enough balance')) {
+        toast.error('Insufficient balance to pay for transaction fees. Please add funds to your wallet.');
+      } else {
+        toast.error(`Failed to start game: ${error.message || 'Unknown error'}`);
+      }
+      
       setIsLoading(false);
     }
   };
 
   const rollDice = async (expectedPosition: number) => {
+    console.log(`🎲 [CONTRACT] Rolling dice from position ${expectedPosition}`);
+    
     if (!isConnected || !chain || !address || !gameStats) {
-      toast.error('Please connect your wallet first');
+      console.error('❌ [CONTRACT] Not ready for dice roll');
+      toast.error('Please connect your wallet and ensure game is loaded');
       return;
     }
 
@@ -480,6 +522,8 @@ export const useContract = () => {
       setIsLoading(true);
       setIsWaitingForVRF(true);
       const rollFee = gameStats[2]; // rollFee is third element in gameStats
+      
+      console.log('📤 [CONTRACT] Sending roll dice transaction with fee:', rollFee);
       
       const result = await writeRollDice({
         address: CONTRACT_ADDRESS,
@@ -490,9 +534,18 @@ export const useContract = () => {
         chain,
         account: address
       });
-    } catch (error) {
-      console.error('❌ [BLOCKCHAIN WRITE] Error rolling dice:', error);
-      toast.error('Failed to roll dice: ' + (error.message || 'Unknown error'));
+      
+      console.log('✅ [CONTRACT] Roll dice transaction sent:', result);
+    } catch (error: any) {
+      console.error('❌ [CONTRACT] Error rolling dice:', error);
+      
+      // Check for insufficient balance
+      if (error.message?.includes('insufficient funds') || error.message?.includes('not enough balance')) {
+        toast.error('Insufficient balance to pay for dice roll fee. Please add funds to your wallet.');
+      } else {
+        toast.error(`Failed to roll dice: ${error.message || 'Unknown error'}`);
+      }
+      
       setIsLoading(false);
       setIsWaitingForVRF(false);
     }
@@ -501,6 +554,7 @@ export const useContract = () => {
   // Initialize game data when connected - only once
   useEffect(() => {
     if (isConnected && address && !gameState) {
+      console.log('🔄 [CONTRACT] Initializing game data for connected user');
       fetchAllGameData();
     }
   }, [isConnected, address]); // Removed fetchAllGameData and gameState from deps to prevent loops

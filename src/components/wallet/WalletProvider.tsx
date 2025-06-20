@@ -25,21 +25,30 @@ interface WalletProviderProps {
 const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
   return (
-    <PrivyProvider appId='cmc31fcqj012bjo0ljd8oog39' config={{
-      supportedChains: [monadTestnet],
-      appearance: {
-        // Defaults ['detected_wallets', 'metamask', 'coinbase_wallet', 'rainbow', 'wallet_connect']
-        // walletList: ['metamask', 'rainbow', 'wallet_connect']
-      },
-      // Create embedded wallets for users who don't have a wallet
-      embeddedWallets: {
-        ethereum: {
-          createOnLogin: 'users-without-wallets',
+    <PrivyProvider 
+      appId='cmc31fcqj012bjo0ljd8oog39' 
+      config={{
+        supportedChains: [monadTestnet],
+        defaultChain: monadTestnet,
+        appearance: {
+          theme: 'dark',
+          accentColor: '#8B5CF6',
+          logo: 'https://your-logo-url.com/logo.png'
         },
-        showWalletUIs: false
-      },
-      
-    }}>
+        // Create embedded wallets for users who don't have a wallet
+        embeddedWallets: {
+          createOnLogin: 'users-without-wallets',
+          requireUserPasswordOnCreate: false,
+          noPromptOnSignature: true, // This enables auto-signing
+        },
+        loginMethods: ['email', 'wallet'],
+        fundingMethodConfig: {
+          moonpay: {
+            useSandbox: true,
+          },
+        },
+      }}
+    >
       <QueryClientProvider client={queryClient}>
         <WagmiProvider config={config}>
           {children}

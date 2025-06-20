@@ -2,52 +2,76 @@
 import { motion } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Home, Gamepad2, Menu, X } from 'lucide-react';
+import { Home, Gamepad2, Menu, X, Wallet } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 
 import { useAccount, useBalance, useChainId, useSendTransaction, useWaitForTransactionReceipt, useDisconnect } from 'wagmi';
 import { sepolia, mainnet, polygon, optimism, arbitrum, base } from 'wagmi/chains';
 import { monadTestnet } from '@/types/monadTestnet';
 import { toast } from 'sonner';
-import { parseEther } from 'viem/utils';
+import { parseEther, formatEther } from 'viem/utils';
 import SendMonadModal from './Sendmodal';
 
 import { usePrivy, useWallets } from '@privy-io/react-auth';
-import {useSetActiveWallet} from '@privy-io/wagmi';
+import { useSetActiveWallet } from '@privy-io/wagmi';
 
 const Header = () => {
+  console.log('🔄 [HEADER] Component rendering');
+  
   // Privy hooks
-  const {ready, user, authenticated, login, connectWallet, logout, linkWallet} = usePrivy();
-  const {wallets, ready: walletsReady} = useWallets();
+  const { ready, user, authenticated, login, logout } = usePrivy();
+  const { wallets, ready: walletsReady } = useWallets();
 
   // WAGMI hooks
-  const {address, isConnected, isConnecting, isDisconnected} = useAccount();
-  const {disconnect} = useDisconnect();
-  const {setActiveWallet} = useSetActiveWallet();
+  const { address, isConnected, isConnecting, isDisconnected } = useAccount();
+  const { disconnect } = useDisconnect();
+  const { setActiveWallet } = useSetActiveWallet();
 
-  const [embeddedWallet, setEmbeddedWallet] = useState({});
+  const [embeddedWallet, setEmbeddedWallet] = useState(null);
 
+  // Set embedded wallet as active when available
   useEffect(() => {
-    // Find the embedded wallet
-    const embedded = wallets.find((wallet) => wallet.connectorType === 'embedded');
-    if (embedded) {
-      setActiveWallet(embedded); // Set as active
-      setEmbeddedWallet(embedded); // (if you want to store it in state)
+    console.log('🔄 [HEADER] Checking wallets:', { 
+      walletsReady, 
+      walletsCount: wallets.length, 
+      authenticated 
+    });
+    
+    if (walletsReady && authenticated && wallets.length > 0) {
+      // Find the embedded wallet
+      const embedded = wallets.find((wallet) => wallet.connectorType === 'embedded');
+      console.log('🔍 [HEADER] Found embedded wallet:', embedded);
+      
+      if (embedded) {
+        console.log('✅ [HEADER] Setting embedded wallet as active');
+        setActiveWallet(embedded);
+        setEmbeddedWallet(embedded);
+      } else {
+        // If no embedded wallet, use the first available wallet
+        console.log('⚠️ [HEADER] No embedded wallet found, using first wallet');
+        setActiveWallet(wallets[0]);
+      }
     }
-  }, [wallets, setActiveWallet]);
+  }, [wallets, walletsReady, authenticated, setActiveWallet]);
 
-  console.log('wallets', wallets, address);
+  console.log('📊 [HEADER] Current state:', { 
+    ready, 
+    authenticated, 
+    address, 
+    isConnected,
+    walletsCount: wallets.length,
+    embeddedWallet: !!embeddedWallet
+  });
 
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const chainId = useChainId();
-  console.log('user', user);
-  const { data: balance } = useBalance({
+  
+  const { data: balance, isLoading: isBalanceLoading } = useBalance({
     address,
+    chainId: monadTestnet.id,
   });
-
-  // const {setOpenConnectModal} = useOpenConnectModal();
 
   const [recipient, setRecipient] = useState('');
   const [amount, setAmount] = useState('');
@@ -86,8 +110,16 @@ const Header = () => {
 
   const handleSendMonad = () => {
     try {
+      console.log('💸 [HEADER] Initiating send transaction:', { recipient, amount });
+      
       if (!recipient || !amount) {
         toast.error('Please enter recipient address and amount');
+        return;
+      }
+
+      // Check balance before sending
+      if (balance && parseEther(amount) > balance.value) {
+        toast.error('Insufficient balance for this transaction');
         return;
       }
 
@@ -98,7 +130,7 @@ const Header = () => {
         chainId: monadTestnet.id,
       });
     } catch (error) {
-      console.error('Error sending transaction:', error);
+      console.error('❌ [HEADER] Error sending transaction:', error);
       toast.error('Transaction failed. Please try again.');
     }
   };
@@ -106,6 +138,7 @@ const Header = () => {
   // Show transaction confirmation
   React.useEffect(() => {
     if (isConfirmed && hash) {
+      console.log('✅ [HEADER] Transaction confirmed:', hash);
       toast.success(
         <div>
           <p>Transaction confirmed!</p>
@@ -138,6 +171,13 @@ const Header = () => {
     if (id === optimism.id) return 'Optimism';
     if (id === monadTestnet.id) return 'Monad';
     return 'Unknown Network';
+  };
+
+  // Format balance for display
+  const formatBalance = () => {
+    if (isBalanceLoading) return 'Loading...';
+    if (!balance) return '0 MON';
+    return `${parseFloat(formatEther(balance.value)).toFixed(4)} MON`;
   };
 
   return (
@@ -190,24 +230,40 @@ const Header = () => {
           </nav>
 
           {/* Desktop Actions */}
-          {/* <div className="hidden md:flex items-center space-x-2">
-            <button
-              className='text-gray-900 bg-gray-100 hover:bg-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500'
-              onClick={() => setOpenConnectModal(true)}>Connect</button>
-          </div> */}
-
-          <div className="hidden md:flex items-center space-x-2">
+          <div className="hidden md:flex items-center space-x-3">
             {ready && authenticated ? (
               <>
-              <p className="text-white">{address}</p>
+                {/* Balance Display */}
+                <div className="flex items-center space-x-2 bg-gray-800 px-3 py-2 rounded-lg">
+                  <Wallet className="w-4 h-4 text-purple-400" />
+                  <span className="text-white font-medium">{formatBalance()}</span>
+                </div>
+                
+                {/* Address Display */}
+                <div className="text-gray-300 text-sm">
+                  {address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'No Address'}
+                </div>
+                
                 <button
-                className='text-gray-900 bg-gray-100 hover:bg-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500'
-                onClick={logout}>Disconnect</button>
+                  className='text-gray-900 bg-gray-100 hover:bg-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500'
+                  onClick={() => {
+                    console.log('🔌 [HEADER] Disconnecting wallet');
+                    logout();
+                  }}
+                >
+                  Disconnect
+                </button>
               </>
             ) : (
               <button
                 className='text-gray-900 bg-gray-100 hover:bg-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500'
-                onClick={login}>Connect</button>
+                onClick={() => {
+                  console.log('🔌 [HEADER] Connecting wallet');
+                  login();
+                }}
+              >
+                Connect Wallet
+              </button>
             )}
           </div>
 
@@ -274,20 +330,29 @@ const Header = () => {
             </nav>
 
             {/* Mobile Wallet Connection */}
-            {/* <div className="pt-4 border-t border-gray-700 mt-4 flex items-center justify-center">
-              <button
-                className='text-gray-900 bg-gray-100 hover:bg-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500'
-                onClick={() => setOpenConnectModal(true)}>Connect</button>
-            </div> */}
-            <div className="pt-4 border-t border-gray-700 mt-4 flex items-center justify-center">
+            <div className="pt-4 border-t border-gray-700 mt-4 flex flex-col items-center space-y-2">
               {ready && authenticated ? (
-                <button
-                  className='text-gray-900 bg-gray-100 hover:bg-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500'
-                  onClick={logout}>Disconnect</button>
+                <>
+                  {/* Mobile Balance Display */}
+                  <div className="flex items-center space-x-2 bg-gray-800 px-3 py-2 rounded-lg">
+                    <Wallet className="w-4 h-4 text-purple-400" />
+                    <span className="text-white font-medium">{formatBalance()}</span>
+                  </div>
+                  
+                  <button
+                    className='text-gray-900 bg-gray-100 hover:bg-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500'
+                    onClick={logout}
+                  >
+                    Disconnect
+                  </button>
+                </>
               ) : (
                 <button
                   className='text-gray-900 bg-gray-100 hover:bg-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500'
-                  onClick={login}>Connect</button>
+                  onClick={login}
+                >
+                  Connect Wallet
+                </button>
               )}
             </div>
           </motion.div>
