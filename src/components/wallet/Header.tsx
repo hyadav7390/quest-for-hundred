@@ -1,85 +1,110 @@
+
 import { motion } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Home, Gamepad2, Menu, X } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
-import {
-  useAccount,
-  useBalance,
-  useChainId,
-  useSendTransaction,
-  useWaitForTransactionReceipt,
-  useDisconnect
-} from 'wagmi';
+
+import { useAccount, useBalance, useChainId, useSendTransaction, useWaitForTransactionReceipt, useDisconnect } from 'wagmi';
 import { sepolia, mainnet, polygon, optimism, arbitrum, base } from 'wagmi/chains';
 import { monadTestnet } from '@/types/monadTestnet';
 import { toast } from 'sonner';
 import { parseEther } from 'viem/utils';
 import SendMonadModal from './Sendmodal';
+
 import { usePrivy, useWallets } from '@privy-io/react-auth';
-import { useSetActiveWallet } from '@privy-io/wagmi';
-
-const navigationItems = [
-  {
-    label: 'Home',
-    path: '/',
-    icon: <Home className="w-4 h-4" />, show: true
-  },
-  {
-    label: 'Games',
-    path: '/games',
-    icon: <Gamepad2 className="w-4 h-4" />, show: true
-  },
-];
-
-const getChainName = (id: number | undefined) => {
-  if (!id) return 'Unknown';
-  if (id === sepolia.id) return 'Sepolia';
-  if (id === mainnet.id) return 'Ethereum';
-  if (id === arbitrum.id) return 'Arbitrum';
-  if (id === base.id) return 'Base';
-  if (id === polygon.id) return 'Polygon';
-  if (id === optimism.id) return 'Optimism';
-  if (id === monadTestnet.id) return 'Monad';
-  return 'Unknown Network';
-};
+import {useSetActiveWallet} from '@privy-io/wagmi';
 
 const Header = () => {
   // Privy hooks
-  const { ready, authenticated, login, logout } = usePrivy();
-  const { wallets } = useWallets();
-  const { setActiveWallet } = useSetActiveWallet();
+  const {ready, user, authenticated, login, connectWallet, logout, linkWallet} = usePrivy();
+  const {wallets, ready: walletsReady} = useWallets();
 
-  // Wagmi hooks
-  const { address, isConnected } = useAccount();
-  const { disconnect } = useDisconnect();
-  const chainId = useChainId();
-  const { data: balance } = useBalance({ address });
+  // WAGMI hooks
+  const {address, isConnected, isConnecting, isDisconnected} = useAccount();
+  const {disconnect} = useDisconnect();
+  const {setActiveWallet} = useSetActiveWallet();
 
-  // UI state
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [recipient, setRecipient] = useState('');
-  const [amount, setAmount] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [embeddedWallet, setEmbeddedWallet] = useState<any>(null);
+  const [embeddedWallet, setEmbeddedWallet] = useState({});
 
-  // Send transaction hooks
-  const { data: hash, isPending, sendTransaction } = useSendTransaction();
-  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash });
-
-  // Set embedded wallet as active when wallets change
   useEffect(() => {
+    // Find the embedded wallet
     const embedded = wallets.find((wallet) => wallet.connectorType === 'embedded');
     if (embedded) {
-      // setActiveWallet(embedded);
-      setEmbeddedWallet(embedded);
+      setActiveWallet(embedded); // Set as active
+      setEmbeddedWallet(embedded); // (if you want to store it in state)
     }
   }, [wallets, setActiveWallet]);
 
+  console.log('wallets', wallets, address);
+
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const chainId = useChainId();
+  console.log('user', user);
+  const { data: balance } = useBalance({
+    address,
+  });
+
+  // const {setOpenConnectModal} = useOpenConnectModal();
+
+  const [recipient, setRecipient] = useState('');
+  const [amount, setAmount] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const navigationItems = [
+    {
+      label: 'Home',
+      path: '/',
+      icon: <Home className="w-4 h-4" />,
+      show: true
+    },
+    {
+      label: 'Games',
+      path: '/games',
+      icon: <Gamepad2 className="w-4 h-4" />,
+      show: true
+    },
+  ];
+
+  const isActivePath = (path: string) => {
+    if (path === '/') {
+      return location.pathname === '/';
+    }
+    return location.pathname.startsWith(path);
+  };
+
+  // Send transaction hook
+  const { data: hash, isPending, sendTransaction } = useSendTransaction();
+
+  // Track transaction status
+  const { isLoading: isConfirming, isSuccess: isConfirmed } =
+    useWaitForTransactionReceipt({
+      hash,
+    });
+
+  const handleSendMonad = () => {
+    try {
+      if (!recipient || !amount) {
+        toast.error('Please enter recipient address and amount');
+        return;
+      }
+
+      // Convert ETH to Wei and send transaction
+      sendTransaction({
+        to: recipient,
+        value: parseEther(amount),
+        chainId: monadTestnet.id,
+      });
+    } catch (error) {
+      console.error('Error sending transaction:', error);
+      toast.error('Transaction failed. Please try again.');
+    }
+  };
+
   // Show transaction confirmation
-  useEffect(() => {
+  React.useEffect(() => {
     if (isConfirmed && hash) {
       toast.success(
         <div>
@@ -94,32 +119,25 @@ const Header = () => {
           </a>
         </div>
       );
+
+      // Reset form
       setRecipient('');
       setAmount('');
       setIsModalOpen(false);
     }
   }, [isConfirmed, hash]);
 
-  // Navigation helpers
-  const isActivePath = (path: string) =>
-    path === '/' ? location.pathname === '/' : location.pathname.startsWith(path);
-
-  // Handle sending MON
-  const handleSendMonad = () => {
-    if (!recipient || !amount) {
-      toast.error('Please enter recipient address and amount');
-      return;
-    }
-    try {
-      sendTransaction({
-        to: recipient,
-        value: parseEther(amount),
-        chainId: monadTestnet.id,
-      });
-    } catch (error) {
-      console.error('Error sending transaction:', error);
-      toast.error('Transaction failed. Please try again.');
-    }
+  // Get chain name from chainId
+  const getChainName = (id: number | undefined) => {
+    if (!id) return 'Unknown';
+    if (id === sepolia.id) return 'Sepolia';
+    if (id === mainnet.id) return 'Ethereum';
+    if (id === arbitrum.id) return 'Arbitrum';
+    if (id === base.id) return 'Base';
+    if (id === polygon.id) return 'Polygon';
+    if (id === optimism.id) return 'Optimism';
+    if (id === monadTestnet.id) return 'Monad';
+    return 'Unknown Network';
   };
 
   return (
@@ -143,21 +161,23 @@ const Header = () => {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-1">
-            {navigationItems.filter(item => item.show).map((item) => (
-              <Button
-                key={item.path}
-                variant={isActivePath(item.path) ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => navigate(item.path)}
-                className={`flex items-center space-x-2 ${isActivePath(item.path)
-                  ? 'bg-purple-600 hover:bg-purple-700 text-white'
-                  : 'text-gray-300 hover:text-white hover:bg-gray-800'
-                } transition-all duration-200`}
-              >
-                {item.icon}
-                <span>{item.label}</span>
-              </Button>
-            ))}
+            {navigationItems
+              .filter(item => item.show)
+              .map((item) => (
+                <Button
+                  key={item.path}
+                  variant={isActivePath(item.path) ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => navigate(item.path)}
+                  className={`flex items-center space-x-2 ${isActivePath(item.path)
+                    ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                    : 'text-gray-300 hover:text-white hover:bg-gray-800'
+                    } transition-all duration-200`}
+                >
+                  {item.icon}
+                  <span>{item.label}</span>
+                </Button>
+              ))}
             {isConnected && (
               <Button
                 variant="outline"
@@ -170,24 +190,24 @@ const Header = () => {
           </nav>
 
           {/* Desktop Actions */}
+          {/* <div className="hidden md:flex items-center space-x-2">
+            <button
+              className='text-gray-900 bg-gray-100 hover:bg-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500'
+              onClick={() => setOpenConnectModal(true)}>Connect</button>
+          </div> */}
+
           <div className="hidden md:flex items-center space-x-2">
             {ready && authenticated ? (
               <>
-                <p className="text-white">{address}</p>
+              <p className="text-white">{address}</p>
                 <button
-                  className="text-gray-900 bg-gray-100 hover:bg-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500"
-                  onClick={logout}
-                >
-                  Disconnect
-                </button>
+                className='text-gray-900 bg-gray-100 hover:bg-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500'
+                onClick={logout}>Disconnect</button>
               </>
             ) : (
               <button
-                className="text-gray-900 bg-gray-100 hover:bg-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500"
-                onClick={login}
-              >
-                Connect
-              </button>
+                className='text-gray-900 bg-gray-100 hover:bg-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500'
+                onClick={login}>Connect</button>
             )}
           </div>
 
@@ -202,7 +222,11 @@ const Header = () => {
             className="md:hidden p-2 text-gray-300 hover:text-white"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {mobileMenuOpen ? (
+              <X className="w-6 h-6" />
+            ) : (
+              <Menu className="w-6 h-6" />
+            )}
           </button>
         </div>
 
@@ -216,24 +240,28 @@ const Header = () => {
             transition={{ duration: 0.2 }}
           >
             <nav className="flex flex-col space-y-2">
-              {navigationItems.filter(item => item.show).map((item) => (
-                <Button
-                  key={item.path}
-                  variant={isActivePath(item.path) ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => {
-                    navigate(item.path);
-                    setMobileMenuOpen(false);
-                  }}
-                  className={`flex items-center justify-start space-x-2 w-full ${isActivePath(item.path)
-                    ? 'bg-purple-600 hover:bg-purple-700 text-white'
-                    : 'text-gray-300 hover:text-white hover:bg-gray-800'
-                  } transition-all duration-200`}
-                >
-                  {item.icon}
-                  <span>{item.label}</span>
-                </Button>
-              ))}
+              {navigationItems
+                .filter(item => item.show)
+                .map((item) => (
+                  <Button
+                    key={item.path}
+                    variant={isActivePath(item.path) ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => {
+                      navigate(item.path);
+                      setMobileMenuOpen(false);
+                    }}
+                    className={`flex items-center justify-start space-x-2 w-full ${isActivePath(item.path)
+                      ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                      : 'text-gray-300 hover:text-white hover:bg-gray-800'
+                      } transition-all duration-200`}
+                  >
+                    {item.icon}
+                    <span>{item.label}</span>
+                  </Button>
+                ))}
+
+              {/* Send MON Button (only visible when connected) */}
               {isConnected && (
                 <Button
                   variant="outline"
@@ -244,21 +272,22 @@ const Header = () => {
                 </Button>
               )}
             </nav>
+
+            {/* Mobile Wallet Connection */}
+            {/* <div className="pt-4 border-t border-gray-700 mt-4 flex items-center justify-center">
+              <button
+                className='text-gray-900 bg-gray-100 hover:bg-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500'
+                onClick={() => setOpenConnectModal(true)}>Connect</button>
+            </div> */}
             <div className="pt-4 border-t border-gray-700 mt-4 flex items-center justify-center">
               {ready && authenticated ? (
                 <button
-                  className="text-gray-900 bg-gray-100 hover:bg-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500"
-                  onClick={logout}
-                >
-                  Disconnect
-                </button>
+                  className='text-gray-900 bg-gray-100 hover:bg-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500'
+                  onClick={logout}>Disconnect</button>
               ) : (
                 <button
-                  className="text-gray-900 bg-gray-100 hover:bg-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500"
-                  onClick={login}
-                >
-                  Connect
-                </button>
+                  className='text-gray-900 bg-gray-100 hover:bg-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500'
+                  onClick={login}>Connect</button>
               )}
             </div>
           </motion.div>
