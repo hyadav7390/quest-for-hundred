@@ -39,7 +39,7 @@ const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         embeddedWallets: {
           createOnLogin: 'users-without-wallets',
           requireUserPasswordOnCreate: false,
-          noPromptOnSignature: true, // This enables auto-signing
+          showWalletUIs: false // This enables auto-signing
         },
         loginMethods: ['email', 'wallet'],
         fundingMethodConfig: {
