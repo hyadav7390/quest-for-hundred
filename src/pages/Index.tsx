@@ -42,12 +42,13 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
-    console.log('🎲 [INDEX] Dice rolling state changed:', isDiceRolling);
+    console.log('🎲 [INDEX] Dice rolling state changed:-----------------------', contractState?.position, gameState.playerPosition);
     setIsDiceRolling(false);
   }, [gameState.playerPosition])
 
   // Handle tile interactions for splash animations based on position changes
   useEffect(() => {
+    console.log('***************************************************', contractState?.position, gameState.playerPosition);
     if (contractState && gameState.playerPosition !== contractState.position) {
       const currentPosition = contractState.position;
       console.log(`🎯 [INDEX] Player moved to position ${currentPosition}`);
@@ -126,7 +127,7 @@ const Index = () => {
     // Reset dice rolling state after animation
     setTimeout(() => {
       setIsDiceRolling(false);
-    }, 5000); // Increased timeout for VRF
+    }, 100); // Increased timeout for VRF
   };
 
   const handleNewGameClick = async () => {
@@ -278,7 +279,7 @@ const Index = () => {
   };
 
   const isNewGameDisabled = () => {
-    return isStartingGame || isLoading || isDiceRolling || (balance && balance.value === 0n);
+    return isStartingGame || isDiceRolling || (balance && balance.value === 0n);
   };
 
   console.log('🎮 [INDEX] Rendering main game interface');
@@ -464,7 +465,7 @@ const Index = () => {
               whileTap={{ scale: isNewGameDisabled() ? 1 : 0.98 }}
               disabled={isNewGameDisabled()}
             >
-              {isStartingGame || isLoading ? 'Starting Game...' : 'New Game'}
+              {isStartingGame && isLoading ? 'Starting Game...' : 'New Game'}
             </motion.button>
           </div>
         </div>

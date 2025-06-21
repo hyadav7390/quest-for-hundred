@@ -12,6 +12,7 @@ interface DiceProps {
 
 const Dice = ({ value, isRolling, onRoll, disabled, contractValue }: DiceProps) => {
   const [animationValue, setAnimationValue] = useState(1);
+  console.log('value, isRolling, disabled, contractValue', value, isRolling, disabled, contractValue);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -21,32 +22,27 @@ const Dice = ({ value, isRolling, onRoll, disabled, contractValue }: DiceProps) 
     };
 
     window.addEventListener('keydown', handleKeyDown);
-    
+
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [disabled, onRoll]);
 
   useEffect(() => {
+    console.log('dice componenttttttt', isRolling, value, contractValue);
     if (isRolling) {
       // Show random animation while waiting for contract result
-      const interval = setInterval(() => {
-        setAnimationValue(Math.floor(Math.random() * 6) + 1);
-      }, 100);
 
       // If we get the contract value, stop on that value immediately
       if (contractValue && contractValue > 0) {
-        clearInterval(interval);
+        // clearInterval(interval);
         setAnimationValue(contractValue);
       } else {
-        // If no contract value after 3 seconds, stop on random value
-        setTimeout(() => {
-          clearInterval(interval);
-          setAnimationValue(value || Math.floor(Math.random() * 6) + 1);
-        }, 3000);
+        const interval = setInterval(() => {
+          setAnimationValue(Math.floor(Math.random() * 6) + 1);
+        }, 100);
+        return () => clearInterval(interval);
       }
-
-      return () => clearInterval(interval);
     } else if (value) {
       // When not rolling, show the actual value
       setAnimationValue(value);
@@ -77,13 +73,13 @@ const Dice = ({ value, isRolling, onRoll, disabled, contractValue }: DiceProps) 
       <motion.div
         className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-300 rounded-xl border-2 border-gray-400 relative shadow-lg"
         animate={{
-          rotateX: isRolling ? 360 : 0,
-          rotateY: isRolling ? 360 : 0,
-          scale: isRolling ? [1, 1.1, 1] : 1,
+          rotateX: isRolling && !contractValue ? 360 : 0,
+          rotateY: isRolling && !contractValue ? 360 : 0,
+          scale: isRolling && !contractValue ? [1, 1.1, 1] : 1,
         }}
         transition={{
-          duration: isRolling ? 0.3 : 0,
-          repeat: isRolling ? Infinity : 0,
+          duration: isRolling && !contractValue ? 0.3 : 0,
+          repeat: isRolling && !contractValue ? Infinity : 0,
           ease: "easeInOut",
         }}
       >
@@ -93,19 +89,18 @@ const Dice = ({ value, isRolling, onRoll, disabled, contractValue }: DiceProps) 
             const col = i % 3;
             const dots = getDiceDots(animationValue);
             const hasDot = dots.some(([r, c]) => r === row && c === col);
-            
+
             return (
               <div
                 key={i}
-                className={`flex items-center justify-center transition-all duration-150 ${
-                  hasDot ? 'bg-gray-800 rounded-full' : ''
-                }`}
+                className={`flex items-center justify-center transition-all duration-150 ${hasDot ? 'bg-gray-800 rounded-full' : ''
+                  }`}
               />
             );
           })}
         </div>
       </motion.div>
-      
+
       <motion.button
         onClick={onRoll}
         disabled={disabled}
@@ -115,10 +110,16 @@ const Dice = ({ value, isRolling, onRoll, disabled, contractValue }: DiceProps) 
       >
         {getRollButtonText()}
       </motion.button>
-      
-      {isRolling && (
+
+      {isRolling && !contractValue && (
         <p className="text-sm text-yellow-400 text-center">
           🎲 Waiting for blockchain result...
+        </p>
+      )}
+
+      {contractValue && contractValue > 0 && (
+        <p className="text-sm text-green-400 text-center">
+          🎯 Rolled: {contractValue}
         </p>
       )}
     </div>
