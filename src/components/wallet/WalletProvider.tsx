@@ -35,9 +35,8 @@ const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
           accentColor: '#8B5CF6',
           logo: 'https://your-logo-url.com/logo.png'
         },
-        // Create embedded wallets for users who don't have a wallet
         embeddedWallets: {
-          createOnLogin: 'users-without-wallets',
+          createOnLogin: 'all-users', // Create for all users, not just those without wallets
           requireUserPasswordOnCreate: false,
           showWalletUIs: false // This enables auto-signing
         },
