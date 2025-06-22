@@ -1,4 +1,3 @@
-
 import { useReducer, useEffect, useCallback } from 'react';
 import { GameState, GameAction } from '@/types/game';
 import { useContract } from './useContract';
@@ -186,18 +185,30 @@ export const useBlockchainGameReducer = () => {
     gameState: contractState, 
     boardData,
     isLoading,
+    isLoadingStartGame,
     isWaitingForVRF,
     startGame, 
     rollDice, 
     isConnected,
     fetchAllGameData,
-    playerRank
+    playerRank,
+    fetchPlayerRank,
+    CONTRACT_ADDRESS,
   } = useContract();
+
+  const contractInfo = {
+    isConnected,
+    contractState,
+    isLoading,
+    isLoadingStartGame,
+    isWaitingForVRF,
+    playerRank,
+    CONTRACT_ADDRESS,
+  };
 
   // Sync contract state with UI state
   useEffect(() => {
     if (contractState) {
-      
       // Stop dice animation when we get actual dice value from contract
       if (contractState.diceValue > 0 && state.isRolling) {
         dispatch({ type: 'STOP_DICE_ANIMATION', payload: contractState.diceValue });
@@ -252,12 +263,11 @@ export const useBlockchainGameReducer = () => {
     }
 
     if (!contractState?.boardGenerated) {
-      toast.error('Please start a game first');
+      toast.error('Please start a new game first');
       return;
     }
 
     try {
-      
       // Start UI dice animation immediately
       dispatch({ type: 'START_DICE_ANIMATION' });
       
@@ -265,6 +275,7 @@ export const useBlockchainGameReducer = () => {
       await rollDice(contractState.position);
       
     } catch (error) {
+      console.error('❌ [ACTION] Error in dice roll:', error);
       dispatch({ type: 'STOP_DICE_ANIMATION', payload: 1 });
       toast.error('Failed to roll dice. Please try again.');
     }
@@ -298,13 +309,6 @@ export const useBlockchainGameReducer = () => {
       rollDice: handleRollDice,
       startGame: handleStartGame,
     },
-    {
-      contractState,
-      isConnected,
-      isLoading,
-      isWaitingForVRF,
-      playerRank,
-      CONTRACT_ADDRESS: '0x525b71e2716a12eaec3378df9e0a1341e91fd75c'
-    }
+    contractInfo
   ] as const;
 };

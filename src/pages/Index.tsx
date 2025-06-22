@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useBlockchainGameReducer } from '@/hooks/useBlockchainGameReducer';
@@ -17,17 +16,85 @@ import { Wallet, RefreshCw } from 'lucide-react';
 import { useAccount, useBalance } from 'wagmi';
 import { monadTestnet } from '@/types/monadTestnet';
 
+// Helper components defined outside Index to prevent re-mounting on every render
+const BalanceWarning = () => (
+  <motion.div
+    className="bg-red-600/20 border border-red-600/40 rounded-lg p-4 mb-6 text-center"
+    initial={{ opacity: 0, y: -10 }}
+    animate={{ opacity: 1, y: 0 }}
+  >
+    <div className="flex items-center justify-center space-x-2">
+      <Wallet className="w-5 h-5 text-red-400" />
+      <span className="text-red-200">
+        No balance detected. Please add MON tokens to your wallet to play the game.
+      </span>
+    </div>
+  </motion.div>
+);
+
+const VRFWaitingIndicator = () => (
+  <motion.div
+    className="bg-yellow-600/20 border border-yellow-600/40 rounded-lg p-4 mb-6 text-center"
+    initial={{ opacity: 0, y: -10 }}
+    animate={{ opacity: 1, y: 0 }}
+  >
+    <div className="flex items-center justify-center space-x-2">
+      <RefreshCw className="w-5 h-5 animate-spin text-yellow-400" />
+      <span className="text-yellow-200">
+        Waiting for Chainlink VRF result... This may take a few moments.
+      </span>
+    </div>
+  </motion.div>
+);
+
+const DiceSection = ({ gameState, isWaitingForVRF, rollDice, isDiceDisabled, contractState, hasNoBalance }) => (
+  <motion.div
+    className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-6 shadow-xl border border-gray-600"
+    initial={{ opacity: 0, scale: 0.9 }}
+    animate={{ opacity: 1, scale: 1 }}
+    transition={{ duration: 0.5, delay: 0.2 }}
+  >
+    <Dice
+      value={gameState.diceValue}
+      isRolling={gameState.isRolling || isWaitingForVRF}
+      onRoll={rollDice}
+      disabled={isDiceDisabled}
+      contractValue={contractState?.diceValue}
+      isWaitingForVRF={isWaitingForVRF}
+    />
+    {isWaitingForVRF && (
+      <p className="text-center text-yellow-400 text-sm mt-2">
+        ⏳ Waiting for blockchain randomness...
+      </p>
+    )}
+    {hasNoBalance && (
+      <p className="text-center text-red-400 text-sm mt-2">
+        ⚠️ Add MON tokens to play
+      </p>
+    )}
+  </motion.div>
+);
+
+const NewGameButton = ({ handleNewGameClick, isNewGameDisabled, isStartingGame }) => (
+  <motion.button
+    onClick={handleNewGameClick}
+    className="w-full py-3 bg-gradient-to-r from-red-600 to-pink-600 text-white font-bold rounded-lg shadow-lg hover:from-red-700 hover:to-pink-700 transition-all duration-200 disabled:opacity-50"
+    whileHover={{ scale: isNewGameDisabled ? 1 : 1.02 }}
+    whileTap={{ scale: isNewGameDisabled ? 1 : 0.98 }}
+    disabled={isNewGameDisabled}
+  >
+    {isStartingGame ? 'Starting Game...' : 'New Game'}
+  </motion.button>
+);
+
+
 const Index = () => {
-  console.log('🏠 [INDEX] Component rendering');
-  
   const [gameState, gameActions, contractInfo] = useBlockchainGameReducer();
   const { playSound } = useSoundEffects(gameState.isSoundMuted);
   const { splash, hideSplash, triggerGiftSplash, triggerDetourSplash, triggerShortcutSplash } = useSplashAnimations();
   const [showNewGameConfirmation, setShowNewGameConfirmation] = useState(false);
-  const [isDiceRolling, setIsDiceRolling] = useState(false);
-  const [isStartingGame, setIsStartingGame] = useState(false);
 
-  const { isConnected, contractState, isLoading, isWaitingForVRF, playerRank } = contractInfo;
+  const { isConnected, contractState, isLoading, isLoadingStartGame, isWaitingForVRF, playerRank } = contractInfo;
   const { address } = useAccount();
   
   // Get balance for validation
@@ -36,60 +103,48 @@ const Index = () => {
     chainId: monadTestnet.id,
   });
 
+  // Play start sound on mount
   useEffect(() => {
-    console.log('🎵 [INDEX] Playing start sound');
     playSound('start');
-  }, []);
+  }, [playSound]);
 
+  // Handle tile interactions for splash animations
   useEffect(() => {
-    console.log('🎲 [INDEX] Dice rolling state changed:-----------------------', contractState?.position, gameState.playerPosition);
-    setIsDiceRolling(false);
-  }, [gameState.playerPosition])
-
-  // Handle tile interactions for splash animations based on position changes
-  useEffect(() => {
-    console.log('***************************************************', contractState?.position, gameState.playerPosition);
-    if (contractState && gameState.playerPosition !== contractState.position) {
-      const currentPosition = contractState.position;
-      console.log(`🎯 [INDEX] Player moved to position ${currentPosition}`);
-      
-      // Check for gift tiles
-      const giftTile = gameState.giftTiles.find(tile => tile.index === currentPosition);
-      if (giftTile) {
-        console.log(`🎁 [INDEX] Triggered gift splash: ${giftTile.points} points`);
-        triggerGiftSplash(giftTile.points);
-        playSound('gift');
-      }
-      
-      // Check for detour traps
-      const detourTile = gameState.detourTrapTiles.find(tile => tile.index === currentPosition);
-      if (detourTile) {
-        console.log(`🚪 [INDEX] Triggered detour splash: move back ${detourTile.moveBack}`);
-        triggerDetourSplash(detourTile.moveBack);
-        playSound('detourTrap');
-      }
-      
-      // Check for shortcut gates
-      const shortcutTile = gameState.shortcutGateTiles.find(tile => tile.index === currentPosition);
-      if (shortcutTile) {
-        console.log(`⚡ [INDEX] Triggered shortcut splash: move forward ${shortcutTile.moveForward}`);
-        triggerShortcutSplash(shortcutTile.moveForward);
-        playSound('gift');
-      }
-    }
-  }, [contractState?.position, gameState.giftTiles, gameState.detourTrapTiles, gameState.shortcutGateTiles]);
-
-  const rollDice = async () => {
-    console.log('🎲 [INDEX] Roll dice button clicked');
+    if (!contractState || gameState.playerPosition === contractState.position) return;
     
-    // Prevent accidental double clicks
-    if (isDiceRolling || isLoading || isWaitingForVRF || isStartingGame) {
-      console.log('⚠️ [INDEX] Dice roll blocked - operation in progress');
-      return;
+    const currentPosition = contractState.position;
+    
+    // Check for gift tiles
+    const giftTile = gameState.giftTiles.find(tile => tile.index === currentPosition);
+    if (giftTile) {
+      triggerGiftSplash(giftTile.points);
+      playSound('gift');
     }
+    
+    // Check for detour traps
+    const detourTile = gameState.detourTrapTiles.find(tile => tile.index === currentPosition);
+    if (detourTile) {
+      triggerDetourSplash(detourTile.moveBack);
+      playSound('detourTrap');
+    }
+    
+    // Check for shortcut gates
+    const shortcutTile = gameState.shortcutGateTiles.find(tile => tile.index === currentPosition);
+    if (shortcutTile) {
+      triggerShortcutSplash(shortcutTile.moveForward);
+      playSound('gift');
+    }
+  }, [contractState?.position, gameState.playerPosition, gameState.giftTiles, gameState.detourTrapTiles, gameState.shortcutGateTiles, triggerGiftSplash, triggerDetourSplash, triggerShortcutSplash, playSound]);
+
+  // Validation helpers
+  const hasNoBalance = balance && balance.value === 0n;
+  const isOperationInProgress = gameState.isRolling || isLoading || isWaitingForVRF;
+
+  // Handle dice roll
+  const rollDice = async () => {
+    if (isOperationInProgress) return;
     
     if (!isConnected) {
-      console.log('❌ [INDEX] Not connected - showing wallet prompt');
       toast({
         title: "Wallet Required",
         description: "Please connect your wallet to play on-chain",
@@ -99,7 +154,6 @@ const Index = () => {
     }
 
     if (!contractState?.boardGenerated) {
-      console.log('❌ [INDEX] Game not started - showing prompt');
       toast({
         title: "Game Not Started",
         description: "Please start a new game first",
@@ -108,9 +162,7 @@ const Index = () => {
       return;
     }
 
-    // Check balance for transaction fees
-    if (balance && balance.value === 0n) {
-      console.log('❌ [INDEX] No balance for transaction fees');
+    if (hasNoBalance) {
       toast({
         title: "Insufficient Balance",
         description: "You need MON tokens to pay for transaction fees. Please add funds to your wallet.",
@@ -119,28 +171,15 @@ const Index = () => {
       return;
     }
 
-    console.log('✅ [INDEX] Proceeding with dice roll');
-    setIsDiceRolling(true);
     await gameActions.rollDice();
     playSound('diceRoll');
-    
-    // Reset dice rolling state after animation
-    setTimeout(() => {
-      setIsDiceRolling(false);
-    }, 100); // Increased timeout for VRF
   };
 
+  // Handle new game
   const handleNewGameClick = async () => {
-    console.log('🆕 [INDEX] New game button clicked');
-    
-    // Prevent accidental double clicks
-    if (isStartingGame || isLoading || isDiceRolling) {
-      console.log('⚠️ [INDEX] New game blocked - operation in progress');
-      return;
-    }
+    if (isLoading || gameState.isRolling || isWaitingForVRF) return;
     
     if (!isConnected) {
-      console.log('❌ [INDEX] Not connected for new game');
       toast({
         title: "Wallet Required",
         description: "Please connect your wallet to start a new game",
@@ -149,9 +188,7 @@ const Index = () => {
       return;
     }
 
-    // Check balance for transaction fees
-    if (balance && balance.value === 0n) {
-      console.log('❌ [INDEX] No balance for new game');
+    if (hasNoBalance) {
       toast({
         title: "Insufficient Balance",
         description: "You need MON tokens to pay for transaction fees. Please add funds to your wallet.",
@@ -161,17 +198,14 @@ const Index = () => {
     }
 
     if (gameState.diceRolled && gameState.gameStatus === 'playing') {
-      console.log('⚠️ [INDEX] Game in progress - showing confirmation');
       setShowNewGameConfirmation(true);
     } else {
-      console.log('✅ [INDEX] Starting new game directly');
       await restartGame();
     }
   };
 
+  // Restart game
   const restartGame = async () => {
-    console.log('🔄 [INDEX] Restarting game');
-    setIsStartingGame(true);
     setShowNewGameConfirmation(false);
     
     try {
@@ -183,22 +217,24 @@ const Index = () => {
         variant: "default",
       });
     } catch (error) {
-      console.error('❌ [INDEX] Error restarting game:', error);
-    } finally {
-      setTimeout(() => {
-        setIsStartingGame(false);
-      }, 8000); // Increased timeout for contract interaction
+      console.error('Error restarting game:', error);
     }
   };
 
   const toggleSound = () => {
-    console.log('🔊 [INDEX] Toggling sound');
     gameActions.dispatch({ type: 'TOGGLE_SOUND' });
   };
 
+  // Disable conditions
+  const isDiceDisabled = isOperationInProgress ||
+           gameState.gameStatus === 'won' || 
+           !contractState?.boardGenerated ||
+           hasNoBalance;
+
+  const isNewGameDisabled = isLoading || gameState.isRolling || isWaitingForVRF || hasNoBalance;
+
   // Show wallet connection prompt if not connected
   if (!isConnected) {
-    console.log('🔌 [INDEX] Showing wallet connection prompt');
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 p-4">
         <div className="max-w-7xl mx-auto">
@@ -224,7 +260,6 @@ const Index = () => {
 
   // Show game start prompt if game not started
   if (contractState && !contractState.boardGenerated) {
-    console.log('🎮 [INDEX] Showing game start prompt');
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 p-4">
         <div className="max-w-7xl mx-auto">
@@ -240,7 +275,7 @@ const Index = () => {
                 Ready to begin your journey to tile 100? Your game board will be generated on-chain 
                 with unique gifts and challenges using Chainlink VRF for randomness.
               </p>
-              {balance && balance.value === 0n && (
+              {hasNoBalance && (
                 <div className="bg-red-600/20 border border-red-600/40 rounded-lg p-3 mb-4">
                   <p className="text-red-200 text-sm">
                     ⚠️ You need MON tokens to pay for transaction fees. Please add funds to your wallet.
@@ -250,9 +285,9 @@ const Index = () => {
               <Button
                 onClick={restartGame}
                 className="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold rounded-lg shadow-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-200"
-                disabled={isStartingGame || isLoading || (balance && balance.value === 0n)}
+                disabled={isLoadingStartGame || hasNoBalance}
               >
-                {isStartingGame || isLoading ? (
+                {isLoadingStartGame ? (
                   <>
                     <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
                     Starting Game...
@@ -267,22 +302,6 @@ const Index = () => {
       </div>
     );
   }
-
-  const isDiceDisabled = () => {
-    return isDiceRolling || 
-           isLoading || 
-           isWaitingForVRF || 
-           isStartingGame ||
-           gameState.gameStatus === 'won' || 
-           !contractState?.boardGenerated ||
-           (balance && balance.value === 0n);
-  };
-
-  const isNewGameDisabled = () => {
-    return isStartingGame || isDiceRolling || (balance && balance.value === 0n);
-  };
-
-  console.log('🎮 [INDEX] Rendering main game interface');
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 p-4">
@@ -315,36 +334,10 @@ const Index = () => {
         </motion.div>
 
         {/* Balance Warning */}
-        {balance && balance.value === 0n && (
-          <motion.div
-            className="bg-red-600/20 border border-red-600/40 rounded-lg p-4 mb-6 text-center"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <div className="flex items-center justify-center space-x-2">
-              <Wallet className="w-5 h-5 text-red-400" />
-              <span className="text-red-200">
-                No balance detected. Please add MON tokens to your wallet to play the game.
-              </span>
-            </div>
-          </motion.div>
-        )}
+        {hasNoBalance && <BalanceWarning />}
 
         {/* VRF Waiting Indicator */}
-        {isWaitingForVRF && (
-          <motion.div
-            className="bg-yellow-600/20 border border-yellow-600/40 rounded-lg p-4 mb-6 text-center"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <div className="flex items-center justify-center space-x-2">
-              <RefreshCw className="w-5 h-5 animate-spin text-yellow-400" />
-              <span className="text-yellow-200">
-                Waiting for Chainlink VRF result... This may take a few moments.
-              </span>
-            </div>
-          </motion.div>
-        )}
+        {isWaitingForVRF && <VRFWaitingIndicator />}
 
         {/* Mobile Layout */}
         <div className="block lg:hidden space-y-6">
@@ -370,40 +363,19 @@ const Index = () => {
           />
 
           <div className="space-y-4">
-            <motion.div
-              className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-6 shadow-xl border border-gray-600"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-            >
-              <Dice
-                value={gameState.diceValue}
-                isRolling={gameState.isRolling || isWaitingForVRF}
-                onRoll={rollDice}
-                disabled={isDiceDisabled()}
-                contractValue={contractState?.diceValue}
-              />
-              {isWaitingForVRF && (
-                <p className="text-center text-yellow-400 text-sm mt-2">
-                  ⏳ Waiting for blockchain randomness...
-                </p>
-              )}
-              {balance && balance.value === 0n && (
-                <p className="text-center text-red-400 text-sm mt-2">
-                  ⚠️ Add MON tokens to play
-                </p>
-              )}
-            </motion.div>
-
-            <motion.button
-              onClick={handleNewGameClick}
-              className="w-full py-3 bg-gradient-to-r from-red-600 to-pink-600 text-white font-bold rounded-lg shadow-lg hover:from-red-700 hover:to-pink-700 transition-all duration-200 disabled:opacity-50"
-              whileHover={{ scale: isNewGameDisabled() ? 1 : 1.02 }}
-              whileTap={{ scale: isNewGameDisabled() ? 1 : 0.98 }}
-              disabled={isNewGameDisabled()}
-            >
-              {isStartingGame || isLoading ? 'Starting Game...' : 'New Game'}
-            </motion.button>
+            <DiceSection 
+              gameState={gameState}
+              isWaitingForVRF={isWaitingForVRF}
+              rollDice={rollDice}
+              isDiceDisabled={isDiceDisabled}
+              contractState={contractState}
+              hasNoBalance={hasNoBalance}
+            />
+            <NewGameButton 
+              handleNewGameClick={handleNewGameClick}
+              isNewGameDisabled={isNewGameDisabled}
+              isStartingGame={isLoadingStartGame}
+            />
           </div>
         </div>
 
@@ -433,40 +405,19 @@ const Index = () => {
               onToggleSound={toggleSound}
             />
 
-            <motion.div
-              className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-6 shadow-xl border border-gray-600"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-            >
-              <Dice
-                value={gameState.diceValue}
-                isRolling={gameState.isRolling || isWaitingForVRF}
-                onRoll={rollDice}
-                disabled={isDiceDisabled()}
-                contractValue={contractState?.diceValue}
-              />
-              {isWaitingForVRF && (
-                <p className="text-center text-yellow-400 text-sm mt-2">
-                  ⏳ Waiting for blockchain randomness...
-                </p>
-              )}
-              {balance && balance.value === 0n && (
-                <p className="text-center text-red-400 text-sm mt-2">
-                  ⚠️ Add MON tokens to play
-                </p>
-              )}
-            </motion.div>
-
-            <motion.button
-              onClick={handleNewGameClick}
-              className="w-full py-3 bg-gradient-to-r from-red-600 to-pink-600 text-white font-bold rounded-lg shadow-lg hover:from-red-700 hover:to-pink-700 transition-all duration-200 disabled:opacity-50"
-              whileHover={{ scale: isNewGameDisabled() ? 1 : 1.02 }}
-              whileTap={{ scale: isNewGameDisabled() ? 1 : 0.98 }}
-              disabled={isNewGameDisabled()}
-            >
-              {isStartingGame && isLoading ? 'Starting Game...' : 'New Game'}
-            </motion.button>
+            <DiceSection 
+              gameState={gameState}
+              isWaitingForVRF={isWaitingForVRF}
+              rollDice={rollDice}
+              isDiceDisabled={isDiceDisabled}
+              contractState={contractState}
+              hasNoBalance={hasNoBalance}
+            />
+            <NewGameButton 
+              handleNewGameClick={handleNewGameClick}
+              isNewGameDisabled={isNewGameDisabled}
+              isStartingGame={isLoadingStartGame}
+            />
           </div>
         </div>
 
