@@ -28,7 +28,27 @@ const CONTRACT_ABI = [
       { "internalType": "uint256", "name": "nunuEarned", "type": "uint256" },
       { "internalType": "uint256", "name": "gameScore", "type": "uint256" },
       { "internalType": "bool", "name": "hasFinished", "type": "bool" },
-      { "internalType": "bool", "name": "boardGenerated", "type": "bool" }
+      { "internalType": "bool", "name": "boardGenerated", "type": "bool" },
+      {
+        "internalType": "uint8",
+        "name": "diceRolls",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "giftsCollected",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "shortcuts",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "detours",
+        "type": "uint8"
+      }
     ],
     "stateMutability": "view",
     "type": "function"
@@ -120,7 +140,7 @@ export interface LeaderboardEntry {
 
 export const useContract = () => {
   const { address, isConnected, chain } = useAccount();
-  
+
   // State management
   const [gameState, setGameState] = useState<ContractGameState | null>(null);
   const [boardData, setBoardData] = useState<ContractBoardData | null>(null);
@@ -155,16 +175,16 @@ export const useContract = () => {
   } = useWriteContract();
 
   // Transaction receipt watchers
-  const { 
-    isLoading: isStartGameConfirming, 
-    isSuccess: isStartGameSuccess, 
-    isError: isStartGameFailed 
+  const {
+    isLoading: isStartGameConfirming,
+    isSuccess: isStartGameSuccess,
+    isError: isStartGameFailed
   } = useWaitForTransactionReceipt({ hash: startGameHash });
 
-  const { 
-    isLoading: isRollDiceConfirming, 
-    isSuccess: isRollDiceSuccess, 
-    isError: isRollDiceFailed 
+  const {
+    isLoading: isRollDiceConfirming,
+    isSuccess: isRollDiceSuccess,
+    isError: isRollDiceFailed
   } = useWaitForTransactionReceipt({ hash: rollDiceHash });
 
   // Manual read operations - all disabled auto-fetch to prevent excessive calls
@@ -278,7 +298,7 @@ export const useContract = () => {
           boardGenerated,
           rollFee: gameStats ? gameStats[2] : BigInt(0)
         };
-        
+
         setGameState(newGameState);
         return newGameState;
       }
@@ -365,35 +385,38 @@ export const useContract = () => {
     setIsLoading(true);
     if (action === 'rollDice') setIsWaitingForVRF(true);
 
-    const maxAttempts = 15; // 30s timeout
+    const isDiceRoll = action === 'rollDice';
+    const pollInterval = isDiceRoll ? 1000 : 2000; // Poll faster for dice rolls
+    const maxAttempts = isDiceRoll ? 30 : 15; // Keep timeout around 30s
+
     for (let i = 0; i < maxAttempts; i++) {
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        const oldState = gameStateRef.current;
-        const newState = await fetchPlayerStatus();
+      await new Promise(resolve => setTimeout(resolve, pollInterval));
 
-        if (!newState) continue;
+      const oldState = gameStateRef.current;
+      const newState = await fetchPlayerStatus();
 
-        const hasStarted = newState.boardGenerated && !oldState?.boardGenerated;
-        const hasRolled = newState.diceValue !== oldState?.diceValue && newState.diceValue !== 0;
+      if (!newState) continue;
 
-        if (action === 'startGame' && hasStarted) {
-            toast.success('Game started successfully!');
-            await fetchAllGameData(); // Fetch rest of data now board is generated
-            setIsLoading(false);
-            return;
-        }
+      const hasStarted = newState.boardGenerated && !oldState?.boardGenerated;
+      const hasRolled = newState.diceValue !== oldState?.diceValue && newState.diceValue !== 0;
 
-        if (action === 'rollDice' && hasRolled) {
-            toast.success(`🎲 Rolled ${newState.diceValue}!`);
-            setIsLoading(false);
-            setIsWaitingForVRF(false);
-            return;
-        }
+      if (action === 'startGame' && hasStarted) {
+        toast.success('Game started successfully!');
+        await fetchAllGameData(); // Fetch rest of data now board is generated
+        setIsLoading(false);
+        return;
+      }
+
+      if (action === 'rollDice' && hasRolled) {
+        toast.success(`🎲 Rolled ${newState.diceValue}!`);
+        setIsLoading(false);
+        setIsWaitingForVRF(false);
+        return;
+      }
     }
-    
+
     // Timeout logic
-    toast.error('Transaction timed out. Please refresh and check the result.');
+    toast.error('Transaction timed out. The network may be busy. Please refresh to see the result.');
     setIsLoading(false);
     setIsWaitingForVRF(false);
   }, [fetchPlayerStatus, fetchAllGameData]);
@@ -489,10 +512,10 @@ export const useContract = () => {
         account: address
       });
     } catch (error: any) {
-      const errorMessage = error.message?.includes('insufficient funds') 
+      const errorMessage = error.message?.includes('insufficient funds')
         ? 'Insufficient balance to pay for transaction fees. Please add funds to your wallet.'
         : `Failed to start game: ${error.message || 'Unknown error'}`;
-      
+
       setTransactionError(errorMessage);
       toast.error(errorMessage);
       setIsLoading(false);
@@ -511,7 +534,7 @@ export const useContract = () => {
       setTransactionError(null);
       resetRollDice();
       rollDiceTxHashRef.current = undefined; // Reset for new transaction
-      
+
       const rollFee = gameStats[2]; // rollFee is third element in gameStats
 
       const result = await writeRollDice({
@@ -527,7 +550,7 @@ export const useContract = () => {
       const errorMessage = error.message?.includes('insufficient funds')
         ? 'Insufficient balance to pay for dice roll fee. Please add funds to your wallet.'
         : `Failed to roll dice: ${error.message || 'Unknown error'}`;
-      
+
       toast.error(errorMessage);
       setIsLoading(false);
       setIsWaitingForVRF(false);
