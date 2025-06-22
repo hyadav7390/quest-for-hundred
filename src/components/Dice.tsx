@@ -114,7 +114,7 @@ const Dice = ({ value, isRolling, onRoll, disabled, contractValue, isWaitingForV
         </p>
       )}
 
-      {contractValue && contractValue > 0 && (
+      {contractValue && contractValue > 0 && !isWaitingForVRF && (
         <p className="text-sm text-green-400 text-center">
           🎯 Rolled: {contractValue}
         </p>

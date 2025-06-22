@@ -386,15 +386,15 @@ export const useContract = () => {
     if (action === 'rollDice') setIsWaitingForVRF(true);
 
     const isDiceRoll = action === 'rollDice';
-    const pollInterval = isDiceRoll ? 1000 : 2000; // Poll faster for dice rolls
-    const maxAttempts = isDiceRoll ? 30 : 15; // Keep timeout around 30s
+    const pollInterval = isDiceRoll ? 400 : 500; // Poll faster for dice rolls
+    const maxAttempts = isDiceRoll ? 25 : 10; // Keep timeout around 30s
 
     for (let i = 0; i < maxAttempts; i++) {
       await new Promise(resolve => setTimeout(resolve, pollInterval));
 
       const oldState = gameStateRef.current;
       const newState = await fetchPlayerStatus();
-
+      console.log('pollAfterTransaction newState', newState);
       if (!newState) continue;
 
       const hasStarted = newState.boardGenerated && !oldState?.boardGenerated;
@@ -510,6 +510,8 @@ export const useContract = () => {
         functionName: 'startGame',
         chain,
         account: address
+        // ,
+        // gas: parseEther("0.00000005"),
       });
     } catch (error: any) {
       const errorMessage = error.message?.includes('insufficient funds')
@@ -545,6 +547,9 @@ export const useContract = () => {
         // value: rollFee,
         chain,
         account: address
+        // ,
+
+        // gas: parseEther("0.00000005")
       });
     } catch (error: any) {
       const errorMessage = error.message?.includes('insufficient funds')

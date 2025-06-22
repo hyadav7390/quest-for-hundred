@@ -318,7 +318,7 @@ const Header = () => {
                 ))}
 
               {/* Send MON Button (only visible when connected) */}
-              {isConnected && (
+              {/* {isConnected && (
                 <Button
                   variant="outline"
                   onClick={() => setIsModalOpen(true)}
@@ -326,7 +326,7 @@ const Header = () => {
                 >
                   {'Send MON'}
                 </Button>
-              )}
+              )} */}
             </nav>
 
             {/* Mobile Wallet Connection */}

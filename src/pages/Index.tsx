@@ -62,11 +62,11 @@ const DiceSection = ({ gameState, isWaitingForVRF, rollDice, isDiceDisabled, con
       contractValue={contractState?.diceValue}
       isWaitingForVRF={isWaitingForVRF}
     />
-    {isWaitingForVRF && (
+    {/* {isWaitingForVRF && (
       <p className="text-center text-yellow-400 text-sm mt-2">
         ⏳ Waiting for blockchain randomness...
       </p>
-    )}
+    )} */}
     {hasNoBalance && (
       <p className="text-center text-red-400 text-sm mt-2">
         ⚠️ Add MON tokens to play
