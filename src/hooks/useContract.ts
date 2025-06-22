@@ -110,7 +110,7 @@ const CONTRACT_ABI = [
 ] as const;
 
 // Hardcoded contract address
-const CONTRACT_ADDRESS: `0x${string}` = '0x525b71e2716a12eaec3378df9e0a1341e91fd75c';
+const CONTRACT_ADDRESS: `0x${string}` = '0xb68f8307f54a7695de5bf1270665b6ae8dac803c';
 
 export interface ContractGameState {
   position: number;
@@ -542,7 +542,7 @@ export const useContract = () => {
         abi: CONTRACT_ABI,
         functionName: 'rollDice',
         args: [expectedPosition],
-        value: rollFee,
+        // value: rollFee,
         chain,
         account: address
       });
