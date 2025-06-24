@@ -110,7 +110,7 @@ const CONTRACT_ABI = [
 ] as const;
 
 // Hardcoded contract address
-const CONTRACT_ADDRESS: `0x${string}` = '0x7ab6e5d922e8fe2e06e551dfbf89329d1250a7d4';
+const CONTRACT_ADDRESS: `0x${string}` = '0x2f91f697a257bfccf1ee93e082b79bc454d4ce47';
 
 export interface ContractGameState {
   position: number;
