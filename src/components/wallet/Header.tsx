@@ -16,7 +16,7 @@ import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { useSetActiveWallet } from '@privy-io/wagmi';
 
 const Header = () => {
-  console.log('🔄 [HEADER] Component rendering');
+  // console.log('🔄 [HEADER] Component rendering');
   
   // Privy hooks
   const { ready, user, authenticated, login, logout } = usePrivy();
@@ -31,19 +31,19 @@ const Header = () => {
 
   // Set embedded wallet as active when available
   useEffect(() => {
-    console.log('🔄 [HEADER] Checking wallets:', { 
-      walletsReady, 
-      walletsCount: wallets.length, 
-      authenticated 
-    });
+    // console.log('🔄 [HEADER] Checking wallets:', { 
+    //   walletsReady, 
+    //   walletsCount: wallets.length, 
+    //   authenticated 
+    // });
     
     if (walletsReady && authenticated && wallets.length > 0) {
       // Find the embedded wallet
       const embedded = wallets.find((wallet) => wallet.connectorType === 'embedded');
-      console.log('🔍 [HEADER] Found embedded wallet:', embedded);
+      // console.log('🔍 [HEADER] Found embedded wallet:', embedded);
       
       if (embedded) {
-        console.log('✅ [HEADER] Setting embedded wallet as active');
+        // console.log('✅ [HEADER] Setting embedded wallet as active');
         setActiveWallet(embedded);
         setEmbeddedWallet(embedded);
       } else {
@@ -54,14 +54,14 @@ const Header = () => {
     }
   }, [wallets, walletsReady, authenticated, setActiveWallet]);
 
-  console.log('📊 [HEADER] Current state:', { 
-    ready, 
-    authenticated, 
-    address, 
-    isConnected,
-    walletsCount: wallets.length,
-    embeddedWallet: !!embeddedWallet
-  });
+  // console.log('📊 [HEADER] Current state:', { 
+  //   ready, 
+  //   authenticated, 
+  //   address, 
+  //   isConnected,
+  //   walletsCount: wallets.length,
+  //   embeddedWallet: !!embeddedWallet
+  // });
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -218,7 +218,7 @@ const Header = () => {
                   <span>{item.label}</span>
                 </Button>
               ))}
-            {isConnected && (
+            {/* {isConnected && (
               <Button
                 variant="outline"
                 onClick={() => setIsModalOpen(true)}
@@ -226,7 +226,7 @@ const Header = () => {
               >
                 {'Send MON'}
               </Button>
-            )}
+            )} */}
           </nav>
 
           {/* Desktop Actions */}

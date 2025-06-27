@@ -11,6 +11,7 @@ interface DiceProps {
 }
 
 const Dice = ({ value, isRolling, onRoll, disabled, contractValue, isWaitingForVRF }: DiceProps) => {
+  console.log('DiceProps', value, isRolling, disabled, contractValue, isWaitingForVRF);
   const [animationValue, setAnimationValue] = useState(1);
 
   // Handle keyboard input
@@ -114,11 +115,11 @@ const Dice = ({ value, isRolling, onRoll, disabled, contractValue, isWaitingForV
         </p>
       )}
 
-      {contractValue && contractValue > 0 && !isWaitingForVRF && (
+      {/* {contractValue && contractValue > 0 && !isWaitingForVRF && (
         <p className="text-sm text-green-400 text-center">
           🎯 Rolled: {contractValue}
         </p>
-      )}
+      )} */}
     </div>
   );
 };

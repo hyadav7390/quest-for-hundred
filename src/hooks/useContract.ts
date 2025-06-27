@@ -38,16 +38,6 @@ const CONTRACT_ABI = [
         "internalType": "uint8",
         "name": "giftsCollected",
         "type": "uint8"
-      },
-      {
-        "internalType": "uint8",
-        "name": "shortcuts",
-        "type": "uint8"
-      },
-      {
-        "internalType": "uint8",
-        "name": "detours",
-        "type": "uint8"
       }
     ],
     "stateMutability": "view",
@@ -282,12 +272,14 @@ export const useContract = () => {
 
   // Manual fetch functions
   const fetchPlayerStatus = useCallback(async () => {
+    console.log('fetchPlayerStatus bdahsdjkasdsakj', address);
     if (!address) return null;
 
     try {
       const result = await refetchPlayerStatus();
+      console.log("Results player status",result);
       if (result.isSuccess && result.data) {
-        const [position, diceValue, nunuEarned, gameScore, hasFinished, boardGenerated] = result.data;
+        const [position, diceValue, nunuEarned, gameScore, hasFinished, boardGenerated, diceRolls, giftsCollected] = result.data;
 
         const newGameState = {
           position: Number(position),
@@ -298,6 +290,8 @@ export const useContract = () => {
           boardGenerated,
           rollFee: gameStats ? gameStats[2] : BigInt(0)
         };
+
+        console.log('newGameState', newGameState);
 
         setGameState(newGameState);
         return newGameState;
@@ -366,18 +360,20 @@ export const useContract = () => {
   }, [refetchGameStats]);
 
   const fetchAllGameData = useCallback(async () => {
+    console.log('fetchAllGameData', address, isConnected);
     if (!address || !isConnected) return;
 
     // First fetch game stats as other functions depend on it
     await fetchGameStats();
 
     // Then fetch other data in parallel
-    await Promise.all([
+    const result = await Promise.all([
       fetchPlayerStatus(),
       fetchBoardData(),
       fetchLeaderboard(),
       fetchPlayerRank()
     ]);
+    console.log('promise.all result', result);
   }, [fetchGameStats, fetchPlayerStatus, fetchBoardData, fetchLeaderboard, fetchPlayerRank, address, isConnected]);
 
   // Poll after transactions
@@ -398,7 +394,7 @@ export const useContract = () => {
       if (!newState) continue;
 
       const hasStarted = newState.boardGenerated && !oldState?.boardGenerated;
-      const hasRolled = newState.diceValue !== oldState?.diceValue && newState.diceValue !== 0;
+      const hasRolled = (newState.diceValue !== oldState?.diceValue || newState.position !== oldState?.position) && newState.diceValue !== 0;
 
       if (action === 'startGame' && hasStarted) {
         toast.success('Game started successfully!');
@@ -486,6 +482,7 @@ export const useContract = () => {
 
   // Initialize game data when connected
   useEffect(() => {
+    console.log('Initialize game data when connected', isConnected, address, gameState);
     if (isConnected && address && !gameState) {
       fetchAllGameData();
     }
