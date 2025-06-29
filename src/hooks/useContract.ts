@@ -100,7 +100,7 @@ const CONTRACT_ABI = [
 ] as const;
 
 // Hardcoded contract address
-const CONTRACT_ADDRESS: `0x${string}` = '0xc3645132f54f469d887a66ac27a2a7d24d9e85ce';
+const CONTRACT_ADDRESS: `0x${string}` = '0xb381e23e7326e1b0424245de61e626695a5f715d';
 
 export interface ContractGameState {
   position: number;
@@ -543,7 +543,8 @@ export const useContract = () => {
         args: [expectedPosition],
         // value: rollFee,
         chain,
-        account: address
+        account: address,
+        gas: 100000
         // ,
 
         // gas: parseEther("0.00000005")
