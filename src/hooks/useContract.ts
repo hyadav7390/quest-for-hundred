@@ -390,10 +390,11 @@ export const useContract = () => {
 
       const oldState = gameStateRef.current;
       const newState = await fetchPlayerStatus();
+      console.log('pollAfterTransaction oldState', oldState);
       console.log('pollAfterTransaction newState', newState);
       if (!newState) continue;
 
-      const hasStarted = newState.boardGenerated && !oldState?.boardGenerated;
+      const hasStarted = newState.boardGenerated && newState.position === 1 && newState.diceValue === 0;
       const hasRolled = (newState.diceValue !== oldState?.diceValue || newState.position !== oldState?.position) && newState.diceValue !== 0;
 
       if (action === 'startGame' && hasStarted) {
