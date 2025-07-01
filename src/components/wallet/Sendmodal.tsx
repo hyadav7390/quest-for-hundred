@@ -18,10 +18,11 @@ const SendMonadModal: React.FC<SendMonadModalProps> = ({ isOpen, onClose, onSend
   const [amount, setAmount] = React.useState('');
 
   const handleSendMonad = () => {
-    if (!recipient || !amount) {
-      toast.error('Please enter recipient address and amount');
-      return;
-    }
+    // console.log('recipient', recipient, amount);
+    // if (!recipient || !amount) {
+    //   toast.error('Please enter recipient address and amount');
+    //   return;
+    // }
     onSend(recipient, amount);
     onClose(); // Close the modal after sending
   };

@@ -1,11 +1,11 @@
-
 import { motion } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Home, Gamepad2, Menu, X, Wallet } from 'lucide-react';
-import React, { useState, useEffect } from 'react';
+import { Home, Gamepad2, Menu, X, Wallet, Copy, ChevronLeft, ChevronRight } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
 
 import { useAccount, useBalance, useChainId, useSendTransaction, useWaitForTransactionReceipt, useDisconnect } from 'wagmi';
+import { usePublicClient } from 'wagmi';
 import { sepolia, mainnet, polygon, optimism, arbitrum, base } from 'wagmi/chains';
 import { monadTestnet } from '@/types/monadTestnet';
 import { toast } from 'sonner';
@@ -14,10 +14,18 @@ import SendMonadModal from './Sendmodal';
 
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { useSetActiveWallet } from '@privy-io/wagmi';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import LogoButton from './LogoButton';
+import DesktopNavigation from './DesktopNavigation';
+import WalletPopover from './WalletPopover';
+import MobileMenuButton from './MobileMenuButton';
+import MobileMenu from './MobileMenu';
 
 const Header = () => {
   // console.log('🔄 [HEADER] Component rendering');
-  
+
   // Privy hooks
   const { ready, user, authenticated, login, logout } = usePrivy();
   const { wallets, ready: walletsReady } = useWallets();
@@ -36,12 +44,12 @@ const Header = () => {
     //   walletsCount: wallets.length, 
     //   authenticated 
     // });
-    
+
     if (walletsReady && authenticated && wallets.length > 0) {
       // Find the embedded wallet
       const embedded = wallets.find((wallet) => wallet.connectorType === 'embedded');
       // console.log('🔍 [HEADER] Found embedded wallet:', embedded);
-      
+
       if (embedded) {
         // console.log('✅ [HEADER] Setting embedded wallet as active');
         setActiveWallet(embedded);
@@ -67,7 +75,7 @@ const Header = () => {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const chainId = useChainId();
-  
+
   const { data: balance, isLoading: isBalanceLoading } = useBalance({
     address,
     chainId: monadTestnet.id,
@@ -108,17 +116,38 @@ const Header = () => {
       hash,
     });
 
-  const handleSendMonad = () => {
+  const publicClient = usePublicClient({ chainId: monadTestnet.id });
+
+  const handleSendMonad = async (recipient: string, amount: string, fromAddress?: string) => {
     try {
-      console.log('💸 [HEADER] Initiating send transaction:', { recipient, amount });
-      
+      console.log('💸 [HEADER] Initiating send transaction:', { recipient, amount, fromAddress });
+
       if (!recipient || !amount) {
         toast.error('Please enter recipient address and amount');
         return;
       }
 
-      // Check balance before sending
-      if (balance && parseEther(amount) > balance.value) {
+      // Check balance for the correct wallet
+      let checkAddress = fromAddress || address;
+      let checkBalance = balance;
+      if (checkAddress && (!address || checkAddress.toLowerCase() !== address.toLowerCase())) {
+        // If sending from a different wallet, fetch its balance
+        if (!publicClient) {
+          toast.error('Public client not available');
+          return;
+        }
+        const bal = await publicClient.getBalance({
+          address: checkAddress as `0x${string}`
+        });
+        checkBalance = {
+          value: bal,
+          decimals: monadTestnet.nativeCurrency.decimals,
+          symbol: monadTestnet.nativeCurrency.symbol,
+          formatted: (Number(bal) / 10 ** monadTestnet.nativeCurrency.decimals).toFixed(4)
+        };
+      }
+
+      if (checkBalance && parseEther(amount) > checkBalance.value) {
         toast.error('Insufficient balance for this transaction');
         return;
       }
@@ -180,6 +209,30 @@ const Header = () => {
     return `${parseFloat(formatEther(balance.value)).toFixed(4)} MON`;
   };
 
+  const [withdrawModal, setWithdrawModal] = useState<{ open: boolean; address: string | null }>({ open: false, address: null });
+
+  // Sort wallets: embedded first
+  const sortedWallets = [...wallets].sort((a, b) => (a.connectorType === 'embedded' ? -1 : 1));
+  const [walletIndex, setWalletIndex] = useState(0);
+  const currentWallet = sortedWallets[walletIndex] || null;
+  const { data: currentBalance } = useBalance({
+    address: currentWallet?.address as `0x${string}` | undefined,
+    chainId: monadTestnet.id,
+  });
+
+  // Helper to format balance
+  const formatMon = (data: any) =>
+    data ? parseFloat(formatEther(data.value)).toFixed(4) : '0.0000';
+
+  // Helper to copy address
+  const handleCopy = (address: string) => {
+    navigator.clipboard.writeText(address);
+    toast.success('Address copied!');
+  };
+
+  // Find embedded wallet for later use
+  const embeddedWalletObj = sortedWallets.find(w => w.connectorType === 'embedded');
+
   return (
     <motion.header
       className="bg-gray-900 border-b border-gray-700 sticky top-0 z-40"
@@ -190,70 +243,35 @@ const Header = () => {
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <motion.button
-            onClick={() => navigate('/')}
-            className="text-2xl font-bold text-white hover:text-purple-400 transition-colors"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <img src="./logo.png" className="h-24 w-26 pt-3" />
-          </motion.button>
-
+          <LogoButton navigate={navigate} />
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-1">
-            {navigationItems
-              .filter(item => item.show)
-              .map((item) => (
-                <Button
-                  key={item.path}
-                  variant={isActivePath(item.path) ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => navigate(item.path)}
-                  className={`flex items-center space-x-2 ${isActivePath(item.path)
-                    ? 'bg-purple-600 hover:bg-purple-700 text-white'
-                    : 'text-gray-300 hover:text-white hover:bg-gray-800'
-                    } transition-all duration-200`}
-                >
-                  {item.icon}
-                  <span>{item.label}</span>
-                </Button>
-              ))}
-            {/* {isConnected && (
-              <Button
-                variant="outline"
-                onClick={() => setIsModalOpen(true)}
-                className="bg-gradient-to-r from-indigo-500/10 to-purple-500/10 hover:from-indigo-500/20 hover:to-purple-500/20 px-2 transition-all duration-300"
-              >
-                {'Send MON'}
-              </Button>
-            )} */}
-          </nav>
-
-          {/* Desktop Actions */}
-          <div className="hidden md:flex items-center space-x-3">
+          <DesktopNavigation navigationItems={navigationItems} isActivePath={isActivePath} navigate={navigate} />
+          {/* Wallet Button & Popover (always visible) */}
+          <div className="flex items-center space-x-3">
             {ready && authenticated ? (
-              <>
-                {/* Balance Display */}
-                <div className="flex items-center space-x-2 bg-gray-800 px-3 py-2 rounded-lg">
-                  <Wallet className="w-4 h-4 text-purple-400" />
-                  <span className="text-white font-medium">{formatBalance()}</span>
-                </div>
-                
-                {/* Address Display */}
-                <div className="text-gray-300 text-sm">
-                  {address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'No Address'}
-                </div>
-                
-                <button
-                  className='text-gray-900 bg-gray-100 hover:bg-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500'
-                  onClick={() => {
-                    console.log('🔌 [HEADER] Disconnecting wallet');
-                    logout();
-                  }}
-                >
-                  Disconnect
-                </button>
-              </>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="flex items-center space-x-2 px-3 py-2">
+                    <Wallet className="w-4 h-4 text-purple-400" />
+                    <span>Wallet</span>
+                  </Button>
+                </PopoverTrigger>
+                <WalletPopover
+                  currentWallet={currentWallet}
+                  currentBalance={currentBalance}
+                  sortedWallets={sortedWallets}
+                  walletIndex={walletIndex}
+                  setWalletIndex={setWalletIndex}
+                  handleCopy={handleCopy}
+                  setWithdrawModal={setWithdrawModal}
+                  logout={logout}
+                  disconnect={disconnect}
+                  setActiveWallet={setActiveWallet}
+                  authenticated={authenticated}
+                  ready={ready}
+                  formatMon={formatMon}
+                />
+              </Popover>
             ) : (
               <button
                 className='text-gray-900 bg-gray-100 hover:bg-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500'
@@ -266,96 +284,48 @@ const Header = () => {
               </button>
             )}
           </div>
-
-          <SendMonadModal
-            isOpen={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
-            onSend={handleSendMonad}
-          />
-
           {/* Mobile Menu Button */}
-          <button
-            className="md:hidden p-2 text-gray-300 hover:text-white"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            {mobileMenuOpen ? (
-              <X className="w-6 h-6" />
-            ) : (
-              <Menu className="w-6 h-6" />
-            )}
-          </button>
+          <MobileMenuButton isOpen={mobileMenuOpen} onClick={() => setMobileMenuOpen(!mobileMenuOpen)} />
         </div>
-
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <motion.div
-            className="md:hidden border-t border-gray-700 py-4"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <nav className="flex flex-col space-y-2">
-              {navigationItems
-                .filter(item => item.show)
-                .map((item) => (
-                  <Button
-                    key={item.path}
-                    variant={isActivePath(item.path) ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => {
-                      navigate(item.path);
-                      setMobileMenuOpen(false);
-                    }}
-                    className={`flex items-center justify-start space-x-2 w-full ${isActivePath(item.path)
-                      ? 'bg-purple-600 hover:bg-purple-700 text-white'
-                      : 'text-gray-300 hover:text-white hover:bg-gray-800'
-                      } transition-all duration-200`}
-                  >
-                    {item.icon}
-                    <span>{item.label}</span>
-                  </Button>
-                ))}
-
-              {/* Send MON Button (only visible when connected) */}
-              {/* {isConnected && (
-                <Button
-                  variant="outline"
-                  onClick={() => setIsModalOpen(true)}
-                  className="bg-gradient-to-r from-indigo-500/10 to-purple-500/10 hover:from-indigo-500/20 hover:to-purple-500/20 px-3 py-1 rounded-full transition-all duration-300"
-                >
-                  {'Send MON'}
-                </Button>
-              )} */}
-            </nav>
-
-            {/* Mobile Wallet Connection */}
-            <div className="pt-4 border-t border-gray-700 mt-4 flex flex-col items-center space-y-2">
-              {ready && authenticated ? (
-                <>
-                  {/* Mobile Balance Display */}
-                  <div className="flex items-center space-x-2 bg-gray-800 px-3 py-2 rounded-lg">
-                    <Wallet className="w-4 h-4 text-purple-400" />
-                    <span className="text-white font-medium">{formatBalance()}</span>
-                  </div>
-                  
-                  <button
-                    className='text-gray-900 bg-gray-100 hover:bg-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500'
-                    onClick={logout}
-                  >
-                    Disconnect
-                  </button>
-                </>
-              ) : (
-                <button
-                  className='text-gray-900 bg-gray-100 hover:bg-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500'
-                  onClick={login}
-                >
-                  Connect Wallet
-                </button>
-              )}
-            </div>
-          </motion.div>
+          <MobileMenu
+            navigationItems={navigationItems}
+            isActivePath={isActivePath}
+            navigate={navigate}
+            setMobileMenuOpen={setMobileMenuOpen}
+            ready={ready}
+            authenticated={authenticated}
+            formatBalance={formatBalance}
+            login={login}
+            logout={logout}
+          />
+        )}
+        {/* Withdraw Modal (reuse SendMonadModal) */}
+        {withdrawModal.open && (
+          <SendMonadModal
+            isOpen={withdrawModal.open}
+            onClose={() => setWithdrawModal({ open: false, address: null })}
+            onSend={async (recipient, amount) => {
+              // Find the wallet being used for withdrawal
+              const withdrawWallet = sortedWallets.find(w => w.address === withdrawModal.address);
+              if (withdrawWallet) {
+                // If not already active, set as active
+                if (address?.toLowerCase() !== withdrawWallet.address.toLowerCase()) {
+                  await setActiveWallet(withdrawWallet);
+                }
+                // Send transaction, check balance for this wallet
+                await handleSendMonad(recipient, amount, withdrawWallet.address);
+                // If it was an external wallet, revert to embedded after a short delay
+                if (withdrawWallet.connectorType !== 'embedded' && embeddedWalletObj) {
+                  setTimeout(() => setActiveWallet(embeddedWalletObj), 2000); // 2s delay to allow tx to propagate
+                }
+              } else {
+                await handleSendMonad(recipient, amount);
+              }
+              setWithdrawModal({ open: false, address: null });
+            }}
+          />
         )}
       </div>
     </motion.header>
