@@ -87,7 +87,6 @@ const NewGameButton = ({ handleNewGameClick, isNewGameDisabled, isStartingGame }
   </motion.button>
 );
 
-
 const Index = () => {
   const [gameState, gameActions, contractInfo] = useBlockchainGameReducer();
   const { playSound } = useSoundEffects(gameState.isSoundMuted);
@@ -350,6 +349,9 @@ const Index = () => {
             shortcutGatesTriggered={gameState.shortcutGatesTriggered}
             isSoundMuted={gameState.isSoundMuted}
             onToggleSound={toggleSound}
+            diceRolls={contractState?.diceRolls}
+            shortcuts={contractState?.shortcuts}
+            detours={contractState?.detours}
           />
 
           <GameBoard
@@ -403,6 +405,9 @@ const Index = () => {
               shortcutGatesTriggered={gameState.shortcutGatesTriggered}
               isSoundMuted={gameState.isSoundMuted}
               onToggleSound={toggleSound}
+              diceRolls={contractState?.diceRolls}
+              shortcuts={contractState?.shortcuts}
+              detours={contractState?.detours}
             />
 
             <DiceSection 
@@ -438,6 +443,9 @@ const Index = () => {
           gameScore={gameState.score}
           nunuCoins={contractState?.nunuEarned || 0}
           onRestart={restartGame}
+          diceRolls={contractState?.diceRolls}
+          shortcuts={contractState?.shortcuts}
+          detours={contractState?.detours}
         />
 
         <NewGameConfirmation

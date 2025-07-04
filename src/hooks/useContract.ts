@@ -1,9 +1,10 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
 import { parseEther, formatEther } from 'viem';
 import { toast } from 'sonner';
 
-// Contract ABI - only the functions we need
+// Contract ABI - updated with new functions and parameters
 const CONTRACT_ABI = [
   {
     "inputs": [],
@@ -20,25 +21,26 @@ const CONTRACT_ABI = [
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "claimRewards",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [{ "internalType": "address", "name": "player", "type": "address" }],
     "name": "getPlayerStatus",
     "outputs": [
       { "internalType": "uint8", "name": "position", "type": "uint8" },
       { "internalType": "uint8", "name": "diceValue", "type": "uint8" },
-      { "internalType": "uint256", "name": "nunuEarned", "type": "uint256" },
-      { "internalType": "uint256", "name": "gameScore", "type": "uint256" },
+      { "internalType": "uint16", "name": "nunuEarned", "type": "uint16" },
+      { "internalType": "uint16", "name": "gameScore", "type": "uint16" },
       { "internalType": "bool", "name": "hasFinished", "type": "bool" },
       { "internalType": "bool", "name": "boardGenerated", "type": "bool" },
-      {
-        "internalType": "uint8",
-        "name": "diceRolls",
-        "type": "uint8"
-      },
-      {
-        "internalType": "uint8",
-        "name": "giftsCollected",
-        "type": "uint8"
-      }
+      { "internalType": "uint8", "name": "diceRolls", "type": "uint8" },
+      { "internalType": "uint8", "name": "giftsCollected", "type": "uint8" },
+      { "internalType": "uint8", "name": "shortcuts", "type": "uint8" },
+      { "internalType": "uint8", "name": "detours", "type": "uint8" }
     ],
     "stateMutability": "view",
     "type": "function"
@@ -49,10 +51,10 @@ const CONTRACT_ABI = [
     "outputs": [
       {
         "components": [
-          { "internalType": "uint256", "name": "giftValue", "type": "uint256" },
+          { "internalType": "uint64", "name": "giftValue", "type": "uint64" },
           { "internalType": "int16", "name": "doorOffset", "type": "int16" }
         ],
-        "internalType": "struct NGame.Tile[]",
+        "internalType": "struct NUGame.Tile[]",
         "name": "board",
         "type": "tuple[]"
       }
@@ -67,9 +69,9 @@ const CONTRACT_ABI = [
       {
         "components": [
           { "internalType": "address", "name": "player", "type": "address" },
-          { "internalType": "uint256", "name": "score", "type": "uint256" }
+          { "internalType": "uint16", "name": "score", "type": "uint16" }
         ],
-        "internalType": "struct NGame.LeaderboardEntry[]",
+        "internalType": "struct NUGame.LeaderboardEntry[]",
         "name": "",
         "type": "tuple[]"
       }
@@ -81,11 +83,8 @@ const CONTRACT_ABI = [
     "inputs": [],
     "name": "getGameStats",
     "outputs": [
-      { "internalType": "uint256", "name": "_totalMinted", "type": "uint256" },
-      { "internalType": "uint256", "name": "_totalMonCollected", "type": "uint256" },
-      { "internalType": "uint256", "name": "rollFee", "type": "uint256" },
-      { "internalType": "uint256", "name": "finishBonus", "type": "uint256" },
-      { "internalType": "uint16", "name": "boardSize", "type": "uint16" }
+      { "internalType": "uint256", "name": "_gamesCompleted", "type": "uint256" },
+      { "internalType": "uint256", "name": "_totalNunuEarned", "type": "uint256" }
     ],
     "stateMutability": "view",
     "type": "function"
@@ -109,6 +108,10 @@ export interface ContractGameState {
   gameScore: number;
   hasFinished: boolean;
   boardGenerated: boolean;
+  diceRolls: number;
+  giftsCollected: number;
+  shortcuts: number;
+  detours: number;
   rollFee: bigint;
 }
 
@@ -128,6 +131,11 @@ export interface LeaderboardEntry {
   score: bigint;
 }
 
+export interface GameStatsData {
+  gamesCompleted: number;
+  totalNunuEarned: number;
+}
+
 export const useContract = () => {
   const { address, isConnected, chain } = useAccount();
 
@@ -138,7 +146,7 @@ export const useContract = () => {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [isWaitingForVRF, setIsWaitingForVRF] = useState(false);
   const [playerRank, setPlayerRank] = useState<number>(0);
-  const [gameStats, setGameStats] = useState<any>(null);
+  const [gameStats, setGameStats] = useState<GameStatsData | null>(null);
   const [transactionError, setTransactionError] = useState<string | null>(null);
 
   // Ref for gameState to avoid dependency cycles in callbacks
@@ -164,6 +172,14 @@ export const useContract = () => {
     reset: resetRollDice
   } = useWriteContract();
 
+  const {
+    writeContract: writeClaimRewards,
+    isPending: isClaimingRewards,
+    data: claimRewardsHash,
+    error: claimRewardsError,
+    reset: resetClaimRewards
+  } = useWriteContract();
+
   // Transaction receipt watchers
   const {
     isLoading: isStartGameConfirming,
@@ -176,6 +192,12 @@ export const useContract = () => {
     isSuccess: isRollDiceSuccess,
     isError: isRollDiceFailed
   } = useWaitForTransactionReceipt({ hash: rollDiceHash });
+
+  const {
+    isLoading: isClaimRewardsConfirming,
+    isSuccess: isClaimRewardsSuccess,
+    isError: isClaimRewardsFailed
+  } = useWaitForTransactionReceipt({ hash: claimRewardsHash });
 
   // Manual read operations - all disabled auto-fetch to prevent excessive calls
   const { refetch: refetchPlayerStatus } = useReadContract({
@@ -254,7 +276,7 @@ export const useContract = () => {
       if (arrayIndex === 0) return; // Skip index 0 as it's not used in the game
 
       if (tile.giftValue > 0) {
-        const points = Number(formatEther(tile.giftValue));
+        const points = Number(tile.giftValue);
         giftTiles.push({ index: arrayIndex, points });
       } else if (tile.doorOffset !== 0) {
         if (tile.doorOffset < 0) {
@@ -272,23 +294,27 @@ export const useContract = () => {
 
   // Manual fetch functions
   const fetchPlayerStatus = useCallback(async () => {
-    console.log('fetchPlayerStatus bdahsdjkasdsakj', address);
+    console.log('fetchPlayerStatus', address);
     if (!address) return null;
 
     try {
       const result = await refetchPlayerStatus();
-      console.log("Results player status",result);
+      console.log("Results player status", result);
       if (result.isSuccess && result.data) {
-        const [position, diceValue, nunuEarned, gameScore, hasFinished, boardGenerated, diceRolls, giftsCollected] = result.data;
+        const [position, diceValue, nunuEarned, gameScore, hasFinished, boardGenerated, diceRolls, giftsCollected, shortcuts, detours] = result.data;
 
         const newGameState = {
           position: Number(position),
           diceValue: Number(diceValue),
-          nunuEarned: Number(formatEther(nunuEarned)),
+          nunuEarned: Number(nunuEarned),
           gameScore: Number(gameScore),
           hasFinished,
           boardGenerated,
-          rollFee: gameStats ? gameStats[2] : BigInt(0)
+          diceRolls: Number(diceRolls),
+          giftsCollected: Number(giftsCollected),
+          shortcuts: Number(shortcuts),
+          detours: Number(detours),
+          rollFee: BigInt(0) // Will be set from game stats if available
         };
 
         console.log('newGameState', newGameState);
@@ -301,7 +327,7 @@ export const useContract = () => {
       console.error('Error fetching player status:', error);
       return null;
     }
-  }, [address, refetchPlayerStatus, gameStats]);
+  }, [address, refetchPlayerStatus]);
 
   const fetchBoardData = useCallback(async () => {
     if (!address) return null;
@@ -350,7 +376,11 @@ export const useContract = () => {
     try {
       const result = await refetchGameStats();
       if (result.data) {
-        setGameStats(result.data);
+        const [gamesCompleted, totalNunuEarned] = result.data;
+        setGameStats({
+          gamesCompleted: Number(gamesCompleted),
+          totalNunuEarned: Number(totalNunuEarned)
+        });
       }
       return result;
     } catch (error) {
@@ -377,7 +407,7 @@ export const useContract = () => {
   }, [fetchGameStats, fetchPlayerStatus, fetchBoardData, fetchLeaderboard, fetchPlayerRank, address, isConnected]);
 
   // Poll after transactions
-  const pollAfterTransaction = useCallback(async (action: 'startGame' | 'rollDice') => {
+  const pollAfterTransaction = useCallback(async (action: 'startGame' | 'rollDice' | 'claimRewards') => {
     setIsLoading(true);
     if (action === 'rollDice') setIsWaitingForVRF(true);
 
@@ -396,6 +426,7 @@ export const useContract = () => {
 
       const hasStarted = newState.boardGenerated && newState.position === 1 && newState.diceValue === 0;
       const hasRolled = (newState.diceValue !== oldState?.diceValue || newState.position !== oldState?.position) && newState.diceValue !== 0;
+      const hasClaimedRewards = action === 'claimRewards' && newState.nunuEarned === 0 && oldState?.nunuEarned > 0;
 
       if (action === 'startGame' && hasStarted) {
         toast.success('Game started successfully!');
@@ -408,6 +439,12 @@ export const useContract = () => {
         toast.success(`🎲 Rolled ${newState.diceValue}!`);
         setIsLoading(false);
         setIsWaitingForVRF(false);
+        return;
+      }
+
+      if (action === 'claimRewards' && hasClaimedRewards) {
+        toast.success('🎉 Rewards claimed successfully!');
+        setIsLoading(false);
         return;
       }
     }
@@ -430,7 +467,8 @@ export const useContract = () => {
 
     if (startGameError) handleError(startGameError, 'start game');
     if (rollDiceError) handleError(rollDiceError, 'roll dice');
-  }, [startGameError, rollDiceError]);
+    if (claimRewardsError) handleError(claimRewardsError, 'claim rewards');
+  }, [startGameError, rollDiceError, claimRewardsError]);
 
   // Handle transaction failures
   useEffect(() => {
@@ -444,11 +482,13 @@ export const useContract = () => {
 
     if (isStartGameFailed) handleFailure('start game');
     if (isRollDiceFailed) handleFailure('roll dice');
-  }, [isStartGameFailed, isRollDiceFailed]);
+    if (isClaimRewardsFailed) handleFailure('claim rewards');
+  }, [isStartGameFailed, isRollDiceFailed, isClaimRewardsFailed]);
 
   // Refs to track if polling has been triggered for a given transaction hash
   const startGameTxHashRef = useRef<`0x${string}` | undefined>();
   const rollDiceTxHashRef = useRef<`0x${string}` | undefined>();
+  const claimRewardsTxHashRef = useRef<`0x${string}` | undefined>();
 
   // Watch for transaction confirmations
   useEffect(() => {
@@ -466,6 +506,14 @@ export const useContract = () => {
       pollAfterTransaction('rollDice');
     }
   }, [rollDiceHash, isRollDiceSuccess, pollAfterTransaction]);
+
+  useEffect(() => {
+    if (claimRewardsHash && isClaimRewardsSuccess && claimRewardsTxHashRef.current !== claimRewardsHash) {
+      claimRewardsTxHashRef.current = claimRewardsHash;
+      setTransactionError(null);
+      pollAfterTransaction('claimRewards');
+    }
+  }, [claimRewardsHash, isClaimRewardsSuccess, pollAfterTransaction]);
 
   // Clear game state when wallet disconnects
   useEffect(() => {
@@ -489,6 +537,14 @@ export const useContract = () => {
     }
   }, [isConnected, address, gameState, fetchAllGameData]);
 
+  // Auto-claim rewards when game is finished
+  useEffect(() => {
+    if (gameState?.hasFinished && gameState?.nunuEarned > 0 && !isClaimingRewards && !isClaimRewardsConfirming) {
+      console.log('Auto-claiming rewards for finished game');
+      claimRewards();
+    }
+  }, [gameState?.hasFinished, gameState?.nunuEarned, isClaimingRewards, isClaimRewardsConfirming]);
+
   // Contract interaction functions
   const startGame = async () => {
     if (!isConnected || !chain || !address) {
@@ -509,8 +565,6 @@ export const useContract = () => {
         chain,
         account: address,
         gas: 700000
-        // ,
-        // gas: parseEther("0.00000005"),
       });
     } catch (error: any) {
       const errorMessage = error.message?.includes('insufficient funds')
@@ -524,7 +578,7 @@ export const useContract = () => {
   };
 
   const rollDice = async (expectedPosition: number) => {
-    if (!isConnected || !chain || !address || !gameStats) {
+    if (!isConnected || !chain || !address) {
       toast.error('Please connect your wallet and ensure game is loaded');
       return;
     }
@@ -536,20 +590,17 @@ export const useContract = () => {
       resetRollDice();
       rollDiceTxHashRef.current = undefined; // Reset for new transaction
 
-      const rollFee = gameStats[2]; // rollFee is third element in gameStats
+      const rollFee = parseEther('0.001'); // 0.001 ETH as per contract
 
       const result = await writeRollDice({
         address: CONTRACT_ADDRESS,
         abi: CONTRACT_ABI,
         functionName: 'rollDice',
         args: [expectedPosition],
-        // value: rollFee,
+        value: rollFee,
         chain,
         account: address,
         gas: 100000
-        // ,
-
-        // gas: parseEther("0.00000005")
       });
     } catch (error: any) {
       const errorMessage = error.message?.includes('insufficient funds')
@@ -562,21 +613,54 @@ export const useContract = () => {
     }
   };
 
+  const claimRewards = async () => {
+    if (!isConnected || !chain || !address) {
+      toast.error('Please connect your wallet first');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setTransactionError(null);
+      resetClaimRewards();
+      claimRewardsTxHashRef.current = undefined; // Reset for new transaction
+
+      const result = await writeClaimRewards({
+        address: CONTRACT_ADDRESS,
+        abi: CONTRACT_ABI,
+        functionName: 'claimRewards',
+        chain,
+        account: address,
+        gas: 200000
+      });
+    } catch (error: any) {
+      const errorMessage = error.message?.includes('insufficient funds')
+        ? 'Insufficient balance to pay for transaction fees. Please add funds to your wallet.'
+        : `Failed to claim rewards: ${error.message || 'Unknown error'}`;
+
+      setTransactionError(errorMessage);
+      toast.error(errorMessage);
+      setIsLoading(false);
+    }
+  };
+
   return {
     // State
     gameState,
     boardData,
-    isLoading: isLoading || isStartingGame || isRollingDice || isStartGameConfirming || isRollDiceConfirming,
+    isLoading: isLoading || isStartingGame || isRollingDice || isClaimingRewards || isStartGameConfirming || isRollDiceConfirming || isClaimRewardsConfirming,
     isLoadingStartGame: isStartingGame || isStartGameConfirming,
     isWaitingForVRF,
     isConnected,
     leaderboard,
     playerRank,
+    gameStats,
     transactionError,
 
     // Actions
     startGame,
     rollDice,
+    claimRewards,
 
     // Manual fetch functions
     fetchPlayerStatus,

@@ -1,6 +1,6 @@
 
 import { motion } from 'framer-motion';
-import { Trophy, RotateCcw, Gift, Target, DoorClosed, ArrowUp } from 'lucide-react';
+import { Trophy, RotateCcw, Gift, Target, TrendingDown, ArrowUp, TrendingUp } from 'lucide-react';
 
 interface VictoryModalProps {
   isOpen: boolean;
@@ -12,6 +12,10 @@ interface VictoryModalProps {
   gameScore: number;
   nunuCoins: number;
   onRestart: () => void;
+  // New props from contract
+  diceRolls?: number;
+  shortcuts?: number;
+  detours?: number;
 }
 
 const VictoryModal = ({
@@ -23,9 +27,18 @@ const VictoryModal = ({
   shortcutGatesTriggered,
   gameScore,
   nunuCoins,
-  onRestart
+  onRestart,
+  diceRolls,
+  shortcuts,
+  detours
 }: VictoryModalProps) => {
   if (!isOpen) return null;
+
+  // Use contract values if available, otherwise fall back to UI state
+  const displayDiceRolls = diceRolls ?? turnsPlayed;
+  const displayGifts = giftsCollected;
+  const displayShortcuts = shortcuts ?? shortcutGatesTriggered;
+  const displayDetours = detours ?? detourTrapsTriggered;
 
   return (
     <motion.div
@@ -76,22 +89,22 @@ const VictoryModal = ({
             <div className="grid grid-cols-2 gap-4 text-sm mt-4">
               <div className="flex items-center space-x-2">
                 <Target className="w-4 h-4 text-blue-400" />
-                <span className="text-gray-300">Turns: {turnsPlayed}</span>
+                <span className="text-gray-300">Dice Rolls: {displayDiceRolls}</span>
               </div>
 
               <div className="flex items-center space-x-2">
                 <Gift className="w-4 h-4 text-yellow-400" />
-                <span className="text-gray-300">Gifts: {giftsCollected}</span>
+                <span className="text-gray-300">Gifts: {displayGifts}</span>
               </div>
 
               <div className="flex items-center space-x-2">
-                <DoorClosed className="w-4 h-4 text-red-400" />
-                <span className="text-gray-300">Traps: {detourTrapsTriggered}</span>
+                <TrendingDown className="w-4 h-4 text-red-400" />
+                <span className="text-gray-300">Detours: {displayDetours}</span>
               </div>
 
               <div className="flex items-center space-x-2">
-                <DoorClosed className="w-4 h-4 text-green-400" />
-                <span className="text-gray-300">Shortcuts: {shortcutGatesTriggered}</span>
+                <TrendingUp className="w-4 h-4 text-green-400" />
+                <span className="text-gray-300">Shortcuts: {displayShortcuts}</span>
               </div>
             </div>
           </div>
@@ -112,7 +125,7 @@ const VictoryModal = ({
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
-            Sign your Score
+            Play Again
           </motion.button>
         </div>
       </motion.div>

@@ -1,6 +1,6 @@
 
 import { motion } from 'framer-motion';
-import { Trophy, Target, Gift, DoorClosed, Dices, Volume2, VolumeX } from 'lucide-react';
+import { Trophy, Target, Gift, DoorClosed, Dices, Volume2, VolumeX, TrendingUp, TrendingDown } from 'lucide-react';
 
 interface ScoreBoardProps {
   score: number;
@@ -11,6 +11,10 @@ interface ScoreBoardProps {
   shortcutGatesTriggered: number;
   isSoundMuted: boolean;
   onToggleSound: () => void;
+  // New props from contract
+  diceRolls?: number;
+  shortcuts?: number;
+  detours?: number;
 }
 
 const ScoreBoard = ({ 
@@ -21,8 +25,17 @@ const ScoreBoard = ({
   detourTrapsTriggered,
   shortcutGatesTriggered,
   isSoundMuted,
-  onToggleSound
+  onToggleSound,
+  diceRolls,
+  shortcuts,
+  detours
 }: ScoreBoardProps) => {
+  // Use contract values if available, otherwise fall back to UI state
+  const displayDiceRolls = diceRolls ?? turnsPlayed;
+  const displayGifts = giftsCollected;
+  const displayShortcuts = shortcuts ?? shortcutGatesTriggered;
+  const displayDetours = detours ?? detourTrapsTriggered;
+
   return (
     <motion.div
       className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-6 shadow-xl border border-gray-600"
@@ -56,13 +69,13 @@ const ScoreBoard = ({
         <div className="bg-gray-700 rounded-lg p-3 text-center">
           <Dices className="w-8 h-8 text-red-400 mx-auto mb-3" />
           <p className="text-sm text-gray-300">Dice Rolled</p>
-          <p className="text-2xl font-bold text-white">{turnsPlayed}</p>
+          <p className="text-2xl font-bold text-white">{displayDiceRolls}</p>
         </div>
 
         <div className="bg-gray-700 rounded-lg p-3 text-center">
           <Gift className="w-8 h-8 text-green-400 mx-auto mb-3" />
           <p className="text-sm text-gray-300">Gifts</p>
-          <p className="text-2xl font-bold text-white">{giftsCollected}</p>
+          <p className="text-2xl font-bold text-white">{displayGifts}</p>
         </div>
         
         <div className="bg-gray-700 rounded-lg p-3 text-center">
@@ -72,15 +85,15 @@ const ScoreBoard = ({
         </div>
         
         <div className="bg-gray-700 rounded-lg p-3 text-center">
-          <DoorClosed className="w-8 h-8 text-red-400 mx-auto mb-3" />
-          <p className="text-sm text-gray-300">Detour Traps</p>
-          <p className="text-2xl font-bold text-white">{detourTrapsTriggered}</p>
+          <TrendingDown className="w-8 h-8 text-red-400 mx-auto mb-3" />
+          <p className="text-sm text-gray-300">Detours</p>
+          <p className="text-2xl font-bold text-white">{displayDetours}</p>
         </div>
         
         <div className="bg-gray-700 rounded-lg p-3 text-center">
-          <DoorClosed className="w-8 h-8 text-green-400 mx-auto mb-3" />
-          <p className="text-sm text-gray-300">Shortcut Gates</p>
-          <p className="text-2xl font-bold text-white">{shortcutGatesTriggered}</p>
+          <TrendingUp className="w-8 h-8 text-green-400 mx-auto mb-3" />
+          <p className="text-sm text-gray-300">Shortcuts</p>
+          <p className="text-2xl font-bold text-white">{displayShortcuts}</p>
         </div>
       </div>
     </motion.div>
