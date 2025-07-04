@@ -128,7 +128,7 @@ export interface ContractBoardData {
 
 export interface LeaderboardEntry {
   player: string;
-  score: bigint;
+  score: number;
 }
 
 export interface GameStatsData {
@@ -348,7 +348,12 @@ export const useContract = () => {
     try {
       const result = await refetchLeaderboard();
       if (result.data) {
-        setLeaderboard(result.data as LeaderboardEntry[]);
+        // Fix type conversion - map the readonly array to our mutable type
+        const leaderboardEntries: LeaderboardEntry[] = result.data.map(entry => ({
+          player: entry.player,
+          score: Number(entry.score)
+        }));
+        setLeaderboard(leaderboardEntries);
       }
       return result;
     } catch (error) {
