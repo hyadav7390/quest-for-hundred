@@ -144,7 +144,7 @@ export const useContract = () => {
         functionName: 'startGame',
         chain: monadTestnet,
         account: address,
-        gas: 700000
+        gas: 1000000
       });
     } catch (error: any) {
       console.error('❌ [CONTRACT] Failed to start game:', error);
