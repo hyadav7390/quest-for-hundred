@@ -186,7 +186,7 @@ export const useContract = () => {
 
   // Fetch data from contract
   const fetchAllGameData = useCallback(async () => {
-    if (!address) return;
+    if (!address || !publicClient) return;
 
     setIsLoading(true);
     try {
@@ -334,5 +334,3 @@ export const useContract = () => {
     isClaimRewardsPending: isClaimRewardsPending || isClaimRewardsConfirming,
   };
 };
-
-export type { LeaderboardEntry };
