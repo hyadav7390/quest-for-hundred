@@ -93,37 +93,44 @@ const blockchainGameReducer = (state: GameState, action: GameAction): GameState 
       const newPosition = position;
       const positionChanged = oldPosition !== newPosition;
       
-      // Check for special tiles at new position
+      // Check for special tiles at new position - but delay position update for door effects
       let triggeredGift = false;
       let triggeredDetour = false;
       let triggeredShortcut = false;
+      let shouldDelayPositionUpdate = false;
       
-      if (positionChanged && newPosition > oldPosition) {
+      if (positionChanged && newPosition !== oldPosition) {
+        // Check the tile we stepped on initially (before any door effect)
+        const steppedPosition = oldPosition + (diceValue || 1);
+        
         // Check if landed on a gift tile
-        const giftTile = state.giftTiles.find(tile => tile.index === newPosition);
+        const giftTile = state.giftTiles.find(tile => tile.index === steppedPosition);
         if (giftTile) {
           triggeredGift = true;
           updateGameStats('totalGiftsCollected');
         }
         
-        // Check if landed on a detour trap
-        const detourTile = state.detourTrapTiles.find(tile => tile.index === oldPosition + 1 || tile.index === newPosition);
-        if (detourTile && newPosition < oldPosition + (diceValue || 0)) {
+        // Check if landed on a detour trap - compare with expected vs actual position
+        const detourTile = state.detourTrapTiles.find(tile => tile.index === steppedPosition);
+        if (detourTile && newPosition < steppedPosition) {
           triggeredDetour = true;
+          shouldDelayPositionUpdate = true;
           updateGameStats('totalDetourTrapsTriggered');
         }
         
-        // Check if landed on a shortcut gate
-        const shortcutTile = state.shortcutGateTiles.find(tile => tile.index === oldPosition + 1 || tile.index === newPosition);
-        if (shortcutTile && newPosition > oldPosition + (diceValue || 0)) {
+        // Check if landed on a shortcut gate - compare with expected vs actual position  
+        const shortcutTile = state.shortcutGateTiles.find(tile => tile.index === steppedPosition);
+        if (shortcutTile && newPosition > steppedPosition) {
           triggeredShortcut = true;
+          shouldDelayPositionUpdate = true;
           updateGameStats('totalShortcutGatesTriggered');
         }
       }
       
       return {
         ...state,
-        playerPosition: newPosition,
+        // Delay position update if door effect needs to show animation first
+        playerPosition: shouldDelayPositionUpdate ? oldPosition : newPosition,
         score: score,
         diceValue: diceValue || state.diceValue,
         gameStatus: hasFinished ? 'won' : 'playing',
@@ -133,6 +140,8 @@ const blockchainGameReducer = (state: GameState, action: GameAction): GameState 
         giftsCollected: triggeredGift ? state.giftsCollected + 1 : state.giftsCollected,
         detourTrapsTriggered: triggeredDetour ? state.detourTrapsTriggered + 1 : state.detourTrapsTriggered,
         shortcutGatesTriggered: triggeredShortcut ? state.shortcutGatesTriggered + 1 : state.shortcutGatesTriggered,
+        // Store the final position for delayed update
+        finalPosition: shouldDelayPositionUpdate ? newPosition : undefined,
       };
     }
 
@@ -173,6 +182,14 @@ const blockchainGameReducer = (state: GameState, action: GameAction): GameState 
         isSoundMuted: state.isSoundMuted, // Preserve sound setting
       };
     }
+
+    case 'COMPLETE_DOOR_ANIMATION':
+      return {
+        ...state,
+        playerPosition: state.finalPosition || state.playerPosition,
+        finalPosition: undefined,
+        isMoving: false,
+      };
 
     default:
       return state;
@@ -250,6 +267,16 @@ export const useBlockchainGameReducer = () => {
       });
     }
   }, [boardData]);
+
+  // Add effect to handle delayed position updates after door animations
+  useEffect(() => {
+    if (state.finalPosition) {
+      const timer = setTimeout(() => {
+        dispatch({ type: 'COMPLETE_DOOR_ANIMATION' });
+      }, 2500); // Wait for splash animation to complete
+      return () => clearTimeout(timer);
+    }
+  }, [state.finalPosition]);
 
   // Enhanced roll dice function that only handles UI animations
   const handleRollDice = useCallback(async () => {

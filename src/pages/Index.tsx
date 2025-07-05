@@ -93,7 +93,7 @@ const Index = () => {
   const { splash, hideSplash, triggerGiftSplash, triggerDetourSplash, triggerShortcutSplash } = useSplashAnimations();
   const [showNewGameConfirmation, setShowNewGameConfirmation] = useState(false);
 
-  const { isConnected, contractState, isLoading, isLoadingStartGame, isWaitingForVRF, playerRank } = contractInfo;
+  const { isConnected, contractState, isLoading, isLoadingStartGame, isWaitingForVRF, playerRank, claimRewards, claimRewardsError } = contractInfo;
   const { address } = useAccount();
   
   // Get balance for validation
@@ -112,28 +112,30 @@ const Index = () => {
     if (!contractState || gameState.playerPosition === contractState.position) return;
     
     const currentPosition = contractState.position;
+    const previousPosition = gameState.playerPosition;
+    const expectedPosition = previousPosition + (contractState.diceValue || 1);
     
-    // Check for gift tiles
-    const giftTile = gameState.giftTiles.find(tile => tile.index === currentPosition);
+    // Check for gift tiles at the stepped position
+    const giftTile = gameState.giftTiles.find(tile => tile.index === expectedPosition);
     if (giftTile) {
       triggerGiftSplash(giftTile.points);
       playSound('gift');
     }
     
-    // Check for detour traps
-    const detourTile = gameState.detourTrapTiles.find(tile => tile.index === currentPosition);
-    if (detourTile) {
-      triggerDetourSplash(detourTile.moveBack);
+    // Check for detour traps - triggered when actual position is less than expected
+    const detourTile = gameState.detourTrapTiles.find(tile => tile.index === expectedPosition);
+    if (detourTile && currentPosition < expectedPosition) {
+      triggerDetourSplash(Math.abs(currentPosition - expectedPosition));
       playSound('detourTrap');
     }
     
-    // Check for shortcut gates
-    const shortcutTile = gameState.shortcutGateTiles.find(tile => tile.index === currentPosition);
-    if (shortcutTile) {
-      triggerShortcutSplash(shortcutTile.moveForward);
+    // Check for shortcut gates - triggered when actual position is more than expected
+    const shortcutTile = gameState.shortcutGateTiles.find(tile => tile.index === expectedPosition);
+    if (shortcutTile && currentPosition > expectedPosition) {
+      triggerShortcutSplash(currentPosition - expectedPosition);
       playSound('gift');
     }
-  }, [contractState?.position, gameState.playerPosition, gameState.giftTiles, gameState.detourTrapTiles, gameState.shortcutGateTiles, triggerGiftSplash, triggerDetourSplash, triggerShortcutSplash, playSound]);
+  }, [contractState?.position, contractState?.diceValue, gameState.playerPosition, gameState.giftTiles, gameState.detourTrapTiles, gameState.shortcutGateTiles, triggerGiftSplash, triggerDetourSplash, triggerShortcutSplash, playSound]);
 
   // Validation helpers
   const hasNoBalance = balance && balance.value === 0n;
@@ -231,6 +233,15 @@ const Index = () => {
            hasNoBalance;
 
   const isNewGameDisabled = isLoading || gameState.isRolling || isWaitingForVRF || hasNoBalance;
+
+  // Handle manual claim rewards
+  const handleClaimRewards = async () => {
+    try {
+      await claimRewards();
+    } catch (error) {
+      console.error('Error claiming rewards:', error);
+    }
+  };
 
   // Show wallet connection prompt if not connected
   if (!isConnected) {
@@ -443,6 +454,8 @@ const Index = () => {
           gameScore={gameState.score}
           nunuCoins={contractState?.nunuEarned || 0}
           onRestart={restartGame}
+          onClaimRewards={handleClaimRewards}
+          showClaimButton={!!claimRewardsError}
           diceRolls={contractState?.diceRolls}
           shortcuts={contractState?.shortcuts}
           detours={contractState?.detours}

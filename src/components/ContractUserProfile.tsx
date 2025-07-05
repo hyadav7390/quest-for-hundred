@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { User, Gift, Gamepad2, Coins, Trophy, Target } from 'lucide-react';
+import { User, Coins, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useContract } from '@/hooks/useContract';
@@ -10,20 +10,12 @@ import CrawlingCharacter from './CrawlingCharacter';
 const ContractUserProfile = () => {
   const { gameState, gameStats } = useContract();
   
-  // Get player's stats from contract
+  // Get player's stats from contract - only the required ones
   const playerScore = gameState?.gameScore || 0;
-  const nunuCoins = gameState?.nunuEarned || 0;
-  const hasFinished = gameState?.hasFinished || false;
-  const diceRolls = gameState?.diceRolls || 0;
-  const giftsCollected = gameState?.giftsCollected || 0;
-  const shortcuts = gameState?.shortcuts || 0;
-  const detours = gameState?.detours || 0;
   
   // Get global game stats
   const gamesCompleted = gameStats?.gamesCompleted || 0;
   const totalNunuEarned = gameStats?.totalNunuEarned || 0;
-  
-  const totalScore = playerScore + nunuCoins;
 
   return (
     <Popover>
@@ -44,75 +36,27 @@ const ContractUserProfile = () => {
             <p className="text-xs text-gray-400">Data from Smart Contract</p>
           </div>
           
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-gray-700 rounded-lg p-3 text-center">
-              <p className="text-xs text-gray-300">Game Score</p>
-              <p className="text-lg font-bold text-white">{playerScore.toLocaleString()}</p>
+          <div className="grid grid-cols-1 gap-4">
+            <div className="bg-gray-700 rounded-lg p-4 text-center">
+              <p className="text-sm text-gray-300 mb-2">Current Game Score</p>
+              <p className="text-2xl font-bold text-white">{playerScore.toLocaleString()}</p>
             </div>
             
-            <div className="bg-gray-700 rounded-lg p-3 text-center">
-              <div className="flex items-center justify-center gap-1 mb-1">
-                <Coins className="w-3 h-3 text-yellow-400" />
-                <p className="text-xs text-gray-300">NUNU Coins</p>
-              </div>
-              <p className="text-lg font-bold text-yellow-400">{nunuCoins.toLocaleString()}</p>
-            </div>
-            
-            <div className="col-span-2 bg-gradient-to-r from-purple-700 to-blue-700 rounded-lg p-3 text-center">
-              <p className="text-xs text-gray-200">Total Score</p>
-              <p className="text-xl font-bold text-white">{totalScore.toLocaleString()}</p>
-            </div>
-            
-            <div className="bg-gray-700 rounded-lg p-3 text-center">
-              <div className="flex items-center justify-center gap-2 mb-1">
-                <Target className="w-4 h-4 text-blue-400" />
-                <p className="text-xs text-gray-300">Dice Rolls</p>
-              </div>
-              <p className="text-lg font-bold text-white">{diceRolls}</p>
-            </div>
-
-            <div className="bg-gray-700 rounded-lg p-3 text-center">
-              <div className="flex items-center justify-center gap-2 mb-1">
-                <Gift className="w-4 h-4 text-green-400" />
-                <p className="text-xs text-gray-300">Gifts</p>
-              </div>
-              <p className="text-lg font-bold text-white">{giftsCollected}</p>
-            </div>
-
-            <div className="bg-gray-700 rounded-lg p-3 text-center">
-              <p className="text-xs text-gray-300">Shortcuts</p>
-              <p className="text-lg font-bold text-green-400">{shortcuts}</p>
-            </div>
-
-            <div className="bg-gray-700 rounded-lg p-3 text-center">
-              <p className="text-xs text-gray-300">Detours</p>
-              <p className="text-lg font-bold text-red-400">{detours}</p>
-            </div>
-
-            <div className="bg-gray-700 rounded-lg p-3 text-center">
-              <p className="text-xs text-gray-300">Position</p>
-              <p className="text-lg font-bold text-white">{gameState?.position || 1}/100</p>
-            </div>
-          </div>
-
-          {/* Global Stats Section */}
-          <div className="border-t border-gray-600 pt-3">
-            <p className="text-sm font-semibold text-gray-300 mb-2">Global Stats</p>
             <div className="grid grid-cols-2 gap-3">
-              <div className="bg-gray-700 rounded-lg p-2 text-center">
-                <div className="flex items-center justify-center gap-1 mb-1">
-                  <Trophy className="w-3 h-3 text-yellow-400" />
-                  <p className="text-xs text-gray-300">Games Done</p>
+              <div className="bg-gray-700 rounded-lg p-3 text-center">
+                <div className="flex items-center justify-center gap-1 mb-2">
+                  <Trophy className="w-4 h-4 text-yellow-400" />
+                  <p className="text-xs text-gray-300">Games Completed</p>
                 </div>
-                <p className="text-sm font-bold text-white">{gamesCompleted.toLocaleString()}</p>
+                <p className="text-lg font-bold text-white">{gamesCompleted.toLocaleString()}</p>
               </div>
               
-              <div className="bg-gray-700 rounded-lg p-2 text-center">
-                <div className="flex items-center justify-center gap-1 mb-1">
-                  <Coins className="w-3 h-3 text-yellow-400" />
-                  <p className="text-xs text-gray-300">Total NUNU</p>
+              <div className="bg-gray-700 rounded-lg p-3 text-center">
+                <div className="flex items-center justify-center gap-1 mb-2">
+                  <Coins className="w-4 h-4 text-yellow-400" />
+                  <p className="text-xs text-gray-300">Total NUNU Earned</p>
                 </div>
-                <p className="text-sm font-bold text-yellow-400">{totalNunuEarned.toLocaleString()}</p>
+                <p className="text-lg font-bold text-yellow-400">{totalNunuEarned.toLocaleString()}</p>
               </div>
             </div>
           </div>
