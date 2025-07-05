@@ -3,7 +3,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { useWriteContract, useReadContract, useWaitForTransactionReceipt, useAccount } from 'wagmi';
 import { toast } from 'sonner';
 import { GAME_ABI } from '@/abi/gameABI';
-import { usePublicClient } from 'wagmi';
 
 // Contract address - Replace with your actual contract address
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}` || '0x5FbDB2315678afecb367f032d93F642f64180aa3';
@@ -39,7 +38,6 @@ export interface LeaderboardEntry {
 
 export const useContract = () => {
   const { address } = useAccount();
-  const publicClient = usePublicClient();
 
   // Game state
   const [gameState, setGameState] = useState<GameState | null>(null);
@@ -82,6 +80,49 @@ export const useContract = () => {
     error: claimRewardsReceiptError
   } = useWaitForTransactionReceipt({
     hash: claimRewardsHash,
+  });
+
+  // Read contract data using useReadContract hooks
+  const { data: playerStatusData, refetch: refetchPlayerStatus } = useReadContract({
+    address: CONTRACT_ADDRESS,
+    abi: GAME_ABI,
+    functionName: 'getPlayerStatus',
+    args: address ? [address] : undefined,
+    query: {
+      enabled: !!address,
+    },
+  });
+
+  const { data: boardDataData, refetch: refetchBoardData } = useReadContract({
+    address: CONTRACT_ADDRESS,
+    abi: GAME_ABI,
+    functionName: 'getBoardData',
+    args: address ? [address] : undefined,
+    query: {
+      enabled: !!address,
+    },
+  });
+
+  const { data: gameStatsData, refetch: refetchGameStats } = useReadContract({
+    address: CONTRACT_ADDRESS,
+    abi: GAME_ABI,
+    functionName: 'getGameStats',
+  });
+
+  const { data: playerRankData, refetch: refetchPlayerRank } = useReadContract({
+    address: CONTRACT_ADDRESS,
+    abi: GAME_ABI,
+    functionName: 'getPlayerRank',
+    args: address ? [address] : undefined,
+    query: {
+      enabled: !!address,
+    },
+  });
+
+  const { data: leaderboardData, refetch: refetchLeaderboard } = useReadContract({
+    address: CONTRACT_ADDRESS,
+    abi: GAME_ABI,
+    functionName: 'getLeaderboard',
   });
 
   // Contract interactions
@@ -184,40 +225,10 @@ export const useContract = () => {
     }
   }, [claimRewardsWriteError, claimRewardsReceiptError]);
 
-  // Fetch data from contract
-  const fetchAllGameData = useCallback(async () => {
-    if (!address || !publicClient) return;
-
-    setIsLoading(true);
-    try {
-      const [gameStateData, boardDataData, gameStatsData, playerRankData] = await Promise.all([
-        publicClient.readContract({
-          address: CONTRACT_ADDRESS,
-          abi: GAME_ABI,
-          functionName: 'getPlayerStatus',
-          args: [address],
-        }),
-        publicClient.readContract({
-          address: CONTRACT_ADDRESS,
-          abi: GAME_ABI,
-          functionName: 'getBoardData',
-          args: [address],
-        }),
-        publicClient.readContract({
-          address: CONTRACT_ADDRESS,
-          abi: GAME_ABI,
-          functionName: 'getGameStats',
-        }),
-        publicClient.readContract({
-          address: CONTRACT_ADDRESS,
-          abi: GAME_ABI,
-          functionName: 'getPlayerRank',
-          args: [address],
-        })
-      ]);
-
-      // Process the data structure from getPlayerStatus
-      const playerStatus = gameStateData as any;
+  // Process contract data when it changes
+  useEffect(() => {
+    if (playerStatusData) {
+      const playerStatus = playerStatusData as any;
       
       setGameState({
         position: Number(playerStatus[0]),
@@ -231,21 +242,57 @@ export const useContract = () => {
         shortcuts: Number(playerStatus[8]),
         detours: Number(playerStatus[9]),
       });
+    }
+  }, [playerStatusData]);
 
+  useEffect(() => {
+    if (boardDataData) {
       setBoardData({
         giftTiles: (boardDataData as any)[0].map((tile: any) => ({ index: Number(tile[0]), points: Number(tile[1]) })),
         detourTrapTiles: (boardDataData as any)[1].map((tile: any) => ({ index: Number(tile[0]), moveBack: Number(tile[1]) })),
         shortcutGateTiles: (boardDataData as any)[2].map((tile: any) => ({ index: Number(tile[0]), moveForward: Number(tile[1]) })),
       });
+    }
+  }, [boardDataData]);
 
+  useEffect(() => {
+    if (gameStatsData) {
       const gameStats = gameStatsData as any;
       setGameStats({
         gamesCompleted: Number(gameStats[0]),
         totalNunuEarned: Number(gameStats[1]),
       });
+    }
+  }, [gameStatsData]);
 
+  useEffect(() => {
+    if (playerRankData) {
       setPlayerRank(Number(playerRankData));
+    }
+  }, [playerRankData]);
 
+  useEffect(() => {
+    if (leaderboardData) {
+      const formattedLeaderboard = (leaderboardData as any[]).map((entry: any) => ({
+        player: entry.player,
+        score: Number(entry.score),
+      }));
+      setLeaderboard(formattedLeaderboard);
+    }
+  }, [leaderboardData]);
+
+  // Fetch all game data function
+  const fetchAllGameData = useCallback(async () => {
+    if (!address) return;
+
+    setIsLoading(true);
+    try {
+      await Promise.all([
+        refetchPlayerStatus(),
+        refetchBoardData(),
+        refetchGameStats(),
+        refetchPlayerRank(),
+      ]);
     } catch (error) {
       console.error('❌ [CONTRACT] Failed to fetch game data:', error);
       toast.error(`Failed to fetch game data: ${error}`, {
@@ -254,28 +301,15 @@ export const useContract = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [address, publicClient]);
+  }, [address, refetchPlayerStatus, refetchBoardData, refetchGameStats, refetchPlayerRank]);
 
   const fetchLeaderboard = useCallback(async () => {
-    if (!publicClient) return;
-
     try {
-      const leaderboardData = await publicClient.readContract({
-        address: CONTRACT_ADDRESS,
-        abi: GAME_ABI,
-        functionName: 'getLeaderboard',
-      });
-
-      const formattedLeaderboard = (leaderboardData as any[]).map((entry: any) => ({
-        player: entry.player,
-        score: Number(entry.score),
-      }));
-
-      setLeaderboard(formattedLeaderboard);
+      await refetchLeaderboard();
     } catch (error) {
       console.error('❌ [CONTRACT] Failed to fetch leaderboard:', error);
     }
-  }, [publicClient]);
+  }, [refetchLeaderboard]);
 
   // Fetch initial data and set up polling
   useEffect(() => {
