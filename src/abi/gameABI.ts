@@ -182,58 +182,24 @@ export const GAME_ABI = [
         "type": "address"
       }
     ],
-    "name": "getBoardData",
+    "name": "getBoard",
     "outputs": [
       {
         "components": [
           {
-            "internalType": "uint8",
-            "name": "index",
-            "type": "uint8"
-          },
-          {
-            "internalType": "uint16",
-            "name": "points",
-            "type": "uint16"
-          }
+						"internalType": "uint64",
+						"name": "giftValue",
+						"type": "uint64"
+					},
+					{
+						"internalType": "int16",
+						"name": "doorOffset",
+						"type": "int16"
+					}
         ],
-        "internalType": "struct BoardData.GiftTile[]",
-        "name": "giftTiles",
-        "type": "tuple[]"
-      },
-      {
-        "components": [
-          {
-            "internalType": "uint8",
-            "name": "index",
-            "type": "uint8"
-          },
-          {
-            "internalType": "uint8",
-            "name": "moveBack",
-            "type": "uint8"
-          }
-        ],
-        "internalType": "struct BoardData.DetourTile[]",
-        "name": "detourTrapTiles",
-        "type": "tuple[]"
-      },
-      {
-        "components": [
-          {
-            "internalType": "uint8",
-            "name": "index",
-            "type": "uint8"
-          },
-          {
-            "internalType": "uint8",
-            "name": "moveForward",
-            "type": "uint8"
-          }
-        ],
-        "internalType": "struct BoardData.ShortcutTile[]",
-        "name": "shortcutGateTiles",
-        "type": "tuple[]"
+        "internalType": "struct NUGame.Tile[]",
+				"name": "board",
+				"type": "tuple[]"
       }
     ],
     "stateMutability": "view",

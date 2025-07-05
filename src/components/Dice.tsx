@@ -13,7 +13,6 @@ interface DiceProps {
 
 const Dice = ({ value, isRolling, onRoll, disabled, contractValue, isWaitingForVRF }: DiceProps) => {
   const [animationValue, setAnimationValue] = useState(1);
-  const [isAnimating, setIsAnimating] = useState(false);
 
   // Handle keyboard input
   useEffect(() => {
@@ -31,7 +30,6 @@ const Dice = ({ value, isRolling, onRoll, disabled, contractValue, isWaitingForV
   // Handle dice animation and value updates
   useEffect(() => {
     if (isRolling && value === null) {
-      setIsAnimating(true);
       // Show random animation while waiting
       const interval = setInterval(() => {
         setAnimationValue(Math.floor(Math.random() * 6) + 1);
@@ -40,11 +38,9 @@ const Dice = ({ value, isRolling, onRoll, disabled, contractValue, isWaitingForV
     } else if (value) {
       // Show actual value when not rolling
       setAnimationValue(value);
-      setIsAnimating(false);
     } else if (contractValue) {
       // Fallback for initial state before any roll
       setAnimationValue(contractValue);
-      setIsAnimating(false);
     }
   }, [isRolling, value, contractValue]);
 
@@ -67,6 +63,7 @@ const Dice = ({ value, isRolling, onRoll, disabled, contractValue, isWaitingForV
     return 'Roll Dice';
   };
 
+  const isAnimating = isWaitingForVRF;
   const dots = getDiceDots(animationValue);
 
   return (

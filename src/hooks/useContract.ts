@@ -1,11 +1,12 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useWriteContract, useReadContract, useWaitForTransactionReceipt, useAccount } from 'wagmi';
 import { toast } from 'sonner';
 import { GAME_ABI } from '@/abi/gameABI';
+import { monadTestnet } from '@/types/monadTestnet';
 
 // Contract address - Replace with your actual contract address
-const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}` || '0x5FbDB2315678afecb367f032d93F642f64180aa3';
+// const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}` || '0x9d5c35e1a0db4db616211982a0e7b889e3df3b95';
+const CONTRACT_ADDRESS = '0x57faf03d28c5e2da337386b467123e0a9347fa61';
 
 interface BoardData {
   giftTiles: { index: number; points: number }[];
@@ -96,7 +97,7 @@ export const useContract = () => {
   const { data: boardDataData, refetch: refetchBoardData } = useReadContract({
     address: CONTRACT_ADDRESS,
     abi: GAME_ABI,
-    functionName: 'getBoardData',
+    functionName: 'getBoard',
     args: address ? [address] : undefined,
     query: {
       enabled: !!address,
@@ -141,6 +142,9 @@ export const useContract = () => {
         address: CONTRACT_ADDRESS,
         abi: GAME_ABI,
         functionName: 'startGame',
+        chain: monadTestnet,
+        account: address,
+        gas: 700000
       });
     } catch (error: any) {
       console.error('❌ [CONTRACT] Failed to start game:', error);
@@ -162,7 +166,10 @@ export const useContract = () => {
         abi: GAME_ABI,
         functionName: 'rollDice',
         args: [currentPosition],
-        value: BigInt('1000000000000000') // 0.001 ETH in wei
+        value: BigInt('1000000000000000'), // 0.001 ETH in wei
+        chain: monadTestnet,
+        account: address,
+        gas: 200000
       });
     } catch (error: any) {
       console.error('❌ [CONTRACT] Failed to roll dice:', error);
@@ -184,6 +191,9 @@ export const useContract = () => {
         address: CONTRACT_ADDRESS,
         abi: GAME_ABI,
         functionName: 'claimRewards',
+        chain: monadTestnet,
+        account: address,
+        gas: 500000
       });
     } catch (error: any) {
       console.error('❌ [CONTRACT] Error claiming rewards:', error);
@@ -253,10 +263,36 @@ export const useContract = () => {
 
   useEffect(() => {
     if (boardDataData) {
+      const board = boardDataData as any[];
+      const giftTiles: { index: number; points: number }[] = [];
+      const detourTrapTiles: { index: number; moveBack: number }[] = [];
+      const shortcutGateTiles: { index: number; moveForward: number }[] = [];
+
+      // Parse the board array (index 0 is unused, start from 1)
+      for (let i = 1; i <= 100; i++) {
+        const tile = board[i];
+        if (tile) {
+          const giftValue = Number(tile.giftValue || 0);
+          const doorOffset = Number(tile.doorOffset || 0);
+
+          if (giftValue > 0) {
+            giftTiles.push({ index: i, points: giftValue });
+          } else if (doorOffset !== 0) {
+            if (doorOffset > 0) {
+              // Green door (shortcut)
+              shortcutGateTiles.push({ index: i, moveForward: doorOffset });
+            } else {
+              // Red door (detour)
+              detourTrapTiles.push({ index: i, moveBack: Math.abs(doorOffset) });
+            }
+          }
+        }
+      }
+
       setBoardData({
-        giftTiles: (boardDataData as any)[0].map((tile: any) => ({ index: Number(tile[0]), points: Number(tile[1]) })),
-        detourTrapTiles: (boardDataData as any)[1].map((tile: any) => ({ index: Number(tile[0]), moveBack: Number(tile[1]) })),
-        shortcutGateTiles: (boardDataData as any)[2].map((tile: any) => ({ index: Number(tile[0]), moveForward: Number(tile[1]) })),
+        giftTiles,
+        detourTrapTiles,
+        shortcutGateTiles,
       });
     }
   }, [boardDataData]);
@@ -293,12 +329,13 @@ export const useContract = () => {
 
     setIsLoading(true);
     try {
-      await Promise.all([
+      let result = await Promise.all([
         refetchPlayerStatus(),
         refetchBoardData(),
         refetchGameStats(),
         refetchPlayerRank(),
       ]);
+      console.log('result', result);
     } catch (error) {
       console.error('❌ [CONTRACT] Failed to fetch game data:', error);
       toast.error(`Failed to fetch game data: ${error}`, {
