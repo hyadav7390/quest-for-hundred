@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useWriteContract, useReadContract, useWaitForTransactionReceipt, useAccount } from 'wagmi';
 import { toast } from 'sonner';
@@ -107,6 +106,9 @@ export const useContract = () => {
     address: CONTRACT_ADDRESS,
     abi: GAME_ABI,
     functionName: 'getGameStats',
+    query: {
+      enabled: true,
+    },
   });
 
   const { data: playerRankData, refetch: refetchPlayerRank } = useReadContract({
@@ -123,6 +125,9 @@ export const useContract = () => {
     address: CONTRACT_ADDRESS,
     abi: GAME_ABI,
     functionName: 'getLeaderboard',
+    query: {
+      enabled: true,
+    },
   });
 
   // Contract interactions
