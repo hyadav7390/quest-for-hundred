@@ -1,9 +1,9 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useWriteContract, useReadContract, useWaitForTransactionReceipt, useAccount } from 'wagmi';
 import { toast } from 'sonner';
 import { GAME_ABI } from '@/abi/gameABI';
 import { usePublicClient } from 'wagmi';
-import { getAddress } from 'viem';
 
 // Contract address - Replace with your actual contract address
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}` || '0x5FbDB2315678afecb367f032d93F642f64180aa3';
@@ -32,6 +32,11 @@ interface GameStats {
   totalNunuEarned: number;
 }
 
+export interface LeaderboardEntry {
+  player: string;
+  score: number;
+}
+
 export const useContract = () => {
   const { address } = useAccount();
   const publicClient = usePublicClient();
@@ -41,6 +46,7 @@ export const useContract = () => {
   const [boardData, setBoardData] = useState<BoardData | null>(null);
   const [gameStats, setGameStats] = useState<GameStats | null>(null);
   const [playerRank, setPlayerRank] = useState<number>(0);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
 
   // Loading states
   const [isLoading, setIsLoading] = useState(false);
@@ -60,38 +66,6 @@ export const useContract = () => {
 
   const { isLoading: isRollDiceConfirming, isSuccess: isRollDiceConfirmed, error: rollDiceReceiptError } = useWaitForTransactionReceipt({
     hash: rollDiceHash,
-  });
-
-  // Read contracts
-  const { data: fetchedGameState, refetch: refetchGameState } = useReadContract({
-    address: CONTRACT_ADDRESS,
-    abi: GAME_ABI,
-    functionName: 'getGameState',
-    args: [address],
-    enabled: !!address,
-  });
-
-  const { data: fetchedBoardData, refetch: refetchBoardData } = useReadContract({
-    address: CONTRACT_ADDRESS,
-    abi: GAME_ABI,
-    functionName: 'getBoardData',
-    args: [address],
-    enabled: !!address,
-  });
-
-  const { data: fetchedGameStats, refetch: refetchGameStats } = useReadContract({
-    address: CONTRACT_ADDRESS,
-    abi: GAME_ABI,
-    functionName: 'getGameStats',
-    enabled: true,
-  });
-
-  const { data: fetchedPlayerRank, refetch: refetchPlayerRank } = useReadContract({
-    address: CONTRACT_ADDRESS,
-    abi: GAME_ABI,
-    functionName: 'getPlayerRank',
-    args: [address],
-    enabled: !!address,
   });
 
   // Add claimRewards contract call
@@ -140,7 +114,8 @@ export const useContract = () => {
         address: CONTRACT_ADDRESS,
         abi: GAME_ABI,
         functionName: 'rollDice',
-        args: [currentPosition]
+        args: [currentPosition],
+        value: BigInt('1000000000000000') // 0.001 ETH in wei
       });
     } catch (error: any) {
       console.error('❌ [CONTRACT] Failed to roll dice:', error);
@@ -186,10 +161,9 @@ export const useContract = () => {
       });
       setClaimRewardsError(null);
       // Refresh game data
-      refetchGameState();
-      refetchGameStats();
+      fetchAllGameData();
     }
-  }, [isClaimRewardsConfirmed, refetchGameState, refetchGameStats]);
+  }, [isClaimRewardsConfirmed]);
 
   // Handle claim rewards errors
   useEffect(() => {
@@ -220,7 +194,7 @@ export const useContract = () => {
         publicClient.readContract({
           address: CONTRACT_ADDRESS,
           abi: GAME_ABI,
-          functionName: 'getGameState',
+          functionName: 'getPlayerStatus',
           args: [address],
         }),
         publicClient.readContract({
@@ -242,37 +216,35 @@ export const useContract = () => {
         })
       ]);
 
-      // Ensure the data structure matches the types
-      const gameState = gameStateData as any;
-      const boardData = boardDataData as any;
-      const gameStats = gameStatsData as any;
-      const playerRank = playerRankData as any;
-
+      // Process the data structure from getPlayerStatus
+      const playerStatus = gameStateData as any;
+      
       setGameState({
-        position: Number(gameState[0]),
-        gameScore: Number(gameState[1]),
-        nunuEarned: Number(gameState[2]),
-        hasFinished: gameState[3],
-        boardGenerated: gameState[4],
-        diceValue: Number(gameState[5]),
-        diceRolls: Number(gameState[6]),
-        giftsCollected: Number(gameState[7]),
-        shortcuts: Number(gameState[8]),
-        detours: Number(gameState[9]),
+        position: Number(playerStatus[0]),
+        diceValue: Number(playerStatus[1]),
+        nunuEarned: Number(playerStatus[2]),
+        gameScore: Number(playerStatus[3]),
+        hasFinished: playerStatus[4],
+        boardGenerated: playerStatus[5],
+        diceRolls: Number(playerStatus[6]),
+        giftsCollected: Number(playerStatus[7]),
+        shortcuts: Number(playerStatus[8]),
+        detours: Number(playerStatus[9]),
       });
 
       setBoardData({
-        giftTiles: (boardData[0] as any[]).map((tile: any) => ({ index: Number(tile[0]), points: Number(tile[1]) })),
-        detourTrapTiles: (boardData[1] as any[]).map((tile: any) => ({ index: Number(tile[0]), moveBack: Number(tile[1]) })),
-        shortcutGateTiles: (boardData[2] as any[]).map((tile: any) => ({ index: Number(tile[0]), moveForward: Number(tile[1]) })),
+        giftTiles: (boardDataData as any)[0].map((tile: any) => ({ index: Number(tile[0]), points: Number(tile[1]) })),
+        detourTrapTiles: (boardDataData as any)[1].map((tile: any) => ({ index: Number(tile[0]), moveBack: Number(tile[1]) })),
+        shortcutGateTiles: (boardDataData as any)[2].map((tile: any) => ({ index: Number(tile[0]), moveForward: Number(tile[1]) })),
       });
 
+      const gameStats = gameStatsData as any;
       setGameStats({
         gamesCompleted: Number(gameStats[0]),
         totalNunuEarned: Number(gameStats[1]),
       });
 
-      setPlayerRank(Number(playerRank));
+      setPlayerRank(Number(playerRankData));
 
     } catch (error) {
       console.error('❌ [CONTRACT] Failed to fetch game data:', error);
@@ -284,30 +256,33 @@ export const useContract = () => {
     }
   }, [address, publicClient]);
 
-  const fetchPlayerRank = useCallback(async () => {
-    if (!address) return;
+  const fetchLeaderboard = useCallback(async () => {
+    if (!publicClient) return;
 
     try {
-      const playerRankData = await publicClient.readContract({
+      const leaderboardData = await publicClient.readContract({
         address: CONTRACT_ADDRESS,
         abi: GAME_ABI,
-        functionName: 'getPlayerRank',
-        args: [address],
+        functionName: 'getLeaderboard',
       });
 
-      setPlayerRank(Number(playerRankData));
+      const formattedLeaderboard = (leaderboardData as any[]).map((entry: any) => ({
+        player: entry.player,
+        score: Number(entry.score),
+      }));
+
+      setLeaderboard(formattedLeaderboard);
     } catch (error) {
-      console.error('❌ [CONTRACT] Failed to fetch player rank:', error);
+      console.error('❌ [CONTRACT] Failed to fetch leaderboard:', error);
     }
-  }, [address, publicClient]);
+  }, [publicClient]);
 
   // Fetch initial data and set up polling
   useEffect(() => {
     if (address) {
       fetchAllGameData();
-      fetchPlayerRank();
     }
-  }, [address, fetchAllGameData, fetchPlayerRank]);
+  }, [address, fetchAllGameData]);
 
   // Update local state on contract events
   useEffect(() => {
@@ -345,13 +320,14 @@ export const useContract = () => {
     boardData,
     gameStats,
     playerRank,
+    leaderboard,
     isLoading,
     isLoadingStartGame,
     isWaitingForVRF,
     startGame,
     rollDice,
     fetchAllGameData,
-    fetchPlayerRank,
+    fetchLeaderboard,
     isConnected: !!address,
     claimRewards,
     claimRewardsError,

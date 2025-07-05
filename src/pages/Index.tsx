@@ -93,7 +93,16 @@ const Index = () => {
   const { splash, hideSplash, triggerGiftSplash, triggerDetourSplash, triggerShortcutSplash } = useSplashAnimations();
   const [showNewGameConfirmation, setShowNewGameConfirmation] = useState(false);
 
-  const { isConnected, contractState, isLoading, isLoadingStartGame, isWaitingForVRF, playerRank, claimRewards, claimRewardsError } = contractInfo;
+  const { 
+    isConnected, 
+    contractState, 
+    isLoading, 
+    isLoadingStartGame, 
+    isWaitingForVRF, 
+    playerRank, 
+    claimRewards, 
+    claimRewardsError 
+  } = contractInfo;
   const { address } = useAccount();
   
   // Get balance for validation
