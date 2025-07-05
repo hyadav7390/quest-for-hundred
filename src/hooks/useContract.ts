@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useWriteContract, useReadContract, useWaitForTransactionReceipt, useAccount } from 'wagmi';
 import { toast } from 'sonner';
@@ -136,7 +137,7 @@ export const useContract = () => {
 
     setIsLoadingStartGame(true);
     try {
-      await writeStartGame({
+      writeStartGame({
         address: CONTRACT_ADDRESS,
         abi: GAME_ABI,
         functionName: 'startGame',
@@ -156,7 +157,7 @@ export const useContract = () => {
 
     setIsWaitingForVRF(true);
     try {
-      await writeRollDice({
+      writeRollDice({
         address: CONTRACT_ADDRESS,
         abi: GAME_ABI,
         functionName: 'rollDice',
@@ -179,7 +180,7 @@ export const useContract = () => {
 
     try {
       setClaimRewardsError(null);
-      await writeClaimRewards({
+      writeClaimRewards({
         address: CONTRACT_ADDRESS,
         abi: GAME_ABI,
         functionName: 'claimRewards',
