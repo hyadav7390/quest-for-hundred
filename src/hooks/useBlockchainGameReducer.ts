@@ -1,3 +1,4 @@
+
 import { useReducer, useEffect, useCallback } from 'react';
 import { GameState, GameAction } from '@/types/game';
 import { useContract } from './useContract';
@@ -209,7 +210,6 @@ export const useBlockchainGameReducer = () => {
     isConnected,
     fetchAllGameData,
     playerRank,
-    fetchPlayerRank,
     CONTRACT_ADDRESS,
   } = useContract();
 

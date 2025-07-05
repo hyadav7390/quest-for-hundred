@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Wallet, RefreshCw } from 'lucide-react';
 import { useAccount, useBalance } from 'wagmi';
 import { monadTestnet } from '@/types/monadTestnet';
+import { useContract } from '@/hooks/useContract';
 
 // Helper components defined outside Index to prevent re-mounting on every render
 const BalanceWarning = () => (
@@ -100,9 +101,12 @@ const Index = () => {
     isLoadingStartGame, 
     isWaitingForVRF, 
     playerRank, 
-    claimRewards, 
-    claimRewardsError 
+    CONTRACT_ADDRESS,
   } = contractInfo;
+
+  // Get claimRewards and claimRewardsError directly from useContract
+  const { claimRewards, claimRewardsError } = useContract();
+
   const { address } = useAccount();
   
   // Get balance for validation

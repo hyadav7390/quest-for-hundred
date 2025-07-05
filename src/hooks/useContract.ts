@@ -334,3 +334,5 @@ export const useContract = () => {
     isClaimRewardsPending: isClaimRewardsPending || isClaimRewardsConfirming,
   };
 };
+
+export type { LeaderboardEntry };
