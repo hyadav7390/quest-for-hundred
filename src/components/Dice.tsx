@@ -13,6 +13,17 @@ interface DiceProps {
 
 const Dice = ({ value, isRolling, onRoll, disabled, contractValue, isWaitingForVRF }: DiceProps) => {
   const [animationValue, setAnimationValue] = useState(1);
+  const [isAnimationRunning, setIsAnimationRunning] = useState(false);
+  const [animationInterval, setAnimationInterval] = useState<NodeJS.Timeout | null>(null);
+
+  console.log('🎲 [DICE] Render state:', { 
+    value, 
+    isRolling, 
+    disabled, 
+    contractValue, 
+    isWaitingForVRF,
+    isAnimationRunning 
+  });
 
   // Handle keyboard input
   useEffect(() => {
@@ -27,22 +38,54 @@ const Dice = ({ value, isRolling, onRoll, disabled, contractValue, isWaitingForV
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [disabled, onRoll]);
 
-  // Handle dice animation and value updates
+  // Handle dice animation start/stop
   useEffect(() => {
-    if (isRolling && value === null) {
-      // Show random animation while waiting
+    console.log('🎲 [DICE] Animation effect triggered:', { isRolling, value, isAnimationRunning });
+    
+    if (isRolling && !isAnimationRunning) {
+      // Start animation
+      console.log('▶️ [DICE] Starting animation');
+      setIsAnimationRunning(true);
+      
       const interval = setInterval(() => {
         setAnimationValue(Math.floor(Math.random() * 6) + 1);
       }, 100);
-      return () => clearInterval(interval);
-    } else if (value) {
-      // Show actual value when not rolling
-      setAnimationValue(value);
-    } else if (contractValue) {
-      // Fallback for initial state before any roll
-      setAnimationValue(contractValue);
+      
+      setAnimationInterval(interval);
+    } else if (!isRolling && isAnimationRunning) {
+      // Stop animation and show final value
+      console.log('⏹️ [DICE] Stopping animation, final value:', value || contractValue);
+      setIsAnimationRunning(false);
+      
+      if (animationInterval) {
+        clearInterval(animationInterval);
+        setAnimationInterval(null);
+      }
+      
+      // Set final value
+      if (value) {
+        setAnimationValue(value);
+      } else if (contractValue) {
+        setAnimationValue(contractValue);
+      }
     }
-  }, [isRolling, value, contractValue]);
+
+    // Cleanup on unmount
+    return () => {
+      if (animationInterval) {
+        clearInterval(animationInterval);
+      }
+    };
+  }, [isRolling, value, contractValue, isAnimationRunning, animationInterval]);
+
+  // Handle initial state when component mounts
+  useEffect(() => {
+    if (!isRolling && !isAnimationRunning) {
+      const initialValue = value || contractValue || 1;
+      console.log('🎲 [DICE] Setting initial value:', initialValue);
+      setAnimationValue(initialValue);
+    }
+  }, [value, contractValue, isRolling, isAnimationRunning]);
 
   // Dice dot patterns
   const getDiceDots = (num: number) => {
@@ -59,11 +102,11 @@ const Dice = ({ value, isRolling, onRoll, disabled, contractValue, isWaitingForV
   };
 
   const getRollButtonText = () => {
-    if (disabled && isRolling) return 'Rolling...';
+    if (disabled && (isRolling || isWaitingForVRF)) return 'Rolling...';
     return 'Roll Dice';
   };
 
-  const isAnimating = isWaitingForVRF;
+  const isCurrentlyAnimating = isRolling || isWaitingForVRF || isAnimationRunning;
   const dots = getDiceDots(animationValue);
 
   return (
@@ -77,11 +120,11 @@ const Dice = ({ value, isRolling, onRoll, disabled, contractValue, isWaitingForV
           <motion.div
             className="w-full h-full bg-gradient-to-br from-gray-100 via-white to-gray-200 rounded-2xl border-2 border-gray-300 relative shadow-2xl transform-gpu"
             animate={{
-              rotateX: isAnimating ? [0, 360, 720, 1080] : 0,
-              rotateY: isAnimating ? [0, 360, 720, 1080] : 0,
-              rotateZ: isAnimating ? [0, 180, 360, 540] : 0,
-              scale: isAnimating ? [1, 1.2, 0.9, 1.1, 1] : 1,
-              boxShadow: isAnimating 
+              rotateX: isCurrentlyAnimating ? [0, 360, 720, 1080] : 0,
+              rotateY: isCurrentlyAnimating ? [0, 360, 720, 1080] : 0,
+              rotateZ: isCurrentlyAnimating ? [0, 180, 360, 540] : 0,
+              scale: isCurrentlyAnimating ? [1, 1.2, 0.9, 1.1, 1] : 1,
+              boxShadow: isCurrentlyAnimating 
                 ? [
                     '0 10px 25px rgba(0,0,0,0.3)',
                     '0 20px 40px rgba(0,0,0,0.4)',
@@ -91,9 +134,9 @@ const Dice = ({ value, isRolling, onRoll, disabled, contractValue, isWaitingForV
                 : '0 8px 20px rgba(0,0,0,0.25)',
             }}
             transition={{
-              duration: isAnimating ? 0.15 : 0.3,
-              repeat: isAnimating ? Infinity : 0,
-              ease: isAnimating ? "easeInOut" : "easeOut",
+              duration: isCurrentlyAnimating ? 0.15 : 0.3,
+              repeat: isCurrentlyAnimating ? Infinity : 0,
+              ease: isCurrentlyAnimating ? "easeInOut" : "easeOut",
             }}
             style={{
               transformStyle: 'preserve-3d',
@@ -131,12 +174,12 @@ const Dice = ({ value, isRolling, onRoll, disabled, contractValue, isWaitingForV
             <motion.div
               className="absolute inset-0 bg-gradient-to-tr from-transparent via-white to-transparent opacity-20 rounded-2xl"
               animate={{
-                x: isAnimating ? [-100, 100] : 0,
-                opacity: isAnimating ? [0, 0.3, 0] : 0.1,
+                x: isCurrentlyAnimating ? [-100, 100] : 0,
+                opacity: isCurrentlyAnimating ? [0, 0.3, 0] : 0.1,
               }}
               transition={{
                 duration: 0.8,
-                repeat: isAnimating ? Infinity : 0,
+                repeat: isCurrentlyAnimating ? Infinity : 0,
                 ease: "easeInOut",
               }}
             />
@@ -144,7 +187,7 @@ const Dice = ({ value, isRolling, onRoll, disabled, contractValue, isWaitingForV
 
           {/* Glowing ring effect when rolling */}
           <AnimatePresence>
-            {isAnimating && (
+            {isCurrentlyAnimating && (
               <motion.div
                 className="absolute inset-0 rounded-2xl border-4 border-purple-400"
                 initial={{ scale: 1, opacity: 0.8 }}
@@ -165,7 +208,7 @@ const Dice = ({ value, isRolling, onRoll, disabled, contractValue, isWaitingForV
 
         {/* Floating sparkles when rolling */}
         <AnimatePresence>
-          {isAnimating && (
+          {isCurrentlyAnimating && (
             <>
               {[...Array(6)].map((_, i) => (
                 <motion.div
@@ -206,12 +249,12 @@ const Dice = ({ value, isRolling, onRoll, disabled, contractValue, isWaitingForV
         }}
         whileTap={{ scale: disabled ? 1 : 0.95 }}
         animate={{
-          backgroundPosition: isAnimating ? ['0% 50%', '100% 50%', '0% 50%'] : '0% 50%',
+          backgroundPosition: isCurrentlyAnimating ? ['0% 50%', '100% 50%', '0% 50%'] : '0% 50%',
         }}
         transition={{
           backgroundPosition: {
             duration: 2,
-            repeat: isAnimating ? Infinity : 0,
+            repeat: isCurrentlyAnimating ? Infinity : 0,
             ease: "linear"
           }
         }}
@@ -235,11 +278,11 @@ const Dice = ({ value, isRolling, onRoll, disabled, contractValue, isWaitingForV
         <span className="relative z-10 flex items-center justify-center space-x-2">
           <motion.span
             animate={{
-              rotateY: isAnimating ? 360 : 0,
+              rotateY: isCurrentlyAnimating ? 360 : 0,
             }}
             transition={{
               duration: 0.6,
-              repeat: isAnimating ? Infinity : 0,
+              repeat: isCurrentlyAnimating ? Infinity : 0,
             }}
           >
             🎲

@@ -60,6 +60,7 @@ const updateGameStats = (key: string, increment: number = 1) => {
 const blockchainGameReducer = (state: GameState, action: GameAction): GameState => {
   switch (action.type) {
     case 'START_DICE_ANIMATION':
+      console.log('🎲 [UI REDUCER] Starting dice animation');
       return {
         ...state,
         isRolling: true,
@@ -67,6 +68,7 @@ const blockchainGameReducer = (state: GameState, action: GameAction): GameState 
       };
 
     case 'STOP_DICE_ANIMATION':
+      console.log('🎲 [UI REDUCER] Stopping dice animation with value:', action.payload);
       updateGameStats('totalDiceRolled');
       return {
         ...state,
@@ -75,12 +77,14 @@ const blockchainGameReducer = (state: GameState, action: GameAction): GameState 
       };
 
     case 'START_MOVING':
+      console.log('🚶 [UI REDUCER] Starting player movement');
       return {
         ...state,
         isMoving: true,
       };
 
     case 'STOP_MOVING':
+      console.log('🚶 [UI REDUCER] Stopping player movement');
       return {
         ...state,
         isMoving: false,
@@ -88,6 +92,7 @@ const blockchainGameReducer = (state: GameState, action: GameAction): GameState 
 
     case 'UPDATE_FROM_CONTRACT': {
       const { position, score, nunuEarned, hasFinished, diceValue } = action.payload;
+      console.log('📊 [UI REDUCER] Updating from contract:', action.payload);
       
       // Check if player moved to trigger animations
       const oldPosition = state.playerPosition;
@@ -163,6 +168,7 @@ const blockchainGameReducer = (state: GameState, action: GameAction): GameState 
     }
 
     case 'WIN_GAME':
+      console.log('🎉 [UI REDUCER] Game won!');
       return {
         ...state,
         gameStatus: 'won',
@@ -171,12 +177,14 @@ const blockchainGameReducer = (state: GameState, action: GameAction): GameState 
       };
 
     case 'TOGGLE_SOUND':
+      console.log('🔊 [UI REDUCER] Toggling sound:', !state.isSoundMuted);
       return {
         ...state,
         isSoundMuted: !state.isSoundMuted,
       };
 
     case 'RESET_GAME': {
+      console.log('🔄 [UI REDUCER] Resetting game');
       updateGameStats('totalGamesPlayed');
       return {
         ...initialState,
@@ -185,6 +193,7 @@ const blockchainGameReducer = (state: GameState, action: GameAction): GameState 
     }
 
     case 'COMPLETE_DOOR_ANIMATION':
+      console.log('🚪 [UI REDUCER] Completing door animation');
       return {
         ...state,
         playerPosition: state.finalPosition || state.playerPosition,
@@ -226,8 +235,11 @@ export const useBlockchainGameReducer = () => {
   // Sync contract state with UI state
   useEffect(() => {
     if (contractState) {
+      console.log('🔄 [UI REDUCER] Syncing contract state:', contractState);
+      
       // Stop dice animation when we get actual dice value from contract
       if (contractState.diceValue > 0 && state.isRolling) {
+        console.log('🎲 [UI REDUCER] Contract dice value received, stopping animation');
         dispatch({ type: 'STOP_DICE_ANIMATION', payload: contractState.diceValue });
       }
       
@@ -244,6 +256,7 @@ export const useBlockchainGameReducer = () => {
 
       // Handle game completion
       if (contractState.hasFinished && state.gameStatus !== 'won') {
+        console.log('🎉 [UI REDUCER] Game completed, triggering win animation');
         setTimeout(() => {
           dispatch({ type: 'WIN_GAME' });
         }, 2000); // Wait for animations to complete
@@ -261,6 +274,7 @@ export const useBlockchainGameReducer = () => {
   // Sync board data from contract
   useEffect(() => {
     if (boardData) {
+      console.log('📋 [UI REDUCER] Syncing board data from contract');
       dispatch({
         type: 'UPDATE_BOARD_DATA',
         payload: boardData
@@ -280,12 +294,21 @@ export const useBlockchainGameReducer = () => {
 
   // Enhanced roll dice function that only handles UI animations
   const handleRollDice = useCallback(async () => {
+    console.log('🎲 [UI REDUCER] Handle roll dice called', {
+      isConnected,
+      isRolling: state.isRolling,
+      isLoading,
+      isWaitingForVRF,
+      boardGenerated: contractState?.boardGenerated
+    });
+
     if (!isConnected) {
       toast.error('Please connect your wallet to play');
       return;
     }
 
-    if (state.isRolling || isLoading || isWaitingForVRF) {
+    if (state.isRolling || isLoading || isWaitingForVRF || isLoadingStartGame) {
+      console.log('🚫 [UI REDUCER] Roll dice blocked by loading states');
       return;
     }
 
@@ -296,33 +319,49 @@ export const useBlockchainGameReducer = () => {
 
     try {
       // Start UI dice animation immediately
+      console.log('▶️ [UI REDUCER] Starting dice animation');
       dispatch({ type: 'START_DICE_ANIMATION' });
       
       // Call contract roll dice - this will trigger VRF and events
       await rollDice(contractState.position);
       
     } catch (error) {
-      console.error('❌ [ACTION] Error in dice roll:', error);
+      console.error('❌ [UI REDUCER] Error in dice roll:', error);
       dispatch({ type: 'STOP_DICE_ANIMATION', payload: 1 });
       toast.error('Failed to roll dice. Please try again.');
     }
-  }, [isConnected, state.isRolling, isLoading, isWaitingForVRF, contractState, rollDice]);
+  }, [isConnected, state.isRolling, isLoading, isWaitingForVRF, isLoadingStartGame, contractState, rollDice]);
 
   // Enhanced start game function
   const handleStartGame = useCallback(async () => {
+    console.log('🎮 [UI REDUCER] Handle start game called', {
+      isConnected,
+      isLoadingStartGame,
+      isLoading,
+      isRolling: state.isRolling,
+      isWaitingForVRF
+    });
+
     if (!isConnected) {
       toast.error('Please connect your wallet to start a new game');
       return;
     }
 
+    if (isLoadingStartGame || isLoading || state.isRolling || isWaitingForVRF) {
+      console.log('🚫 [UI REDUCER] Start game blocked by loading states');
+      return;
+    }
+
     try {
+      console.log('🔄 [UI REDUCER] Resetting game state');
       dispatch({ type: 'RESET_GAME' });
       await startGame();
       
     } catch (error) {
+      console.error('❌ [UI REDUCER] Error starting game:', error);
       toast.error('Failed to start new game. Please try again.');
     }
-  }, [isConnected, startGame]);
+  }, [isConnected, isLoadingStartGame, isLoading, state.isRolling, isWaitingForVRF, startGame]);
 
   return [
     {

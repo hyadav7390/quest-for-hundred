@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useWriteContract, useReadContract, useWaitForTransactionReceipt, useAccount } from 'wagmi';
 import { toast } from 'sonner';
@@ -56,14 +57,33 @@ export const useContract = () => {
   const [claimRewardsError, setClaimRewardsError] = useState<string | null>(null);
 
   // Contract calls
-  const { writeContract: writeStartGame, data: startGameHash, isPending: isStartGamePending, error: startGameError } = useWriteContract();
-  const { writeContract: writeRollDice, data: rollDiceHash, isPending: isRollDicePending, error: rollDiceError } = useWriteContract();
+  const { 
+    writeContract: writeStartGame, 
+    data: startGameHash, 
+    isPending: isStartGamePending, 
+    error: startGameError 
+  } = useWriteContract();
+  
+  const { 
+    writeContract: writeRollDice, 
+    data: rollDiceHash, 
+    isPending: isRollDicePending, 
+    error: rollDiceError 
+  } = useWriteContract();
 
-  const { isLoading: isStartGameConfirming, isSuccess: isStartGameConfirmed, error: startGameReceiptError } = useWaitForTransactionReceipt({
+  const { 
+    isLoading: isStartGameConfirming, 
+    isSuccess: isStartGameConfirmed, 
+    error: startGameReceiptError 
+  } = useWaitForTransactionReceipt({
     hash: startGameHash,
   });
 
-  const { isLoading: isRollDiceConfirming, isSuccess: isRollDiceConfirmed, error: rollDiceReceiptError } = useWaitForTransactionReceipt({
+  const { 
+    isLoading: isRollDiceConfirming, 
+    isSuccess: isRollDiceConfirmed, 
+    error: rollDiceReceiptError 
+  } = useWaitForTransactionReceipt({
     hash: rollDiceHash,
   });
 
@@ -83,7 +103,7 @@ export const useContract = () => {
     hash: claimRewardsHash,
   });
 
-  // Read contract data using useReadContract hooks
+  // Read contract data using useReadContract hooks with optimized queries
   const { data: playerStatusData, refetch: refetchPlayerStatus } = useReadContract({
     address: CONTRACT_ADDRESS,
     abi: GAME_ABI,
@@ -91,6 +111,8 @@ export const useContract = () => {
     args: address ? [address] : undefined,
     query: {
       enabled: !!address,
+      refetchInterval: false, // Only refetch on demand
+      staleTime: 1000, // Cache for 1 second
     },
   });
 
@@ -101,6 +123,8 @@ export const useContract = () => {
     args: address ? [address] : undefined,
     query: {
       enabled: !!address,
+      refetchInterval: false, // Only refetch on demand
+      staleTime: 30000, // Cache board data for 30 seconds (rarely changes)
     },
   });
 
@@ -110,6 +134,8 @@ export const useContract = () => {
     functionName: 'getGameStats',
     query: {
       enabled: true,
+      refetchInterval: false, // Only refetch on demand
+      staleTime: 10000, // Cache for 10 seconds
     },
   });
 
@@ -120,6 +146,8 @@ export const useContract = () => {
     args: address ? [address] : undefined,
     query: {
       enabled: !!address,
+      refetchInterval: false, // Only refetch on demand
+      staleTime: 5000, // Cache for 5 seconds
     },
   });
 
@@ -129,72 +157,120 @@ export const useContract = () => {
     functionName: 'getLeaderboard',
     query: {
       enabled: true,
+      refetchInterval: false, // Only refetch on demand
+      staleTime: 15000, // Cache for 15 seconds
     },
   });
 
-  // Contract interactions
+  // Contract interactions with comprehensive logging
   const startGame = useCallback(async () => {
-    if (!address || isStartGamePending || isStartGameConfirming) return;
+    if (!address || isStartGamePending || isStartGameConfirming) {
+      console.log('🚫 [CONTRACT] Start game blocked:', { 
+        address: !!address, 
+        isStartGamePending, 
+        isStartGameConfirming 
+      });
+      return;
+    }
 
+    console.log('🎮 [CONTRACT] Starting new game...', { 
+      address, 
+      contractAddress: CONTRACT_ADDRESS 
+    });
+    
     setIsLoadingStartGame(true);
     try {
-      writeStartGame({
-        address: CONTRACT_ADDRESS,
+      const txConfig = {
+        address: CONTRACT_ADDRESS as `0x${string}`,
         abi: GAME_ABI,
-        functionName: 'startGame',
+        functionName: 'startGame' as const,
         chain: monadTestnet,
         account: address,
-        gas: 1000000
-      });
+        gas: 1000000n
+      };
+      
+      console.log('📋 [CONTRACT] Start game transaction config:', txConfig);
+      writeStartGame(txConfig);
+      
     } catch (error: any) {
       console.error('❌ [CONTRACT] Failed to start game:', error);
+      setIsLoadingStartGame(false);
       toast.error(`Failed to start game: ${error?.message || 'Unknown error'}`, {
         position: 'top-right'
       });
-    } finally {
-      setIsLoadingStartGame(false);
     }
   }, [address, writeStartGame, isStartGamePending, isStartGameConfirming]);
 
   const rollDice = useCallback(async (currentPosition: number) => {
-    if (!address || isRollDicePending || isRollDiceConfirming) return;
+    if (!address || isRollDicePending || isRollDiceConfirming) {
+      console.log('🚫 [CONTRACT] Roll dice blocked:', { 
+        address: !!address, 
+        isRollDicePending, 
+        isRollDiceConfirming 
+      });
+      return;
+    }
+
+    console.log('🎲 [CONTRACT] Rolling dice...', { 
+      address, 
+      currentPosition, 
+      contractAddress: CONTRACT_ADDRESS 
+    });
 
     setIsWaitingForVRF(true);
     try {
-      writeRollDice({
-        address: CONTRACT_ADDRESS,
+      const txConfig = {
+        address: CONTRACT_ADDRESS as `0x${string}`,
         abi: GAME_ABI,
-        functionName: 'rollDice',
-        args: [currentPosition],
+        functionName: 'rollDice' as const,
+        args: [currentPosition] as const,
         value: BigInt('1000000000000000'), // 0.001 ETH in wei
         chain: monadTestnet,
         account: address,
-        gas: 200000
-      });
+        gas: 200000n
+      };
+      
+      console.log('📋 [CONTRACT] Roll dice transaction config:', txConfig);
+      writeRollDice(txConfig);
+      
     } catch (error: any) {
       console.error('❌ [CONTRACT] Failed to roll dice:', error);
+      setIsWaitingForVRF(false);
       toast.error(`Failed to roll dice: ${error?.message || 'Unknown error'}`, {
         position: 'top-right'
       });
-    } finally {
-      setIsWaitingForVRF(false);
     }
   }, [address, writeRollDice, isRollDicePending, isRollDiceConfirming]);
 
   // Auto claim rewards when game finishes
   const claimRewards = useCallback(async () => {
-    if (!address || !gameState?.hasFinished) return;
+    if (!address || !gameState?.hasFinished) {
+      console.log('🚫 [CONTRACT] Claim rewards blocked:', { 
+        address: !!address, 
+        hasFinished: gameState?.hasFinished 
+      });
+      return;
+    }
+
+    console.log('💰 [CONTRACT] Claiming rewards...', { 
+      address, 
+      nunuEarned: gameState.nunuEarned 
+    });
 
     try {
       setClaimRewardsError(null);
-      writeClaimRewards({
-        address: CONTRACT_ADDRESS,
+      const txConfig = {
+        address: CONTRACT_ADDRESS as `0x${string}`,
         abi: GAME_ABI,
-        functionName: 'claimRewards',
+        functionName: 'claimRewards' as const,
         chain: monadTestnet,
         account: address,
-        gas: 500000
-      });
+        gas: 500000n
+      };
+      
+      console.log('📋 [CONTRACT] Claim rewards transaction config:', txConfig);
+      writeClaimRewards(txConfig);
+      
     } catch (error: any) {
       console.error('❌ [CONTRACT] Error claiming rewards:', error);
       const errorMessage = error?.message?.includes('finish first') 
@@ -208,11 +284,12 @@ export const useContract = () => {
         position: 'top-right'
       });
     }
-  }, [address, gameState?.hasFinished, writeClaimRewards]);
+  }, [address, gameState?.hasFinished, gameState?.nunuEarned, writeClaimRewards]);
 
   // Handle claim rewards success
   useEffect(() => {
     if (isClaimRewardsConfirmed) {
+      console.log('✅ [CONTRACT] Rewards claimed successfully');
       toast.success('Rewards claimed successfully!', {
         position: 'top-right'
       });
@@ -245,6 +322,7 @@ export const useContract = () => {
   useEffect(() => {
     if (playerStatusData) {
       const playerStatus = playerStatusData as any;
+      console.log('📊 [CONTRACT] Player status updated:', playerStatus);
       
       setGameState({
         position: Number(playerStatus[0]),
@@ -263,6 +341,7 @@ export const useContract = () => {
 
   useEffect(() => {
     if (boardDataData) {
+      console.log('🎯 [CONTRACT] Board data updated');
       const board = boardDataData as any[];
       const giftTiles: { index: number; points: number }[] = [];
       const detourTrapTiles: { index: number; moveBack: number }[] = [];
@@ -289,6 +368,12 @@ export const useContract = () => {
         }
       }
 
+      console.log('🎯 [CONTRACT] Parsed board:', {
+        gifts: giftTiles.length,
+        detours: detourTrapTiles.length,
+        shortcuts: shortcutGateTiles.length
+      });
+
       setBoardData({
         giftTiles,
         detourTrapTiles,
@@ -300,6 +385,7 @@ export const useContract = () => {
   useEffect(() => {
     if (gameStatsData) {
       const gameStats = gameStatsData as any;
+      console.log('📈 [CONTRACT] Game stats updated:', gameStats);
       setGameStats({
         gamesCompleted: Number(gameStats[0]),
         totalNunuEarned: Number(gameStats[1]),
@@ -309,6 +395,7 @@ export const useContract = () => {
 
   useEffect(() => {
     if (playerRankData) {
+      console.log('🏆 [CONTRACT] Player rank updated:', Number(playerRankData));
       setPlayerRank(Number(playerRankData));
     }
   }, [playerRankData]);
@@ -319,23 +406,28 @@ export const useContract = () => {
         player: entry.player,
         score: Number(entry.score),
       }));
+      console.log('🏅 [CONTRACT] Leaderboard updated:', formattedLeaderboard.length, 'entries');
       setLeaderboard(formattedLeaderboard);
     }
   }, [leaderboardData]);
 
-  // Fetch all game data function
+  // Fetch all game data function with logging
   const fetchAllGameData = useCallback(async () => {
-    if (!address) return;
+    if (!address) {
+      console.log('🚫 [CONTRACT] Cannot fetch data - no address');
+      return;
+    }
 
+    console.log('🔄 [CONTRACT] Fetching all game data...');
     setIsLoading(true);
     try {
-      let result = await Promise.all([
+      const result = await Promise.all([
         refetchPlayerStatus(),
         refetchBoardData(),
         refetchGameStats(),
         refetchPlayerRank(),
       ]);
-      console.log('result', result);
+      console.log('✅ [CONTRACT] All game data fetched successfully');
     } catch (error) {
       console.error('❌ [CONTRACT] Failed to fetch game data:', error);
       toast.error(`Failed to fetch game data: ${error}`, {
@@ -347,8 +439,10 @@ export const useContract = () => {
   }, [address, refetchPlayerStatus, refetchBoardData, refetchGameStats, refetchPlayerRank]);
 
   const fetchLeaderboard = useCallback(async () => {
+    console.log('🔄 [CONTRACT] Fetching leaderboard...');
     try {
       await refetchLeaderboard();
+      console.log('✅ [CONTRACT] Leaderboard fetched successfully');
     } catch (error) {
       console.error('❌ [CONTRACT] Failed to fetch leaderboard:', error);
     }
@@ -357,13 +451,16 @@ export const useContract = () => {
   // Fetch initial data and set up polling
   useEffect(() => {
     if (address) {
+      console.log('👤 [CONTRACT] Address connected, fetching initial data...');
       fetchAllGameData();
     }
   }, [address, fetchAllGameData]);
 
-  // Update local state on contract events
+  // Update local state on contract events with proper loading state management
   useEffect(() => {
     if (isStartGameConfirmed) {
+      console.log('✅ [CONTRACT] Start game transaction confirmed');
+      setIsLoadingStartGame(false);
       setIsLoading(true);
       toast.success('Game started successfully!', {
         position: 'top-right'
@@ -374,15 +471,32 @@ export const useContract = () => {
 
   useEffect(() => {
     if (isRollDiceConfirmed) {
+      console.log('✅ [CONTRACT] Roll dice transaction confirmed');
       setIsWaitingForVRF(false);
       setIsLoading(true);
       fetchAllGameData();
     }
   }, [isRollDiceConfirmed, fetchAllGameData]);
 
+  // Handle transaction errors with proper loading state cleanup
+  useEffect(() => {
+    if (startGameError || startGameReceiptError) {
+      console.error('❌ [CONTRACT] Start game error:', startGameError || startGameReceiptError);
+      setIsLoadingStartGame(false);
+    }
+  }, [startGameError, startGameReceiptError]);
+
+  useEffect(() => {
+    if (rollDiceError || rollDiceReceiptError) {
+      console.error('❌ [CONTRACT] Roll dice error:', rollDiceError || rollDiceReceiptError);
+      setIsWaitingForVRF(false);
+    }
+  }, [rollDiceError, rollDiceReceiptError]);
+
   // Auto-trigger claim rewards when player finishes game
   useEffect(() => {
     if (gameState?.hasFinished && gameState.nunuEarned > 0 && !claimRewardsError) {
+      console.log('🎉 [CONTRACT] Game finished, auto-claiming rewards...');
       // Small delay to ensure UI animations complete
       const timer = setTimeout(() => {
         claimRewards();
@@ -399,8 +513,8 @@ export const useContract = () => {
     playerRank,
     leaderboard,
     isLoading,
-    isLoadingStartGame,
-    isWaitingForVRF,
+    isLoadingStartGame: isLoadingStartGame || isStartGamePending || isStartGameConfirming,
+    isWaitingForVRF: isWaitingForVRF || isRollDicePending || isRollDiceConfirming,
     startGame,
     rollDice,
     fetchAllGameData,
