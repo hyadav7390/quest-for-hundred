@@ -156,11 +156,13 @@ const Index = () => {
     }
 
     const expectedPosition = prevPosition + (diceValue || 1);
-    // Check for gift tiles at the stepped position
-    const giftTile = gameState.giftTiles.find(tile => tile.index === expectedPosition);
-    if (giftTile) {
-      triggerGiftSplash(giftTile.points);
-      playSound('gift');
+    // Only trigger gift animation if the player has actually rolled the dice (not on initial game load)
+    if (prevPosition !== newPosition && diceValue > 0) {
+      const giftTile = gameState.giftTiles.find(tile => tile.index === expectedPosition);
+      if (giftTile) {
+        triggerGiftSplash(giftTile.points);
+        playSound('gift');
+      }
     }
     // Check for detour traps - triggered when actual position is less than expected
     const detourTile = gameState.detourTrapTiles.find(tile => tile.index === expectedPosition);
