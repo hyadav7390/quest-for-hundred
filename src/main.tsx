@@ -1,4 +1,7 @@
 
+// Import polyfills for viem/wagmi compatibility
+import './polyfills';
+
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.tsx'

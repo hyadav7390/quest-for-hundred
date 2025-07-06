@@ -19,10 +19,26 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
       // point all `import 'buffer'` to the shim
-      buffer: 'buffer/'
+      buffer: 'buffer/',
+      // Additional polyfills for Node.js modules
+      process: 'process/browser',
+      util: 'util',
     },
   },
   define: {
     global: 'globalThis',
+    'process.env': {},
+  },
+  optimizeDeps: {
+    include: ['buffer'],
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          buffer: ['buffer'],
+        },
+      },
+    },
   },
 }));
