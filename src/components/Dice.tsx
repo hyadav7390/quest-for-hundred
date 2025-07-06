@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface DiceProps {
@@ -13,8 +12,8 @@ interface DiceProps {
 
 const Dice = ({ value, isRolling, onRoll, disabled, contractValue, isWaitingForVRF }: DiceProps) => {
   const [animationValue, setAnimationValue] = useState(1);
-  const [isAnimationRunning, setIsAnimationRunning] = useState(false);
-  const [animationInterval, setAnimationInterval] = useState<NodeJS.Timeout | null>(null);
+  const animationIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const isAnimationRunningRef = useRef(false);
 
   console.log('🎲 [DICE] Render state:', { 
     value, 
@@ -22,7 +21,7 @@ const Dice = ({ value, isRolling, onRoll, disabled, contractValue, isWaitingForV
     disabled, 
     contractValue, 
     isWaitingForVRF,
-    isAnimationRunning 
+    isAnimationRunning: isAnimationRunningRef.current
   });
 
   // Handle keyboard input
@@ -40,52 +39,42 @@ const Dice = ({ value, isRolling, onRoll, disabled, contractValue, isWaitingForV
 
   // Handle dice animation start/stop
   useEffect(() => {
-    console.log('🎲 [DICE] Animation effect triggered:', { isRolling, value, isAnimationRunning });
-    
-    if (isRolling && !isAnimationRunning) {
-      // Start animation
-      console.log('▶️ [DICE] Starting animation');
-      setIsAnimationRunning(true);
-      
-      const interval = setInterval(() => {
-        setAnimationValue(Math.floor(Math.random() * 6) + 1);
+    if (isRolling && !isAnimationRunningRef.current) {
+      isAnimationRunningRef.current = true;
+      animationIntervalRef.current = setInterval(() => {
+        setAnimationValue((prev) => {
+          const next = Math.floor(Math.random() * 6) + 1;
+          return next !== prev ? next : ((next % 6) + 1); // avoid same value
+        });
       }, 100);
-      
-      setAnimationInterval(interval);
-    } else if (!isRolling && isAnimationRunning) {
-      // Stop animation and show final value
-      console.log('⏹️ [DICE] Stopping animation, final value:', value || contractValue);
-      setIsAnimationRunning(false);
-      
-      if (animationInterval) {
-        clearInterval(animationInterval);
-        setAnimationInterval(null);
+    } else if (!isRolling && isAnimationRunningRef.current) {
+      isAnimationRunningRef.current = false;
+      if (animationIntervalRef.current) {
+        clearInterval(animationIntervalRef.current);
+        animationIntervalRef.current = null;
       }
-      
-      // Set final value
       if (value) {
         setAnimationValue(value);
       } else if (contractValue) {
         setAnimationValue(contractValue);
       }
     }
-
-    // Cleanup on unmount
     return () => {
-      if (animationInterval) {
-        clearInterval(animationInterval);
+      if (animationIntervalRef.current) {
+        clearInterval(animationIntervalRef.current);
+        animationIntervalRef.current = null;
       }
+      isAnimationRunningRef.current = false;
     };
-  }, [isRolling, value, contractValue, isAnimationRunning, animationInterval]);
+  }, [isRolling, value, contractValue]);
 
-  // Handle initial state when component mounts
+  // Handle initial state when component mounts or value changes
   useEffect(() => {
-    if (!isRolling && !isAnimationRunning) {
+    if (!isRolling && !isAnimationRunningRef.current) {
       const initialValue = value || contractValue || 1;
-      console.log('🎲 [DICE] Setting initial value:', initialValue);
       setAnimationValue(initialValue);
     }
-  }, [value, contractValue, isRolling, isAnimationRunning]);
+  }, [value, contractValue, isRolling]);
 
   // Dice dot patterns
   const getDiceDots = (num: number) => {
@@ -106,7 +95,7 @@ const Dice = ({ value, isRolling, onRoll, disabled, contractValue, isWaitingForV
     return 'Roll Dice';
   };
 
-  const isCurrentlyAnimating = isRolling || isWaitingForVRF || isAnimationRunning;
+  const isCurrentlyAnimating = isRolling || isWaitingForVRF || isAnimationRunningRef.current;
   const dots = getDiceDots(animationValue);
 
   return (
@@ -310,4 +299,4 @@ const Dice = ({ value, isRolling, onRoll, disabled, contractValue, isWaitingForV
   );
 };
 
-export default Dice;
+export default React.memo(Dice);

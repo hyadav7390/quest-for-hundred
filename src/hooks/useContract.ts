@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useWriteContract, useReadContract, useWaitForTransactionReceipt, useAccount } from 'wagmi';
 import { toast } from 'sonner';
@@ -7,7 +6,7 @@ import { monadTestnet } from '@/types/monadTestnet';
 
 // Contract address - Replace with your actual contract address
 // const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}` || '0x9d5c35e1a0db4db616211982a0e7b889e3df3b95';
-const CONTRACT_ADDRESS = '0x5a6f8fb571ee6b691bddd03950c99c843503d9e6';
+const CONTRACT_ADDRESS = '0x898704dcb11ddec3eb37b60dc4c8c305d595ff95';
 
 interface BoardData {
   giftTiles: { index: number; points: number }[];
@@ -36,6 +35,25 @@ interface GameStats {
 export interface LeaderboardEntry {
   player: string;
   score: number;
+}
+
+// Helper to handle contract errors and show user-friendly toast
+function handleContractError(error: any, fallbackMessage = 'Transaction failed') {
+  const errorMsg = error?.message || '';
+  console.log('error', error.message);
+  if (
+    errorMsg.includes('insufficient balance') ||
+    errorMsg.includes('Signer had insufficient balance') ||
+    errorMsg.includes('insufficient funds')
+  ) {
+    toast.error('You do not have enough MON to perform this action. Please add funds to your wallet.', {
+      position: 'top-right',
+    });
+    return;
+  }
+  // toast.error(`${fallbackMessage}: ${errorMsg}`, {
+  //   position: 'top-right',
+  // });
 }
 
 export const useContract = () => {
@@ -195,9 +213,7 @@ export const useContract = () => {
     } catch (error: any) {
       console.error('❌ [CONTRACT] Failed to start game:', error);
       setIsLoadingStartGame(false);
-      toast.error(`Failed to start game: ${error?.message || 'Unknown error'}`, {
-        position: 'top-right'
-      });
+      // No toast here; handled by useEffect error handler
     }
   }, [address, writeStartGame, isStartGamePending, isStartGameConfirming]);
 
@@ -236,9 +252,7 @@ export const useContract = () => {
     } catch (error: any) {
       console.error('❌ [CONTRACT] Failed to roll dice:', error);
       setIsWaitingForVRF(false);
-      toast.error(`Failed to roll dice: ${error?.message || 'Unknown error'}`, {
-        position: 'top-right'
-      });
+      // No toast here; handled by useEffect error handler
     }
   }, [address, writeRollDice, isRollDicePending, isRollDiceConfirming]);
 
@@ -273,16 +287,18 @@ export const useContract = () => {
       
     } catch (error: any) {
       console.error('❌ [CONTRACT] Error claiming rewards:', error);
-      const errorMessage = error?.message?.includes('finish first') 
-        ? 'Game not finished yet'
-        : error?.message?.includes('no reward')
-        ? 'No rewards to claim'
-        : 'Failed to claim rewards';
-      
-      setClaimRewardsError(errorMessage);
-      toast.error(`Claim Rewards Failed: ${errorMessage}`, {
-        position: 'top-right'
-      });
+      // const errorMessage = error?.message?.includes('finish first') 
+      //   ? 'Game not finished yet'
+      //   : error?.message?.includes('no reward')
+      //   ? 'No rewards to claim'
+      //   : null;
+      // if (errorMessage) {
+      //   setClaimRewardsError(errorMessage);
+      //   toast.error(`Claim Rewards Failed: ${errorMessage}`, {
+      //     position: 'top-right'
+      //   });
+      // }
+      // No toast for other errors; handled by useEffect error handler
     }
   }, [address, gameState?.hasFinished, gameState?.nunuEarned, writeClaimRewards]);
 
@@ -312,9 +328,9 @@ export const useContract = () => {
         : 'Transaction failed';
       
       setClaimRewardsError(errorMessage);
-      toast.error(`Claim Rewards Failed: ${errorMessage}`, {
-        position: 'top-right'
-      });
+      // toast.error(`Claim Rewards Failed: ${errorMessage}`, {
+      //   position: 'top-right'
+      // });
     }
   }, [claimRewardsWriteError, claimRewardsReceiptError]);
 
@@ -503,7 +519,28 @@ export const useContract = () => {
       }, 1000);
       return () => clearTimeout(timer);
     }
-  }, [gameState?.hasFinished, gameState?.nunuEarned, claimRewards, claimRewardsError]);
+  }, [gameState?.hasFinished, claimRewards]);
+
+  // Show toast for rollDiceError
+  useEffect(() => {
+    if (rollDiceError) {
+      handleContractError(rollDiceError, 'Failed to roll dice');
+    }
+  }, [rollDiceError]);
+
+  // Show toast for startGameError
+  useEffect(() => {
+    if (startGameError) {
+      handleContractError(startGameError, 'Failed to start game');
+    }
+  }, [startGameError]);
+
+  // Show toast for claimRewardsWriteError
+  useEffect(() => {
+    if (claimRewardsWriteError) {
+      handleContractError(claimRewardsWriteError, 'Failed to claim rewards');
+    }
+  }, [claimRewardsWriteError]);
 
   return {
     CONTRACT_ADDRESS,

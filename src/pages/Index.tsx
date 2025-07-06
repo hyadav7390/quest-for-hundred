@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useBlockchainGameReducer } from '@/hooks/useBlockchainGameReducer';
 import { useSoundEffects } from '@/hooks/useSoundEffects';
@@ -93,6 +93,8 @@ const Index = () => {
   const { playSound } = useSoundEffects(gameState.isSoundMuted);
   const { splash, hideSplash, triggerGiftSplash, triggerDetourSplash, triggerShortcutSplash } = useSplashAnimations();
   const [showNewGameConfirmation, setShowNewGameConfirmation] = useState(false);
+  const [showVictoryModal, setShowVictoryModal] = useState(true);
+  const [showBoardLoader, setShowBoardLoader] = useState(false);
 
   const { 
     isConnected, 
@@ -115,47 +117,75 @@ const Index = () => {
     chainId: monadTestnet.id,
   });
 
+  // Track previous player position for overshoot detection
+  const prevPlayerPositionRef = useRef(gameState.playerPosition);
+
+  // Show VictoryModal only when gameStatus transitions from not-won to 'won'
+  const prevGameStatusRef = useRef(gameState.gameStatus);
+  useEffect(() => {
+    if (prevGameStatusRef.current !== 'won' && gameState.gameStatus === 'won') {
+      setShowVictoryModal(true);
+    }
+    prevGameStatusRef.current = gameState.gameStatus;
+  }, [gameState.gameStatus]);
+
   // Play start sound on mount
   useEffect(() => {
     playSound('start');
   }, [playSound]);
 
-  // Handle tile interactions for splash animations
+  // Handle tile interactions for splash animations and overshoot warning
   useEffect(() => {
-    if (!contractState || gameState.playerPosition === contractState.position) return;
-    
-    const currentPosition = contractState.position;
-    const previousPosition = gameState.playerPosition;
-    const expectedPosition = previousPosition + (contractState.diceValue || 1);
-    
+    if (!contractState) return;
+    const prevPosition = prevPlayerPositionRef.current;
+    const newPosition = contractState.position;
+    const diceValue = contractState.diceValue;
+    const needed = 100 - prevPosition;
+    // Only show warning if position did not change and diceValue overshoots
+    if (
+      diceValue > 0 &&
+      prevPosition < 100 &&
+      diceValue > needed &&
+      newPosition === prevPosition
+    ) {
+      toast({
+        title: 'Dice Overshoot',
+        description: `⚠️ You need exactly ${needed}`,
+        variant: 'default',
+      });
+    }
+
+    const expectedPosition = prevPosition + (diceValue || 1);
     // Check for gift tiles at the stepped position
     const giftTile = gameState.giftTiles.find(tile => tile.index === expectedPosition);
     if (giftTile) {
       triggerGiftSplash(giftTile.points);
       playSound('gift');
     }
-    
     // Check for detour traps - triggered when actual position is less than expected
     const detourTile = gameState.detourTrapTiles.find(tile => tile.index === expectedPosition);
-    if (detourTile && currentPosition < expectedPosition) {
-      triggerDetourSplash(Math.abs(currentPosition - expectedPosition));
+    if (detourTile && newPosition < expectedPosition) {
+      triggerDetourSplash(Math.abs(newPosition - expectedPosition));
       playSound('detourTrap');
     }
-    
     // Check for shortcut gates - triggered when actual position is more than expected
     const shortcutTile = gameState.shortcutGateTiles.find(tile => tile.index === expectedPosition);
-    if (shortcutTile && currentPosition > expectedPosition) {
-      triggerShortcutSplash(currentPosition - expectedPosition);
+    if (shortcutTile && newPosition > expectedPosition) {
+      triggerShortcutSplash(newPosition - expectedPosition);
       playSound('gift');
     }
-  }, [contractState?.position, contractState?.diceValue, gameState.playerPosition, gameState.giftTiles, gameState.detourTrapTiles, gameState.shortcutGateTiles, triggerGiftSplash, triggerDetourSplash, triggerShortcutSplash, playSound]);
+    // Only update previous position if game is not finished
+    if (!contractState.hasFinished) {
+      prevPlayerPositionRef.current = newPosition;
+    }
+  }, [contractState?.position, contractState?.diceValue, contractState?.hasFinished, gameState.giftTiles, gameState.detourTrapTiles, gameState.shortcutGateTiles, triggerGiftSplash, triggerDetourSplash, triggerShortcutSplash, playSound, toast]);
 
   // Validation helpers
   const hasNoBalance = balance && balance.value === 0n;
   const isOperationInProgress = gameState.isRolling || isLoading || isWaitingForVRF;
 
   // Handle dice roll
-  const rollDice = async () => {
+  const rollDice = useCallback(async () => {
     if (isOperationInProgress) return;
     
     if (!isConnected) {
@@ -187,7 +217,7 @@ const Index = () => {
 
     await gameActions.rollDice();
     playSound('diceRoll');
-  };
+  }, [isOperationInProgress, isConnected, contractState?.boardGenerated, hasNoBalance, gameActions, playSound]);
 
   // Handle new game
   const handleNewGameClick = async () => {
@@ -221,7 +251,8 @@ const Index = () => {
   // Restart game
   const restartGame = async () => {
     setShowNewGameConfirmation(false);
-    
+    setShowVictoryModal(false);
+    setShowBoardLoader(true);
     try {
       await gameActions.startGame();
       playSound('start');
@@ -231,6 +262,8 @@ const Index = () => {
         variant: "default",
       });
     } catch (error) {
+      setShowBoardLoader(false);
+      setShowVictoryModal(true);
       console.error('Error restarting game:', error);
     }
   };
@@ -255,6 +288,17 @@ const Index = () => {
       console.error('Error claiming rewards:', error);
     }
   };
+
+  // Hide loader and show modal when new game is confirmed
+  useEffect(() => {
+    if (isLoadingStartGame === false && showBoardLoader) {
+      setShowBoardLoader(false);
+      setShowVictoryModal(true);
+    }
+    if (gameState.gameStatus !== 'won' && showVictoryModal) {
+      setShowVictoryModal(false);
+    }
+  }, [isLoadingStartGame, gameState.gameStatus]);
 
   // Show wallet connection prompt if not connected
   if (!isConnected) {
@@ -456,12 +500,22 @@ const Index = () => {
           onComplete={hideSplash}
         />
 
+        {/* Board Loader Overlay */}
+        {showBoardLoader && (
+          <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-60">
+            <div className="flex flex-col items-center">
+              <RefreshCw className="w-10 h-10 text-purple-400 animate-spin mb-4" />
+              <span className="text-white text-lg font-semibold">Generating new game board...</span>
+            </div>
+          </div>
+        )}
+
         {/* Victory Modal */}
         <VictoryModal
-          isOpen={gameState.gameStatus === 'won'}
+          isOpen={showVictoryModal && gameState.gameStatus === 'won'}
           score={gameState.score}
           turnsPlayed={gameState.turnsPlayed}
-          giftsCollected={gameState.giftsCollected}
+          giftsCollected={contractState?.giftsCollected ?? 0}
           detourTrapsTriggered={gameState.detourTrapsTriggered}
           shortcutGatesTriggered={gameState.shortcutGatesTriggered}
           gameScore={gameState.score}
