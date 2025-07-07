@@ -1,4 +1,3 @@
-
 import { motion } from 'framer-motion';
 import { Trophy, RotateCcw, Gift, Target, TrendingDown, ArrowUp, TrendingUp, Coins } from 'lucide-react';
 
@@ -18,6 +17,7 @@ interface VictoryModalProps {
   diceRolls?: number;
   shortcuts?: number;
   detours?: number;
+  isRestarting?: boolean;
 }
 
 const VictoryModal = ({
@@ -34,7 +34,8 @@ const VictoryModal = ({
   showClaimButton = false,
   diceRolls,
   shortcuts,
-  detours
+  detours,
+  isRestarting = false
 }: VictoryModalProps) => {
   if (!isOpen) return null;
 
@@ -117,13 +118,14 @@ const VictoryModal = ({
         <div className="space-y-3">
           <motion.button
             onClick={onRestart}
-            className="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold rounded-lg shadow-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-200"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            className="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold rounded-lg shadow-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-200 disabled:opacity-50"
+            whileHover={{ scale: isRestarting ? 1 : 1.02 }}
+            whileTap={{ scale: isRestarting ? 1 : 0.98 }}
+            disabled={isRestarting}
           >
             <div className="flex items-center justify-center space-x-2">
               <RotateCcw className="w-4 h-4" />
-              <span>Play Again</span>
+              <span>{isRestarting ? 'Starting...' : 'Play Again'}</span>
             </div>
           </motion.button>
 

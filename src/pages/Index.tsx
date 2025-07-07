@@ -528,6 +528,7 @@ const Index = () => {
           diceRolls={contractState?.diceRolls}
           shortcuts={contractState?.shortcuts}
           detours={contractState?.detours}
+          isRestarting={showBoardLoader}
         />
 
         <NewGameConfirmation
