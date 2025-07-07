@@ -18,6 +18,8 @@ interface VictoryModalProps {
   shortcuts?: number;
   detours?: number;
   isRestarting?: boolean;
+  isClaimRewardsPending?: boolean;
+  claimRewardsError?: string | null;
 }
 
 const VictoryModal = ({
@@ -35,7 +37,9 @@ const VictoryModal = ({
   diceRolls,
   shortcuts,
   detours,
-  isRestarting = false
+  isRestarting = false,
+  isClaimRewardsPending = false,
+  claimRewardsError = null,
 }: VictoryModalProps) => {
   if (!isOpen) return null;
 
@@ -129,7 +133,13 @@ const VictoryModal = ({
             </div>
           </motion.button>
 
-          {showClaimButton && onClaimRewards && (
+          {isClaimRewardsPending && (
+            <div className="w-full py-3 text-center text-yellow-400 font-semibold bg-yellow-900/20 rounded-lg">
+              Claiming rewards in progress...
+            </div>
+          )}
+
+          {claimRewardsError && onClaimRewards && !isClaimRewardsPending && (
             <motion.button
               onClick={onClaimRewards}
               className="w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold rounded-lg shadow-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-200"

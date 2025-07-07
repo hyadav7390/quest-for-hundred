@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface DiceProps {
@@ -96,7 +96,7 @@ const Dice = ({ value, isRolling, onRoll, disabled, contractValue, isWaitingForV
   };
 
   const isCurrentlyAnimating = isRolling || isWaitingForVRF || isAnimationRunningRef.current;
-  const dots = getDiceDots(animationValue);
+  const dots = useMemo(() => getDiceDots(animationValue), [animationValue]);
 
   return (
     <div className="flex flex-col items-center space-y-4">

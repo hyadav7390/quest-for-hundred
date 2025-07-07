@@ -524,11 +524,12 @@ const Index = () => {
           nunuCoins={contractState?.nunuEarned || 0}
           onRestart={restartGame}
           onClaimRewards={handleClaimRewards}
-          showClaimButton={!!claimRewardsError}
           diceRolls={contractState?.diceRolls}
           shortcuts={contractState?.shortcuts}
           detours={contractState?.detours}
           isRestarting={showBoardLoader}
+          isClaimRewardsPending={contractInfo.isClaimRewardsPending}
+          claimRewardsError={claimRewardsError}
         />
 
         <NewGameConfirmation

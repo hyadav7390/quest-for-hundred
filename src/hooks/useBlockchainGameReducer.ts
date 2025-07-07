@@ -1,4 +1,3 @@
-
 import { useReducer, useEffect, useCallback } from 'react';
 import { GameState, GameAction } from '@/types/game';
 import { useContract } from './useContract';
@@ -220,6 +219,8 @@ export const useBlockchainGameReducer = () => {
     fetchAllGameData,
     playerRank,
     CONTRACT_ADDRESS,
+    isClaimRewardsPending,
+    claimRewardsError,
   } = useContract();
 
   const contractInfo = {
@@ -230,6 +231,8 @@ export const useBlockchainGameReducer = () => {
     isWaitingForVRF,
     playerRank,
     CONTRACT_ADDRESS,
+    isClaimRewardsPending,
+    claimRewardsError,
   };
 
   // Sync contract state with UI state

@@ -317,13 +317,13 @@ export const useContract = () => {
 
   // Handle claim rewards errors
   useEffect(() => {
-    if (claimRewardsWriteError || claimRewardsReceiptError) {
-      const error = claimRewardsWriteError || claimRewardsReceiptError;
-      console.error('❌ [CONTRACT] Claim rewards error:', error);
+    if (claimRewardsReceiptError) {
+      // const error = claimRewardsWriteError || claimRewardsReceiptError;
+      console.error('❌ [CONTRACT] Claim rewards error:', claimRewardsWriteError, claimRewardsReceiptError);
       
-      const errorMessage = error?.message?.includes('finish first') 
+      const errorMessage = claimRewardsReceiptError?.message?.includes('finish first') 
         ? 'Game not finished yet'
-        : error?.message?.includes('no reward')
+        : claimRewardsReceiptError?.message?.includes('no reward')
         ? 'No rewards to claim'
         : 'Transaction failed';
       
@@ -332,7 +332,7 @@ export const useContract = () => {
       //   position: 'top-right'
       // });
     }
-  }, [claimRewardsWriteError, claimRewardsReceiptError]);
+  }, [claimRewardsReceiptError]);
 
   // Process contract data when it changes
   useEffect(() => {
