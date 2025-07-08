@@ -45,13 +45,13 @@ const WalletPopover: React.FC<WalletPopoverProps> = ({
   onWithdrawNUNU
 }) => (
   <Card className="rounded-lg shadow-lg bg-gray-900">
-    <CardHeader>
+    <CardHeader className="p-2">
       <CardTitle className="text-white">Wallet</CardTitle>
       <CardDescription>Manage your wallets and balances</CardDescription>
     </CardHeader>
-    <CardContent className="space-y-4">
+    <CardContent className="space-y-4 p-2">
       {currentWallet && (
-        <div className="border rounded-lg p-5 bg-gray-800 relative">
+        <div className="border rounded-lg p-2 bg-gray-800 relative">
           {/* Slider arrows */}
           {sortedWallets.length > 1 && (
             <>
