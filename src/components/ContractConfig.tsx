@@ -5,7 +5,7 @@ import { Settings, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 
 const ContractConfig = () => {
   const [contractAddress, setContractAddress] = useState('');
@@ -22,17 +22,28 @@ const ContractConfig = () => {
 
   const handleSave = () => {
     if (!contractAddress) {
-      toast.error('Please enter a valid contract address');
+      toast({
+        title: 'Please enter a valid contract address',
+        description: 'Please enter a valid contract address',
+        variant: 'destructive',
+      });
       return;
     }
 
     if (!contractAddress.startsWith('0x') || contractAddress.length !== 42) {
-      toast.error('Please enter a valid Ethereum address');
+      toast({
+        title: 'Please enter a valid Ethereum address',
+        description: 'Please enter a valid Ethereum address',
+        variant: 'destructive',
+      });
       return;
     }
 
     localStorage.setItem('contract_address', contractAddress);
-    toast.success('Contract address saved! Please refresh the page.');
+    toast({
+      title: 'Contract address saved!',
+      description: 'Please refresh the page.',
+    });
     setIsOpen(false);
   };
 
@@ -40,7 +51,10 @@ const ContractConfig = () => {
     navigator.clipboard.writeText(contractAddress);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-    toast.success('Address copied to clipboard');
+    toast({
+      title: 'Address copied to clipboard',
+      description: 'Address copied to clipboard',
+    });
   };
 
   return (

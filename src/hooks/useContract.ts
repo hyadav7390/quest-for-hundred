@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useWriteContract, useReadContract, useWaitForTransactionReceipt, useAccount } from 'wagmi';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 import { GAME_ABI } from '@/abi/gameABI';
 import { monadTestnet } from '@/types/monadTestnet';
 
@@ -46,8 +46,10 @@ function handleContractError(error: any, fallbackMessage = 'Transaction failed')
     errorMsg.includes('Signer had insufficient balance') ||
     errorMsg.includes('insufficient funds')
   ) {
-    toast.error('You do not have enough MON to perform this action. Please add funds to your wallet.', {
-      position: 'top-right',
+    toast({
+      title: 'Insufficient Funds',
+      description: 'You do not have enough MON to perform this action. Please add funds to your wallet.',
+      variant: 'destructive',
     });
     return;
   }
@@ -306,8 +308,9 @@ export const useContract = () => {
   useEffect(() => {
     if (isClaimRewardsConfirmed) {
       console.log('✅ [CONTRACT] Rewards claimed successfully');
-      toast.success('Rewards claimed successfully!', {
-        position: 'top-right'
+      toast({
+        title: 'Success',
+        description: 'Rewards claimed successfully!',
       });
       setClaimRewardsError(null);
       // Refresh game data
@@ -446,8 +449,10 @@ export const useContract = () => {
       console.log('✅ [CONTRACT] All game data fetched successfully');
     } catch (error) {
       console.error('❌ [CONTRACT] Failed to fetch game data:', error);
-      toast.error(`Failed to fetch game data: ${error}`, {
-        position: 'top-right'
+      toast({
+        title: 'Failed to fetch game data',
+        description: error as string,
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
@@ -478,8 +483,9 @@ export const useContract = () => {
       console.log('✅ [CONTRACT] Start game transaction confirmed');
       setIsLoadingStartGame(false);
       setIsLoading(true);
-      toast.success('Game started successfully!', {
-        position: 'top-right'
+      toast({
+        title: 'Success',
+        description: 'Game started successfully!',
       });
       fetchAllGameData();
     }

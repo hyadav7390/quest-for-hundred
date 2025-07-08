@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 import { parseEther } from 'viem/utils';
 import { TOKEN_SYMBOLS, TokenSymbol } from '@/config';
 
@@ -13,13 +13,32 @@ interface SendMonadModalProps {
   token: TokenSymbol;
   isOpen: boolean;
   onClose: () => void;
+  maxBalance: string;
 }
 
-const SendModal: React.FC<SendMonadModalProps> = ({ isOpen, onClose, onSend, token }) => {
+const SendModal: React.FC<SendMonadModalProps> = ({ isOpen, onClose, onSend, token, maxBalance }) => {
   const [recipient, setRecipient] = React.useState('');
   const [amount, setAmount] = React.useState('');
+  const [error, setError] = React.useState<string | null>(null);
+
+  const parsedMax = parseFloat(maxBalance.replace(/,/g, ''));
+  const parsedAmount = parseFloat(amount);
+  const isAmountValid = !isNaN(parsedAmount) && parsedAmount > 0 && parsedAmount <= parsedMax;
+
+  React.useEffect(() => {
+    if (amount === '') {
+      setError(null);
+    } else if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      setError('Enter a valid amount');
+    } else if (parsedAmount > parsedMax) {
+      setError('Amount exceeds available balance');
+    } else {
+      setError(null);
+    }
+  }, [amount, parsedAmount, parsedMax]);
 
   const handleSend = () => {
+    if (!isAmountValid) return;
     onSend(recipient, amount, token);
     onClose(); // Close the modal after sending
   };
@@ -35,6 +54,9 @@ const SendModal: React.FC<SendMonadModalProps> = ({ isOpen, onClose, onSend, tok
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
+            <div className="text-xs text-gray-400 mb-2">
+              Available: <span className="font-mono text-black">{maxBalance} {token}</span>
+            </div>
             <div>
               <Label htmlFor="recipient">Recipient Address</Label>
               <Input
@@ -55,8 +77,9 @@ const SendModal: React.FC<SendMonadModalProps> = ({ isOpen, onClose, onSend, tok
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
               />
+              {error && <div className="text-xs text-red-500 mt-1">{error}</div>}
             </div>
-            <Button onClick={handleSend} className="w-full">
+            <Button onClick={handleSend} className="w-full" disabled={!isAmountValid || !recipient}>
               Send {token}
             </Button>
           </div>

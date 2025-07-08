@@ -1,7 +1,7 @@
 import { useReducer, useEffect, useCallback } from 'react';
 import { GameState, GameAction } from '@/types/game';
 import { useContract } from './useContract';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 
 // Pure UI state - no game logic, just UI animations and display
 const initialState: GameState = {
@@ -306,7 +306,7 @@ export const useBlockchainGameReducer = () => {
     });
 
     if (!isConnected) {
-      toast.error('Please connect your wallet to play');
+      toast({ title: 'Error', description: 'Please connect your wallet to play', variant: 'destructive' });
       return;
     }
 
@@ -316,7 +316,7 @@ export const useBlockchainGameReducer = () => {
     }
 
     if (!contractState?.boardGenerated) {
-      toast.error('Please start a new game first');
+      toast({ title: 'Error', description: 'Please start a new game first', variant: 'destructive' });
       return;
     }
 
@@ -331,7 +331,7 @@ export const useBlockchainGameReducer = () => {
     } catch (error) {
       console.error('❌ [UI REDUCER] Error in dice roll:', error);
       dispatch({ type: 'STOP_DICE_ANIMATION', payload: 1 });
-      toast.error('Failed to roll dice. Please try again.');
+      toast({ title: 'Error', description: 'Failed to roll dice. Please try again.', variant: 'destructive' });
     }
   }, [isConnected, state.isRolling, isLoading, isWaitingForVRF, isLoadingStartGame, contractState, rollDice]);
 
@@ -346,7 +346,7 @@ export const useBlockchainGameReducer = () => {
     });
 
     if (!isConnected) {
-      toast.error('Please connect your wallet to start a new game');
+      toast({ title: 'Error', description: 'Please connect your wallet to start a new game', variant: 'destructive' });
       return;
     }
 
@@ -362,7 +362,7 @@ export const useBlockchainGameReducer = () => {
       
     } catch (error) {
       console.error('❌ [UI REDUCER] Error starting game:', error);
-      toast.error('Failed to start new game. Please try again.');
+      toast({ title: 'Error', description: 'Failed to start new game. Please try again.', variant: 'destructive' });
     }
   }, [isConnected, isLoadingStartGame, isLoading, state.isRolling, isWaitingForVRF, startGame]);
 
