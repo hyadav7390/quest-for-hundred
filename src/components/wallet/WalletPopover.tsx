@@ -3,6 +3,7 @@ import { PopoverContent } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Wallet, Copy, ChevronLeft, ChevronRight } from 'lucide-react';
+import { NUNUGT_TOKEN } from '@/config';
 
 interface WalletPopoverProps {
   currentWallet: any;
@@ -11,13 +12,15 @@ interface WalletPopoverProps {
   walletIndex: number;
   setWalletIndex: (i: number) => void;
   handleCopy: (address: string) => void;
-  setWithdrawModal: (v: { open: boolean; address: string | null }) => void;
+  setWithdrawModal: (v: { open: boolean; address: string | null; token: 'MON' | 'NUNUGT' }) => void;
   logout: () => void;
   disconnect: () => void;
   setActiveWallet: (w: any) => void;
   authenticated: boolean;
   ready: boolean;
   formatMon: (data: any) => string;
+  nunugtBalance: string;
+  onWithdrawNUNU: () => void;
 }
 
 const WalletPopover: React.FC<WalletPopoverProps> = ({
@@ -33,7 +36,9 @@ const WalletPopover: React.FC<WalletPopoverProps> = ({
   setActiveWallet,
   authenticated,
   ready,
-  formatMon
+  formatMon,
+  nunugtBalance,
+  onWithdrawNUNU
 }) => (
   <PopoverContent className="w-[90vw] max-w-xs sm:w-80 p-0" sideOffset={12} align="center">
     <Card className="shadow-none border-none bg-transparent">
@@ -91,9 +96,23 @@ const WalletPopover: React.FC<WalletPopoverProps> = ({
                 size="sm"
                 variant="outline"
                 className="px-2 py-1 text-xs"
-                onClick={() => setWithdrawModal({ open: true, address: currentWallet.address })}
+                onClick={() => setWithdrawModal({ open: true, address: currentWallet.address, token: 'MON' })}
               >
-                Withdraw
+                Send
+              </Button>
+            </div>
+            {/* NUNU Balance and Withdraw */}
+            <div className="flex items-center justify-between mt-2">
+              <span className="text-sm text-purple-200 font-medium">
+                {nunugtBalance} {NUNUGT_TOKEN.symbol}
+              </span>
+              <Button
+                size="sm"
+                variant="outline"
+                className="px-2 py-1 text-xs"
+                onClick={onWithdrawNUNU}
+              >
+                Send
               </Button>
             </div>
           </div>

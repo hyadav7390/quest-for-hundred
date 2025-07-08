@@ -4,13 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Home, Gamepad2, Menu, X, Wallet, Copy, ChevronLeft, ChevronRight } from 'lucide-react';
 import React, { useState, useEffect, useRef } from 'react';
 
-import { useAccount, useBalance, useChainId, useSendTransaction, useWaitForTransactionReceipt, useDisconnect } from 'wagmi';
+import { useAccount, useBalance, useChainId, useSendTransaction, useWaitForTransactionReceipt, useDisconnect, useReadContract, useWriteContract } from 'wagmi';
 import { usePublicClient } from 'wagmi';
 import { sepolia, mainnet, polygon, optimism, arbitrum, base } from 'wagmi/chains';
 import { monadTestnet } from '@/types/monadTestnet';
 import { toast } from 'sonner';
 import { parseEther, formatEther } from 'viem/utils';
-import SendMonadModal from './Sendmodal';
+import SendModal from './Sendmodal';
 
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { useSetActiveWallet } from '@privy-io/wagmi';
@@ -22,9 +22,15 @@ import DesktopNavigation from './DesktopNavigation';
 import WalletPopover from './WalletPopover';
 import MobileMenuButton from './MobileMenuButton';
 import MobileMenu from './MobileMenu';
+import { NUNUGT_ABI } from '@/abi/nunugtABI';
+import { NUNUGT_TOKEN, TOKEN_SYMBOLS, TokenSymbol } from '@/config';
+
+const NUNUGT_ADDRESS = NUNUGT_TOKEN.address;
+const TOKEN_SYMBOL = NUNUGT_TOKEN.symbol;
+
 
 const Header = () => {
-  // console.log('🔄 [HEADER] Component rendering');
+  console.log('🔄 [HEADER] Component rendering', NUNUGT_TOKEN);
 
   // Privy hooks
   const { ready, user, authenticated, login, logout } = usePrivy();
@@ -109,70 +115,84 @@ const Header = () => {
 
   // Send transaction hook
   const { data: hash, isPending, sendTransaction } = useSendTransaction();
+  const [pendingTxHash, setPendingTxHash] = useState<string | null>(null);
+  const { isLoading: isConfirming, isSuccess: isConfirmed, isError: isTxError } = useWaitForTransactionReceipt({ hash: pendingTxHash as `0x${string}` });
 
   // Track transaction status
-  const { isLoading: isConfirming, isSuccess: isConfirmed } =
-    useWaitForTransactionReceipt({
-      hash,
-    });
+  // const { isLoading: isConfirming, isSuccess: isConfirmed } =
+  //   useWaitForTransactionReceipt({
+  //     hash,
+  //   });
 
   const publicClient = usePublicClient({ chainId: monadTestnet.id });
 
-  const handleSendMonad = async (recipient: string, amount: string, fromAddress?: string) => {
-    try {
-      console.log('💸 [HEADER] Initiating send transaction:', { recipient, amount, fromAddress });
+  // Sort wallets: embedded first
+  const sortedWallets = [...wallets].sort((a, b) => (a.connectorType === 'embedded' ? -1 : 1));
+  const [walletIndex, setWalletIndex] = useState(0);
+  const currentWallet = sortedWallets[walletIndex] || null;
 
-      if (!recipient || !amount) {
-        toast.error('Please enter recipient address and amount');
-        return;
-      }
+  const { data: currentBalance } = useBalance({
+    address: currentWallet?.address as `0x${string}` | undefined,
+    chainId: monadTestnet.id,
+  });
 
-      // Check balance for the correct wallet
-      let checkAddress = fromAddress || address;
-      let checkBalance = balance;
-      if (checkAddress && (!address || checkAddress.toLowerCase() !== address.toLowerCase())) {
-        // If sending from a different wallet, fetch its balance
-        if (!publicClient) {
-          toast.error('Public client not available');
-          return;
-        }
-        const bal = await publicClient.getBalance({
-          address: checkAddress as `0x${string}`
+  const { data: nunugtBalanceRaw } = useReadContract({
+    address: NUNUGT_TOKEN.address as `0x${string}`,
+    abi: NUNUGT_ABI,
+    functionName: 'balanceOf',
+    args: currentWallet?.address ? [currentWallet.address as `0x${string}`] : undefined,
+    query: { enabled: !!currentWallet?.address },
+  });
+  const { data: nunugtDecimals } = useReadContract({
+    address: NUNUGT_TOKEN.address as `0x${string}`,
+    abi: NUNUGT_ABI,
+    functionName: 'decimals',
+    query: { enabled: !!currentWallet?.address },
+  });
+  const nunugtBalance = React.useMemo(() => {
+    if (!nunugtBalanceRaw || !nunugtDecimals) return '0';
+    return (Number(nunugtBalanceRaw) / 10 ** Number(nunugtDecimals)).toLocaleString(undefined, { maximumFractionDigits: 4 });
+  }, [nunugtBalanceRaw, nunugtDecimals]);
+  const { writeContract: writeNUNUGTTransfer, data: nunugtTxHash } = useWriteContract();
+
+  const handleSend = React.useCallback(
+    (recipient: string, amount: string, token: TokenSymbol, fromAddress?: string) => {
+      if (token === TOKEN_SYMBOLS.NUNUGT) {
+        if (!nunugtDecimals || !fromAddress) return;
+        const value = BigInt(Math.floor(Number(amount) * 10 ** Number(nunugtDecimals)));
+        writeNUNUGTTransfer({
+          address: NUNUGT_TOKEN.address as `0x${string}`,
+          abi: NUNUGT_ABI,
+          functionName: 'transfer',
+          args: [recipient, value],
+          chain: monadTestnet,
+          account: fromAddress as `0x${string}`,
         });
-        checkBalance = {
-          value: bal,
-          decimals: monadTestnet.nativeCurrency.decimals,
-          symbol: monadTestnet.nativeCurrency.symbol,
-          formatted: (Number(bal) / 10 ** monadTestnet.nativeCurrency.decimals).toFixed(4)
-        };
+      } else {
+        sendTransaction({ to: recipient as `0x${string}`, value: parseEther(amount) });
       }
+    },
+    [nunugtDecimals, writeNUNUGTTransfer, sendTransaction]
+  );
 
-      if (checkBalance && parseEther(amount) > checkBalance.value) {
-        toast.error('Insufficient balance for this transaction');
-        return;
-      }
+  // For MON
+  useEffect(() => {
+    if (hash) setPendingTxHash(hash);
+  }, [hash]);
 
-      // Convert ETH to Wei and send transaction
-      sendTransaction({
-        to: recipient,
-        value: parseEther(amount),
-        chainId: monadTestnet.id,
-      });
-    } catch (error) {
-      console.error('❌ [HEADER] Error sending transaction:', error);
-      toast.error('Transaction failed. Please try again.');
-    }
-  };
+  // For NUNUGT
+  useEffect(() => {
+    if (nunugtTxHash) setPendingTxHash(nunugtTxHash);
+  }, [nunugtTxHash]);
 
   // Show transaction confirmation
   React.useEffect(() => {
-    if (isConfirmed && hash) {
-      console.log('✅ [HEADER] Transaction confirmed:', hash);
+    if (isConfirmed && pendingTxHash) {
       toast.success(
         <div>
           <p>Transaction confirmed!</p>
           <a
-            href={`https://testnet.monvision.io/tx/${hash}`}
+            href={`https://testnet.monvision.io/tx/${pendingTxHash}`}
             target="_blank"
             rel="noopener noreferrer"
             className="text-blue-500 underline"
@@ -181,13 +201,13 @@ const Header = () => {
           </a>
         </div>
       );
-
-      // Reset form
-      setRecipient('');
-      setAmount('');
-      setIsModalOpen(false);
+      setPendingTxHash(null);
     }
-  }, [isConfirmed, hash]);
+    if (isTxError && pendingTxHash) {
+      toast.error('Transaction failed. Please try again.');
+      setPendingTxHash(null);
+    }
+  }, [isConfirmed, isTxError, pendingTxHash]);
 
   // Get chain name from chainId
   const getChainName = (id: number | undefined) => {
@@ -209,16 +229,7 @@ const Header = () => {
     return `${parseFloat(formatEther(balance.value)).toFixed(4)} MON`;
   };
 
-  const [withdrawModal, setWithdrawModal] = useState<{ open: boolean; address: string | null }>({ open: false, address: null });
-
-  // Sort wallets: embedded first
-  const sortedWallets = [...wallets].sort((a, b) => (a.connectorType === 'embedded' ? -1 : 1));
-  const [walletIndex, setWalletIndex] = useState(0);
-  const currentWallet = sortedWallets[walletIndex] || null;
-  const { data: currentBalance } = useBalance({
-    address: currentWallet?.address as `0x${string}` | undefined,
-    chainId: monadTestnet.id,
-  });
+  const [withdrawModal, setWithdrawModal] = useState<{ open: boolean; address: string | null; token: TokenSymbol }>({ open: false, address: null, token: TOKEN_SYMBOLS.MON });
 
   // Helper to format balance
   const formatMon = (data: any) =>
@@ -270,6 +281,8 @@ const Header = () => {
                   authenticated={authenticated}
                   ready={ready}
                   formatMon={formatMon}
+                  nunugtBalance={nunugtBalance}
+                  onWithdrawNUNU={() => setWithdrawModal({ open: true, address: currentWallet?.address ?? null, token: TOKEN_SYMBOLS.NUNUGT })}
                 />
               </Popover>
             ) : (
@@ -303,28 +316,51 @@ const Header = () => {
         )}
         {/* Withdraw Modal (reuse SendMonadModal) */}
         {withdrawModal.open && (
-          <SendMonadModal
+          <SendModal
             isOpen={withdrawModal.open}
-            onClose={() => setWithdrawModal({ open: false, address: null })}
-            onSend={async (recipient, amount) => {
+            onClose={() => setWithdrawModal({ open: false, address: null, token: withdrawModal.token })}
+            onSend={async (recipient, amount, token) => {
               // Find the wallet being used for withdrawal
-              const withdrawWallet = sortedWallets.find(w => w.address === withdrawModal.address);
+              const withdrawWallet = sortedWallets.find(w => w.address === withdrawModal.address) || currentWallet;
+              let switched = false;
               if (withdrawWallet) {
-                // If not already active, set as active
+                // If not already active, set as active and wait for context update
                 if (address?.toLowerCase() !== withdrawWallet.address.toLowerCase()) {
                   await setActiveWallet(withdrawWallet);
+                  switched = true;
+                  // Wait for the wallet context to update
+                  await new Promise<void>((resolve) => {
+                    const check = () => {
+                      const selected = typeof window !== 'undefined' && window.ethereum && typeof window.ethereum.selectedAddress === 'string'
+                        ? window.ethereum.selectedAddress.toLowerCase()
+                        : undefined;
+                      if (
+                        (selected === withdrawWallet.address.toLowerCase()) ||
+                        (address?.toLowerCase() === withdrawWallet.address.toLowerCase())
+                      ) {
+                        resolve();
+                      } else {
+                        setTimeout(check, 100);
+                      }
+                    };
+                    check();
+                  });
                 }
                 // Send transaction, check balance for this wallet
-                await handleSendMonad(recipient, amount, withdrawWallet.address);
-                // If it was an external wallet, revert to embedded after a short delay
-                if (withdrawWallet.connectorType !== 'embedded' && embeddedWalletObj) {
+                await handleSend(recipient, amount, token, withdrawWallet.address);
+                // Always revert to embedded after a short delay for best UX
+                if (embeddedWalletObj) {
                   setTimeout(() => setActiveWallet(embeddedWalletObj), 2000); // 2s delay to allow tx to propagate
                 }
               } else {
-                await handleSendMonad(recipient, amount);
+                await handleSend(recipient, amount, token, currentWallet?.address);
+                if (embeddedWalletObj) {
+                  setTimeout(() => setActiveWallet(embeddedWalletObj), 2000);
+                }
               }
-              setWithdrawModal({ open: false, address: null });
+              setWithdrawModal({ open: false, address: null, token });
             }}
+            token={withdrawModal.token}
           />
         )}
       </div>

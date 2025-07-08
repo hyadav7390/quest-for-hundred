@@ -6,24 +6,21 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { parseEther } from 'viem/utils';
+import { TOKEN_SYMBOLS, TokenSymbol } from '@/config';
 
 interface SendMonadModalProps {
+  onSend: (recipient: string, amount: string, token: TokenSymbol) => void;
+  token: TokenSymbol;
   isOpen: boolean;
   onClose: () => void;
-  onSend: (recipient: string, amount: string) => void;
 }
 
-const SendMonadModal: React.FC<SendMonadModalProps> = ({ isOpen, onClose, onSend }) => {
+const SendModal: React.FC<SendMonadModalProps> = ({ isOpen, onClose, onSend, token }) => {
   const [recipient, setRecipient] = React.useState('');
   const [amount, setAmount] = React.useState('');
 
-  const handleSendMonad = () => {
-    // console.log('recipient', recipient, amount);
-    // if (!recipient || !amount) {
-    //   toast.error('Please enter recipient address and amount');
-    //   return;
-    // }
-    onSend(recipient, amount);
+  const handleSend = () => {
+    onSend(recipient, amount, token);
     onClose(); // Close the modal after sending
   };
 
@@ -33,8 +30,8 @@ const SendMonadModal: React.FC<SendMonadModalProps> = ({ isOpen, onClose, onSend
     <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Send Monad</CardTitle>
-          <CardDescription>Transfer MONAD to another address</CardDescription>
+          <CardTitle>Send {token}</CardTitle>
+          <CardDescription>Transfer {token} to another address</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -48,7 +45,7 @@ const SendMonadModal: React.FC<SendMonadModalProps> = ({ isOpen, onClose, onSend
               />
             </div>
             <div>
-              <Label htmlFor="amount">Amount (MON)</Label>
+              <Label htmlFor="amount">Amount ({token})</Label>
               <Input
                 id="amount"
                 type="number"
@@ -59,8 +56,8 @@ const SendMonadModal: React.FC<SendMonadModalProps> = ({ isOpen, onClose, onSend
                 onChange={(e) => setAmount(e.target.value)}
               />
             </div>
-            <Button onClick={handleSendMonad} className="w-full">
-              Send MON
+            <Button onClick={handleSend} className="w-full">
+              Send {token}
             </Button>
           </div>
         </CardContent>
@@ -74,4 +71,4 @@ const SendMonadModal: React.FC<SendMonadModalProps> = ({ isOpen, onClose, onSend
   );
 };
 
-export default SendMonadModal;
+export default SendModal;

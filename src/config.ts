@@ -46,3 +46,14 @@ export const config = createConfig({
       // a key of the chain's `id` and a value of `http()`
     },
 });
+
+export const NUNUGT_TOKEN = {
+  address: '0xfB3aAF8e3905081e16B5df7325eA6fBb949E134a',
+  symbol: 'NUNUGT',
+};
+
+export const TOKEN_SYMBOLS = {
+  MON: 'MON',
+  NUNUGT: 'NUNUGT',
+} as const;
+export type TokenSymbol = typeof TOKEN_SYMBOLS[keyof typeof TOKEN_SYMBOLS];
