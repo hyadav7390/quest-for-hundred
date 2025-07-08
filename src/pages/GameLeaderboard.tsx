@@ -21,7 +21,7 @@ const GameLeaderboard = () => {
           <Button
             variant="ghost"
             size="lg"
-            onClick={() => navigate('/games/hundredth-tile')}
+            onClick={() => navigate('/game')}
             className="text-white hover:text-purple-400 transition-colors"
           >
             <ArrowLeft className="w-5 h-5 mr-2" />

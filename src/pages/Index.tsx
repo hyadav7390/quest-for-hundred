@@ -423,7 +423,7 @@ const Index = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => setShowGameRules(true)}
-                className="border-purple-500 text-purple-400 hover:bg-purple-500/10"
+                className="border-purple-500 text-purple-400 hover:bg-purple-500/10 hover:text-purple-400 focus:text-purple-400"
               >
                 <HelpCircle className="w-4 h-4 mr-2" />
                 Game Rules
@@ -432,7 +432,7 @@ const Index = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => navigate('/game/leaderboard')}
-                className="border-yellow-500 text-yellow-400 hover:bg-yellow-500/10"
+                className="border-yellow-500 text-yellow-400 hover:bg-yellow-500/10 hover:text-yellow-400 focus:text-yellow-400"
               >
                 <Trophy className="w-4 h-4 mr-2" />
                 Leaderboard
