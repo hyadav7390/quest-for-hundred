@@ -47,7 +47,7 @@ const GameRulesModal = ({ isOpen, onClose }: GameRulesModalProps) => {
 
         <div className="space-y-8">
           {/* Game Features */}
-          <div>
+          {/* <div>
             <h3 className="text-2xl font-bold text-white text-center mb-6">Game Features</h3>
             <div className="grid md:grid-cols-3 gap-6">
               {gameFeatures.map((feature, index) => (
@@ -64,7 +64,7 @@ const GameRulesModal = ({ isOpen, onClose }: GameRulesModalProps) => {
                 </motion.div>
               ))}
             </div>
-          </div>
+          </div> */}
 
           {/* Game Rules */}
           <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">

@@ -18,6 +18,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAccount, useBalance } from 'wagmi';
 import { monadTestnet } from '@/types/monadTestnet';
 import { useContract } from '@/hooks/useContract';
+import { useWalletBalancesAndWithdraw } from '@/hooks/useWalletBalancesAndWithdraw';
 
 // Helper components defined outside Index to prevent re-mounting on every render
 const BalanceWarning = () => (
@@ -112,12 +113,10 @@ const Index = () => {
 
   // Get claimRewards and claimRewardsError directly from useContract
   const { claimRewards, claimRewardsError } = useContract();
-
-  const { address } = useAccount();
-  
+  const { embeddedWalletObj, setActiveWallet, address: embeddedWalletAddress } = useWalletBalancesAndWithdraw();
   // Get balance for validation
   const { data: balance } = useBalance({
-    address,
+    address: embeddedWalletAddress,
     chainId: monadTestnet.id,
   });
 
@@ -186,6 +185,30 @@ const Index = () => {
     }
   }, [contractState?.position, contractState?.diceValue, contractState?.hasFinished, gameState.giftTiles, gameState.detourTrapTiles, gameState.shortcutGateTiles, triggerGiftSplash, triggerDetourSplash, triggerShortcutSplash, playSound, toast]);
 
+  // Helper to ensure embedded wallet is active before game actions
+  const ensureEmbeddedWalletActive = async () => {
+    if (embeddedWalletObj && embeddedWalletAddress?.toLowerCase() !== embeddedWalletObj.address.toLowerCase()) {
+      await setActiveWallet(embeddedWalletObj);
+      // Wait for wallet switch
+      await new Promise<void>((resolve) => {
+        const check = () => {
+          const selected = typeof window !== 'undefined' && window.ethereum && typeof window.ethereum.selectedAddress === 'string'
+            ? window.ethereum.selectedAddress.toLowerCase()
+            : undefined;
+          if (
+            (selected === embeddedWalletObj.address.toLowerCase()) ||
+            (embeddedWalletAddress?.toLowerCase() === embeddedWalletObj.address.toLowerCase())
+          ) {
+            resolve();
+          } else {
+            setTimeout(check, 100);
+          }
+        };
+        check();
+      });
+    }
+  };
+
   // Validation helpers
   const hasNoBalance = balance && balance.value === 0n;
   const isOperationInProgress = gameState.isRolling || isLoading || isWaitingForVRF;
@@ -221,9 +244,10 @@ const Index = () => {
       return;
     }
 
+    await ensureEmbeddedWalletActive();
     await gameActions.rollDice();
     playSound('diceRoll');
-  }, [isOperationInProgress, isConnected, contractState?.boardGenerated, hasNoBalance, gameActions, playSound]);
+  }, [isOperationInProgress, isConnected, contractState?.boardGenerated, hasNoBalance, gameActions, playSound, ensureEmbeddedWalletActive]);
 
   // Handle new game
   const handleNewGameClick = async () => {
@@ -250,6 +274,7 @@ const Index = () => {
     if (gameState.diceRolled && gameState.gameStatus === 'playing') {
       setShowNewGameConfirmation(true);
     } else {
+      await ensureEmbeddedWalletActive();
       await restartGame();
     }
   };
@@ -260,6 +285,7 @@ const Index = () => {
     setShowVictoryModal(false);
     setShowBoardLoader(true);
     try {
+      await ensureEmbeddedWalletActive();
       await gameActions.startGame();
       playSound('start');
       toast({
@@ -289,6 +315,7 @@ const Index = () => {
   // Handle manual claim rewards
   const handleClaimRewards = async () => {
     try {
+      await ensureEmbeddedWalletActive();
       await claimRewards();
     } catch (error) {
       console.error('Error claiming rewards:', error);
