@@ -10,19 +10,19 @@ const Home = () => {
 
   const features = [
     {
-      icon: <Target className="w-8 h-8 text-blue-400" />,
-      title: "Multiple Games",
-      description: "Experience various exciting games on the NUNU platform"
+      icon: <Target className="w-8 h-8" style={{color: 'hsl(var(--neon-purple))'}}/>,
+      title: "Race to 100",
+      description: "Navigate through 100 tiles in this thrilling board game adventure"
     },
     {
-      icon: <Gift className="w-8 h-8 text-yellow-400" />,
+      icon: <Gift className="w-8 h-8" style={{color: 'hsl(var(--neon-yellow))'}}/>,
       title: "Earn NUNU Coins",
-      description: "Collect gifts and earn NUNU coins to unlock new games and features"
+      description: "Collect gifts to earn NUNU coins (50-300 coins each)"
     },
     {
-      icon: <Zap className="w-8 h-8 text-green-400" />,
-      title: "Community Driven",
-      description: "Join a community working together to unlock rewards and new content"
+      icon: <Zap className="w-8 h-8" style={{color: 'hsl(var(--neon-green))'}}/>,
+      title: "Unpredictable Journey",
+      description: "Face detour traps and find shortcut gates that change your path"
     }
   ];
 
@@ -33,7 +33,7 @@ const Home = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900">
+    <div className="min-h-screen bg-black">
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 py-20">
@@ -47,7 +47,7 @@ const Home = () => {
               🎮 NUNU GAMES
             </h1>
             <p className="text-xl sm:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto">
-              The ultimate gaming platform where every game rewards you with NUNU coins. Play, earn, and unlock the future of gaming!
+              Roll the dice, collect gifts, avoid traps, and find shortcuts in this thrilling blockchain board game!
             </p>
             
             <motion.div
@@ -57,11 +57,11 @@ const Home = () => {
             >
               <Button
                 size="lg"
-                onClick={() => navigate('/games')}
+                onClick={() => navigate('/game')}
                 className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-12 py-6 text-xl font-bold rounded-2xl shadow-2xl transform hover:scale-105 transition-all duration-200"
               >
                 <Play className="w-6 h-6 mr-3" />
-                Browse Games
+                Play Now
               </Button>
             </motion.div>
           </motion.div>
@@ -103,7 +103,7 @@ const Home = () => {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          Platform Features
+          Game Features
         </motion.h2>
 
         <div className="grid md:grid-cols-3 gap-8">
@@ -124,8 +124,8 @@ const Home = () => {
         </div>
       </div>
 
-      {/* NUNU Whitepaper Section */}
-      <div className="bg-gray-800 py-20">
+      {/* NUNU Ecosystem Section */}
+      <div className="bg-gray-900 py-20">
         <div className="max-w-7xl mx-auto px-4">
           <motion.div
             className="text-center"
@@ -135,9 +135,9 @@ const Home = () => {
           >
             <h2 className="text-4xl font-bold text-white mb-8">The NUNU Ecosystem</h2>
             <p className="text-xl text-gray-300 max-w-4xl mx-auto mb-12">
-              NUNU Games is building the future of gaming where players are rewarded for their time and skill. 
-              Our ecosystem revolves around NUNU coins - the universal currency that powers all games on our platform.
-              As players collect gifts and complete games, they earn NUNU coins that unlock new experiences and rewards.
+              NUNU Games is building the future of blockchain gaming where players are rewarded for their time and skill. 
+              Our ecosystem revolves around NUNU coins - earn them by collecting gifts, reaching tile 100, and 
+              competing on the leaderboard in this thrilling board game adventure.
             </p>
             
             <div className="grid sm:grid-cols-3 gap-8">
@@ -148,9 +148,9 @@ const Home = () => {
               </div>
               
               <div className="bg-gradient-to-br from-purple-500 to-purple-700 rounded-xl p-6">
-                <div className="text-4xl mb-4">🎮</div>
-                <h3 className="text-lg font-bold text-white mb-2">Unlock Games</h3>
-                <p className="text-white opacity-90">Use coins to access premium games and features</p>
+                <div className="text-4xl mb-4">🎲</div>
+                <h3 className="text-lg font-bold text-white mb-2">Blockchain Gaming</h3>
+                <p className="text-white opacity-90">Provably fair dice rolls using Chainlink VRF</p>
               </div>
               
               <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl p-6">
@@ -186,17 +186,26 @@ const Home = () => {
         >
           <h2 className="text-4xl font-bold text-white mb-8">Ready to Start Gaming?</h2>
           <p className="text-xl text-gray-300 mb-12">
-            Join thousands of players earning NUNU coins and building the future of gaming!
+            Join thousands of players earning NUNU coins and racing to tile 100!
           </p>
           
-          <Button
-            size="lg"
-            onClick={() => navigate('/games')}
-            className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-12 py-6 text-xl font-bold rounded-2xl shadow-2xl transform hover:scale-105 transition-all duration-200 mb-12"
-          >
-            <Play className="w-6 h-6 mr-3" />
-            Browse Games Now
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+            <Button
+              size="lg"
+              onClick={() => navigate('/game')}
+              className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-12 py-6 text-xl font-bold rounded-2xl shadow-2xl transform hover:scale-105 transition-all duration-200"
+            >
+              <Play className="w-6 h-6 mr-3" />
+              Play Now
+            </Button>
+            <Button
+              size="lg"
+              onClick={() => navigate('/game/leaderboard')}
+              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-12 py-6 text-xl font-bold rounded-2xl shadow-2xl transform hover:scale-105 transition-all duration-200"
+            >
+              🏆 Leaderboard
+            </Button>
+          </div>
 
           <div className="flex justify-center space-x-6">
             {socialLinks.map((link, index) => (

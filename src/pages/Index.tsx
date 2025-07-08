@@ -10,9 +10,11 @@ import VictoryModal from '@/components/VictoryModal';
 import ContractUserProfile from '@/components/ContractUserProfile';
 import NewGameConfirmation from '@/components/NewGameConfirmation';
 import SplashAnimation from '@/components/SplashAnimation';
+import GameRulesModal from '@/components/GameRulesModal';
 import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { Wallet, RefreshCw } from 'lucide-react';
+import { Wallet, RefreshCw, HelpCircle, Trophy } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAccount, useBalance } from 'wagmi';
 import { monadTestnet } from '@/types/monadTestnet';
 import { useContract } from '@/hooks/useContract';
@@ -89,12 +91,14 @@ const NewGameButton = ({ handleNewGameClick, isNewGameDisabled, isStartingGame }
 );
 
 const Index = () => {
+  const navigate = useNavigate();
   const [gameState, gameActions, contractInfo] = useBlockchainGameReducer();
   const { playSound } = useSoundEffects(gameState.isSoundMuted);
   const { splash, hideSplash, triggerGiftSplash, triggerDetourSplash, triggerShortcutSplash } = useSplashAnimations();
   const [showNewGameConfirmation, setShowNewGameConfirmation] = useState(false);
   const [showVictoryModal, setShowVictoryModal] = useState(true);
   const [showBoardLoader, setShowBoardLoader] = useState(false);
+  const [showGameRules, setShowGameRules] = useState(false);
 
   const { 
     isConnected, 
@@ -305,7 +309,7 @@ const Index = () => {
   // Show wallet connection prompt if not connected
   if (!isConnected) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 p-4">
+      <div className="min-h-screen bg-black p-4">
         <div className="max-w-7xl mx-auto">
           <div className="flex justify-center items-center min-h-[60vh]">
             <motion.div
@@ -317,7 +321,7 @@ const Index = () => {
               <Wallet className="w-16 h-16 text-purple-400 mx-auto mb-4" />
               <h2 className="text-2xl font-bold text-white mb-4">Connect Your Wallet</h2>
               <p className="text-gray-300 mb-6">
-                To play The Hundredth Tile on-chain, you need to connect your wallet. 
+                To play NUNU Games on-chain, you need to connect your wallet. 
                 Your progress will be stored on the blockchain and you'll earn real NUNU tokens!
               </p>
             </motion.div>
@@ -330,7 +334,7 @@ const Index = () => {
   // Show game start prompt if game not started
   if (contractState && !contractState.boardGenerated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 p-4">
+      <div className="min-h-screen bg-black p-4">
         <div className="max-w-7xl mx-auto">
           <div className="flex justify-center items-center min-h-[60vh]">
             <motion.div
@@ -373,7 +377,7 @@ const Index = () => {
   }
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 p-4">
+    <div className="min-h-screen bg-black p-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <motion.div
@@ -383,10 +387,30 @@ const Index = () => {
           transition={{ duration: 0.6 }}
         >
           <div className="text-center flex-1">
-            <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">The Hundredth Tile</h1>
+            <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">🎲 NUNU Games</h1>
             <p className="text-lg sm:text-xl text-gray-300">
               Roll the dice, collect NUNU tokens, and reach tile 100 on-chain!
             </p>
+            <div className="flex justify-center gap-4 mt-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowGameRules(true)}
+                className="border-purple-500 text-purple-400 hover:bg-purple-500/10"
+              >
+                <HelpCircle className="w-4 h-4 mr-2" />
+                Game Rules
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/game/leaderboard')}
+                className="border-yellow-500 text-yellow-400 hover:bg-yellow-500/10"
+              >
+                <Trophy className="w-4 h-4 mr-2" />
+                Leaderboard
+              </Button>
+            </div>
             {contractState && (
               <div className="text-sm text-purple-400 mt-2 space-y-1">
                 <p>On-chain game • Contract: {contractInfo.CONTRACT_ADDRESS}</p>
@@ -536,6 +560,11 @@ const Index = () => {
           isOpen={showNewGameConfirmation}
           onConfirm={restartGame}
           onCancel={() => setShowNewGameConfirmation(false)}
+        />
+
+        <GameRulesModal
+          isOpen={showGameRules}
+          onClose={() => setShowGameRules(false)}
         />
       </div>
     </div>
