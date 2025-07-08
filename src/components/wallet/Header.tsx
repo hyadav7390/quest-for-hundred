@@ -70,7 +70,7 @@ const Header = () => {
           {/* Logo */}
           <LogoButton navigate={navigate} />
           {/* Desktop Navigation */}
-          <DesktopNavigation navigationItems={navigationItems} isActivePath={isActivePath} navigate={navigate} />
+          {/* <DesktopNavigation navigationItems={navigationItems} isActivePath={isActivePath} navigate={navigate} /> */}
           {/* Wallet Button & Popover (always visible) */}
           <div className="flex items-center space-x-3">
             {ready && authenticated ? (
