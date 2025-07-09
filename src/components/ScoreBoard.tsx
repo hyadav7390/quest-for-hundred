@@ -61,37 +61,37 @@ const ScoreBoard = ({
       
       <div className="grid grid-cols-2 gap-3">
         <div className="bg-surface rounded-lg p-3 text-center border border-accent-main/20">
-          <Trophy className="w-6 h-6 text-positive mx-auto mb-2" />
+          <Trophy className="w-8 h-8 text-positive mx-auto mb-2" />
           <p className="text-xs text-white/60">Score</p>
           <p className="text-xl font-bold text-white">{score}</p>
         </div>
 
         <div className="bg-surface rounded-lg p-3 text-center border border-accent-main/20">
-          <Dices className="w-6 h-6 text-accent-main mx-auto mb-2" />
+          <Dices className="w-8 h-8 text-accent-main mx-auto mb-2" />
           <p className="text-xs text-white/60">Dice Rolled</p>
           <p className="text-xl font-bold text-white">{displayDiceRolls}</p>
         </div>
 
         <div className="bg-surface rounded-lg p-3 text-center border border-accent-main/20">
-          <Gift className="w-6 h-6 text-positive mx-auto mb-2" />
+          <Gift className="w-8 h-8 text-positive mx-auto mb-2" />
           <p className="text-xs text-white/60">Gifts</p>
           <p className="text-xl font-bold text-white">{displayGifts}</p>
         </div>
         
         <div className="bg-surface rounded-lg p-3 text-center border border-accent-main/20">
-          <Target className="w-6 h-6 text-accent-main mx-auto mb-2" />
+          <Target className="w-8 h-8 text-accent-main mx-auto mb-2" />
           <p className="text-xs text-white/60">Position</p>
           <p className="text-xl font-bold text-white">{position}/100</p>
         </div>
         
         <div className="bg-surface rounded-lg p-3 text-center border border-accent-main/20">
-          <TrendingDown className="w-6 h-6 text-negative mx-auto mb-2" />
+          <TrendingDown className="w-8 h-8 text-negative mx-auto mb-2" />
           <p className="text-xs text-white/60">Detours</p>
           <p className="text-xl font-bold text-white">{displayDetours}</p>
         </div>
         
         <div className="bg-surface rounded-lg p-3 text-center border border-accent-main/20">
-          <TrendingUp className="w-6 h-6 text-positive mx-auto mb-2" />
+          <TrendingUp className="w-8 h-8 text-positive mx-auto mb-2" />
           <p className="text-xs text-white/60">Shortcuts</p>
           <p className="text-xl font-bold text-white">{displayShortcuts}</p>
         </div>
