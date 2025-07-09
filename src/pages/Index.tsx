@@ -23,13 +23,13 @@ import { useWalletBalancesAndWithdraw } from '@/hooks/useWalletBalancesAndWithdr
 // Helper components defined outside Index to prevent re-mounting on every render
 const BalanceWarning = () => (
   <motion.div
-    className="bg-danger/20 border border-danger/40 rounded-lg p-4 mb-6 text-center"
+    className="bg-negative/20 border border-negative/40 rounded-lg p-4 mb-6 text-center"
     initial={{ opacity: 0, y: -10 }}
     animate={{ opacity: 1, y: 0 }}
   >
     <div className="flex items-center justify-center space-x-2">
-      <Wallet className="w-5 h-5 text-danger" />
-      <span className="text-danger">
+      <Wallet className="w-5 h-5 text-negative" />
+      <span className="text-negative">
         No balance detected. Please add MON tokens to your wallet to play the game.
       </span>
     </div>
@@ -38,13 +38,13 @@ const BalanceWarning = () => (
 
 const VRFWaitingIndicator = () => (
   <motion.div
-    className="bg-warn/20 border border-warn/40 rounded-lg p-4 mb-6 text-center"
+    className="bg-accent-main/20 border border-accent-main/40 rounded-lg p-4 mb-6 text-center"
     initial={{ opacity: 0, y: -10 }}
     animate={{ opacity: 1, y: 0 }}
   >
     <div className="flex items-center justify-center space-x-2">
-      <RefreshCw className="w-5 h-5 animate-spin text-warn" />
-      <span className="text-warn">
+      <RefreshCw className="w-5 h-5 animate-spin text-accent-main" />
+      <span className="text-accent-main">
         Waiting for Chainlink VRF result... This may take a few moments.
       </span>
     </div>
@@ -53,7 +53,7 @@ const VRFWaitingIndicator = () => (
 
 const DiceSection = ({ gameState, isWaitingForVRF, rollDice, isDiceDisabled, contractState, hasNoBalance }) => (
   <motion.div
-    className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-6 shadow-xl border border-gray-600"
+    className="panel"
     initial={{ opacity: 0, scale: 0.9 }}
     animate={{ opacity: 1, scale: 1 }}
     transition={{ duration: 0.5, delay: 0.2 }}
@@ -66,13 +66,8 @@ const DiceSection = ({ gameState, isWaitingForVRF, rollDice, isDiceDisabled, con
       contractValue={contractState?.diceValue}
       isWaitingForVRF={isWaitingForVRF}
     />
-    {/* {isWaitingForVRF && (
-      <p className="text-center text-yellow-400 text-sm mt-2">
-        ⏳ Waiting for blockchain randomness...
-      </p>
-    )} */}
     {hasNoBalance && (
-      <p className="text-center text-red-400 text-sm mt-2">
+      <p className="text-center text-negative text-sm mt-2">
         ⚠️ Add MON tokens to play
       </p>
     )}
@@ -82,7 +77,7 @@ const DiceSection = ({ gameState, isWaitingForVRF, rollDice, isDiceDisabled, con
 const NewGameButton = ({ handleNewGameClick, isNewGameDisabled, isStartingGame }) => (
   <motion.button
     onClick={handleNewGameClick}
-    className="w-full py-3 bg-gradient-to-r from-red-600 to-pink-600 text-white font-bold rounded-lg shadow-lg hover:from-red-700 hover:to-pink-700 transition-all duration-200 disabled:opacity-50"
+    className="w-full py-3 bg-gradient-to-r from-negative to-accent-main text-white font-bold rounded-lg shadow-lg hover:from-negative/90 hover:to-accent-main/90 transition-all duration-200 disabled:opacity-50"
     whileHover={{ scale: isNewGameDisabled ? 1 : 1.02 }}
     whileTap={{ scale: isNewGameDisabled ? 1 : 0.98 }}
     disabled={isNewGameDisabled}
@@ -340,14 +335,14 @@ const Index = () => {
         <div className="max-w-7xl mx-auto">
           <div className="flex justify-center items-center min-h-[60vh]">
             <motion.div
-              className="card-surface text-center max-w-md"
+              className="panel text-center max-w-md"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5 }}
             >
               <Wallet className="w-16 h-16 text-accent-main mx-auto mb-4" />
-              <h2 className="text-2xl font-heading font-bold text-text-high mb-4">Connect Your Wallet</h2>
-              <p className="text-text-low mb-6">
+              <h2 className="text-2xl font-heading font-bold text-white mb-4">Connect Your Wallet</h2>
+              <p className="text-white/70 mb-6">
                 To play NUNU Games on-chain, you need to connect your wallet. 
                 Your progress will be stored on the blockchain and you'll earn real NUNU tokens!
               </p>
@@ -365,19 +360,19 @@ const Index = () => {
         <div className="max-w-7xl mx-auto">
           <div className="flex justify-center items-center min-h-[60vh]">
             <motion.div
-              className="card-surface text-center max-w-md"
+              className="panel text-center max-w-md"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5 }}
             >
-              <h2 className="text-2xl font-heading font-bold text-text-high mb-4">Start Your Game</h2>
-              <p className="text-text-low mb-6">
+              <h2 className="text-2xl font-heading font-bold text-white mb-4">Start Your Game</h2>
+              <p className="text-white/70 mb-6">
                 Ready to begin your journey to tile 100? Your game board will be generated on-chain 
                 with unique gifts and challenges using Chainlink VRF for randomness.
               </p>
               {hasNoBalance && (
-                <div className="bg-danger/20 border border-danger/40 rounded-lg p-3 mb-4">
-                  <p className="text-danger text-sm">
+                <div className="bg-negative/20 border border-negative/40 rounded-lg p-3 mb-4">
+                  <p className="text-negative text-sm">
                     ⚠️ You need MON tokens to pay for transaction fees. Please add funds to your wallet.
                   </p>
                 </div>
@@ -408,14 +403,14 @@ const Index = () => {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <motion.div
-          className="flex justify-between items-center mb-6 sm:mb-8"
+          className="flex justify-between items-start mb-6 sm:mb-8"
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
           <div className="text-center flex-1">
-            <h1 className="text-3xl sm:text-4xl font-heading font-bold text-text-high mb-2">🎲 NUNU Games</h1>
-            <p className="text-lg sm:text-xl text-text-low">
+            <h1 className="text-3xl sm:text-4xl font-heading font-bold text-white mb-2">🎲 NUNU Games</h1>
+            <p className="text-lg sm:text-xl text-white/70">
               Roll the dice, collect NUNU tokens, and reach tile 100 on-chain!
             </p>
             <div className="flex justify-center gap-4 mt-4">
@@ -432,7 +427,7 @@ const Index = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => navigate('/game/leaderboard')}
-                className="border-success text-success hover:bg-success/10 hover:text-success focus:text-success"
+                className="border-positive text-positive hover:bg-positive/10 hover:text-positive focus:text-positive"
               >
                 <Trophy className="w-4 h-4 mr-2" />
                 Leaderboard
@@ -441,48 +436,29 @@ const Index = () => {
             {contractState && (
               <div className="text-sm text-accent-main mt-2 space-y-1">
                 {playerRank > 0 && (
-                  <p className="text-success">🏅 Your Rank: #{playerRank}</p>
+                  <p className="text-positive">🏅 Your Rank: #{playerRank}</p>
                 )}
               </div>
             )}
           </div>
           
-          <div className="ml-4">
+          <div className="ml-4 hidden sm:block">
             <ContractUserProfile />
           </div>
         </motion.div>
 
+        {/* Mobile Profile - Better Placement */}
+        <div className="block sm:hidden mb-4">
+          <div className="flex justify-end">
+            <ContractUserProfile />
+          </div>
+        </div>
+
         {/* Balance Warning */}
-        {hasNoBalance && (
-          <motion.div
-            className="bg-danger/20 border border-danger/40 rounded-lg p-4 mb-6 text-center"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <div className="flex items-center justify-center space-x-2">
-              <Wallet className="w-5 h-5 text-danger" />
-              <span className="text-danger">
-                No balance detected. Please add MON tokens to your wallet to play the game.
-              </span>
-            </div>
-          </motion.div>
-        )}
+        {hasNoBalance && <BalanceWarning />}
 
         {/* VRF Waiting Indicator */}
-        {isWaitingForVRF && (
-          <motion.div
-            className="bg-warn/20 border border-warn/40 rounded-lg p-4 mb-6 text-center"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <div className="flex items-center justify-center space-x-2">
-              <RefreshCw className="w-5 h-5 animate-spin text-warn" />
-              <span className="text-warn">
-                Waiting for Chainlink VRF result... This may take a few moments.
-              </span>
-            </div>
-          </motion.div>
-        )}
+        {isWaitingForVRF && <VRFWaitingIndicator />}
 
         {/* Mobile Layout */}
         <div className="block lg:hidden space-y-6">
@@ -582,11 +558,12 @@ const Index = () => {
           <div className="fixed inset-0 flex items-center justify-center z-50 bg-bg-primary/80 backdrop-blur-sm">
             <div className="flex flex-col items-center">
               <RefreshCw className="w-10 h-10 text-accent-main animate-spin mb-4" />
-              <span className="text-text-high text-lg font-semibold">Generating new game board...</span>
+              <span className="text-white text-lg font-semibold">Generating new game board...</span>
             </div>
           </div>
         )}
 
+        {/* Modals */}
         <VictoryModal
           isOpen={showVictoryModal && gameState.gameStatus === 'won'}
           score={gameState.score}

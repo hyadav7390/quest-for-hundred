@@ -21,13 +21,13 @@ const BlockchainLeaderboard = () => {
   const getRankIcon = (rank: number) => {
     switch (rank) {
       case 1:
-        return <Crown className="w-6 h-6 text-yellow-400" />;
+        return <Crown className="w-6 h-6 text-accent-main" />;
       case 2:
-        return <Medal className="w-6 h-6 text-gray-400" />;
+        return <Medal className="w-6 h-6 text-accent-main/70" />;
       case 3:
-        return <Award className="w-6 h-6 text-amber-600" />;
+        return <Award className="w-6 h-6 text-accent-main/50" />;
       default:
-        return <Trophy className="w-5 h-5 text-gray-500" />;
+        return <Trophy className="w-5 h-5 text-white/40" />;
     }
   };
 
@@ -39,8 +39,8 @@ const BlockchainLeaderboard = () => {
     return (
       <div className="max-w-4xl mx-auto p-6">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-400 mx-auto"></div>
-          <p className="text-gray-300 mt-2">Loading leaderboard...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent-main mx-auto"></div>
+          <p className="text-white/70 mt-2">Loading leaderboard...</p>
         </div>
       </div>
     );
@@ -49,19 +49,19 @@ const BlockchainLeaderboard = () => {
   return (
     <div className="max-w-4xl mx-auto p-6">
       <motion.div
-        className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-6 shadow-xl border border-gray-600"
+        className="panel"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-3xl font-bold text-white flex items-center gap-3">
-            <Trophy className="w-8 h-8 text-yellow-400" />
-            The Hundredth Tile Leaderboard
+          <h2 className="text-3xl font-heading font-bold text-white flex items-center gap-3">
+            <Trophy className="w-8 h-8 text-accent-main" />
+            Blockchain Leaderboard
           </h2>
           <button
             onClick={() => fetchLeaderboard()}
-            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+            className="px-4 py-2 bg-accent-main hover:bg-accent-main/80 text-bg-primary rounded-lg transition-colors font-semibold"
           >
             Refresh
           </button>
@@ -69,20 +69,20 @@ const BlockchainLeaderboard = () => {
 
         {leaderboard.length === 0 ? (
           <div className="text-center py-8">
-            <Trophy className="w-16 h-16 text-gray-500 mx-auto mb-4" />
-            <p className="text-xl text-gray-300">No games completed yet</p>
-            <p className="text-gray-500">Be the first to reach tile 100!</p>
+            <Trophy className="w-16 h-16 text-white/40 mx-auto mb-4" />
+            <p className="text-xl text-white">No games completed yet</p>
+            <p className="text-white/60">Be the first to reach tile 100!</p>
           </div>
         ) : (
           <div className="space-y-3">
             {leaderboard.slice(0, 50).map((entry: LeaderboardEntry, index: number) => (
               <motion.div
                 key={entry.player}
-                className={`flex items-center justify-between p-4 rounded-lg border ${
+                className={`flex items-center justify-between p-4 rounded-lg border transition-all duration-200 ${
                   index < 3
-                    ? 'bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border-yellow-500/30'
-                    : 'bg-gray-700/50 border-gray-600'
-                } hover:border-purple-500/50 transition-all duration-200`}
+                    ? 'bg-accent-main/10 border-accent-main/30 ring-2 ring-accent-main/50'
+                    : 'bg-surface border-white/10 hover:border-accent-main/30'
+                }`}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.05 }}
@@ -97,7 +97,7 @@ const BlockchainLeaderboard = () => {
                       <span className="text-lg font-bold text-white">
                         #{index + 1}
                       </span>
-                      <span className="text-sm text-gray-300">
+                      <span className="text-sm text-white/70">
                         {formatAddress(entry.player)}
                       </span>
                     </div>
@@ -105,10 +105,10 @@ const BlockchainLeaderboard = () => {
                 </div>
 
                 <div className="text-right">
-                  <div className="text-xl font-bold text-white">
+                  <div className="text-xl font-bold text-accent-main">
                     {Number(entry.score).toLocaleString()}
                   </div>
-                  <div className="text-sm text-gray-400">
+                  <div className="text-sm text-white/60">
                     Game Score
                   </div>
                 </div>

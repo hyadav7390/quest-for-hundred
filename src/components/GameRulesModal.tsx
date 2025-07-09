@@ -21,17 +21,17 @@ const GameRulesModal = ({ isOpen, onClose }: GameRulesModalProps) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-surface-1 border-accent-main/30 text-text-high">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-bg-primary border border-accent-main/30 text-white">
         <DialogHeader>
-          <DialogTitle className="text-3xl font-heading font-bold text-center mb-6 text-gradient-main">
+          <DialogTitle className="text-3xl font-heading font-bold text-center mb-6 text-accent-main">
             🎲 How to Play
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-8">
           {/* Game Rules */}
-          <div className="card-surface">
-            <h3 className="text-2xl font-heading font-bold text-text-high mb-6 text-center">Game Rules</h3>
+          <div className="panel">
+            <h3 className="text-2xl font-heading font-bold text-white mb-6 text-center">Game Rules</h3>
             <div className="grid md:grid-cols-2 gap-4">
               {gameRules.map((rule, index) => (
                 <motion.div
@@ -44,7 +44,7 @@ const GameRulesModal = ({ isOpen, onClose }: GameRulesModalProps) => {
                   <div className="bg-accent-main text-bg-primary rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold flex-shrink-0 mt-0.5">
                     {index + 1}
                   </div>
-                  <p className="text-text-low text-sm">{rule}</p>
+                  <p className="text-white/80 text-sm">{rule}</p>
                 </motion.div>
               ))}
             </div>
@@ -52,20 +52,20 @@ const GameRulesModal = ({ isOpen, onClose }: GameRulesModalProps) => {
 
           {/* Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-surface-2 rounded-xl p-4 text-center border border-success/30">
-              <Trophy className="w-6 h-6 text-success mx-auto mb-2" />
-              <div className="text-lg font-bold text-text-high">1,000</div>
-              <div className="text-text-low text-sm">Completion Bonus</div>
+            <div className="bg-surface rounded-xl p-4 text-center border border-positive/30">
+              <Trophy className="w-6 h-6 text-positive mx-auto mb-2" />
+              <div className="text-lg font-bold text-white">1,000</div>
+              <div className="text-white/60 text-sm">Completion Bonus</div>
             </div>
-            <div className="bg-surface-2 rounded-xl p-4 text-center border border-warn/30">
-              <Gift className="w-6 h-6 text-warn mx-auto mb-2" />
-              <div className="text-lg font-bold text-text-high">50-300</div>
-              <div className="text-text-low text-sm">Gift Values</div>
+            <div className="bg-surface rounded-xl p-4 text-center border border-accent-main/30">
+              <Gift className="w-6 h-6 text-accent-main mx-auto mb-2" />
+              <div className="text-lg font-bold text-white">50-300</div>
+              <div className="text-white/60 text-sm">Gift Values</div>
             </div>
-            <div className="bg-surface-2 rounded-xl p-4 text-center border border-accent-main/30">
+            <div className="bg-surface rounded-xl p-4 text-center border border-accent-main/30">
               <div className="text-2xl mb-2">🎲</div>
-              <div className="text-lg font-bold text-text-high">100</div>
-              <div className="text-text-low text-sm">Tiles to Victory</div>
+              <div className="text-lg font-bold text-white">100</div>
+              <div className="text-white/60 text-sm">Tiles to Victory</div>
             </div>
           </div>
         </div>

@@ -99,31 +99,31 @@ const Leaderboard = () => {
   const getRankIcon = (rank: number) => {
     switch (rank) {
       case 1:
-        return <Trophy className="w-6 h-6 text-yellow-400" />;
+        return <Trophy className="w-6 h-6 text-accent-main" />;
       case 2:
-        return <Medal className="w-6 h-6 text-gray-400" />;
+        return <Medal className="w-6 h-6 text-accent-main/70" />;
       case 3:
-        return <Award className="w-6 h-6 text-amber-600" />;
+        return <Award className="w-6 h-6 text-accent-main/50" />;
       default:
-        return <Star className="w-6 h-6 text-blue-400" />;
+        return <Star className="w-6 h-6 text-white/40" />;
     }
   };
 
-  const getRankColor = (rank: number) => {
+  const getRankStyling = (rank: number) => {
     switch (rank) {
       case 1:
-        return "from-yellow-400 to-yellow-600";
+        return "ring-2 ring-accent-main bg-accent-main/10";
       case 2:
-        return "from-gray-300 to-gray-500";
+        return "ring-2 ring-accent-main/70 bg-accent-main/5";
       case 3:
-        return "from-amber-500 to-amber-700";
+        return "ring-2 ring-accent-main/50 bg-accent-main/5";
       default:
-        return "from-blue-400 to-blue-600";
+        return "border border-white/10";
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 py-8">
+    <div className="min-h-screen bg-bg-primary py-8">
       <div className="max-w-6xl mx-auto px-4">
         <motion.div
           className="text-center mb-12"
@@ -131,10 +131,10 @@ const Leaderboard = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <h1 className="text-5xl font-bold text-white mb-4 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
-            🏆 Leaderboard
+          <h1 className="text-5xl font-heading font-bold text-white mb-4">
+            🏆 <span className="text-accent-main">Leaderboard</span>
           </h1>
-          <p className="text-xl text-gray-300">
+          <p className="text-xl text-white/80">
             Top players in the quest for tile 100
           </p>
         </motion.div>
@@ -144,20 +144,20 @@ const Leaderboard = () => {
           {leaderboardData.slice(0, 3).map((player, index) => (
             <motion.div
               key={player.rank}
-              className={`bg-gradient-to-br ${getRankColor(player.rank)} rounded-2xl p-6 text-center shadow-2xl`}
+              className={`panel text-center ${getRankStyling(player.rank)}`}
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: index * 0.2 }}
-              whileHover={{ scale: 1.05 }}
+              whileHover={{ scale: 1.02 }}
             >
-              <div className="mb-4">
+              <div className="mb-4 flex justify-center">
                 {getRankIcon(player.rank)}
               </div>
-              <h3 className="text-2xl font-bold text-white mb-2">#{player.rank}</h3>
-              <p className="text-white font-mono text-lg mb-4">{player.wallet}</p>
-              <div className="bg-black bg-opacity-20 rounded-lg p-4">
-                <p className="text-3xl font-bold text-white">{player.totalScore.toLocaleString()}</p>
-                <p className="text-white opacity-80">Total Score</p>
+              <h3 className="text-2xl font-heading font-bold text-white mb-2">#{player.rank}</h3>
+              <p className="text-white/80 font-mono text-lg mb-4">{player.wallet}</p>
+              <div className="bg-surface rounded-lg p-4">
+                <p className="text-3xl font-heading font-bold text-accent-main">{player.totalScore.toLocaleString()}</p>
+                <p className="text-white/60">Total Score</p>
               </div>
             </motion.div>
           ))}
@@ -165,32 +165,34 @@ const Leaderboard = () => {
 
         {/* Full Leaderboard Table */}
         <motion.div
-          className="bg-gray-800 rounded-2xl overflow-hidden shadow-2xl border border-gray-700"
+          className="panel"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.6 }}
         >
-          <div className="p-6 border-b border-gray-700">
-            <h2 className="text-2xl font-bold text-white">Full Rankings</h2>
+          <div className="p-6 border-b border-white/10">
+            <h2 className="text-2xl font-heading font-bold text-white">Full Rankings</h2>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-700">
+              <thead className="bg-surface">
                 <tr>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Rank</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Wallet</th>
-                  <th className="px-6 py-4 text-center text-sm font-semibold text-gray-300">Total Score</th>
-                  <th className="px-6 py-4 text-center text-sm font-semibold text-gray-300">Game Score</th>
-                  <th className="px-6 py-4 text-center text-sm font-semibold text-gray-300">Gift Score</th>
-                  <th className="px-6 py-4 text-center text-sm font-semibold text-gray-300">Games</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-white/80">Rank</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-white/80">Wallet</th>
+                  <th className="px-6 py-4 text-right text-sm font-semibold text-white/80">Total Score</th>
+                  <th className="px-6 py-4 text-right text-sm font-semibold text-white/80">Game Score</th>
+                  <th className="px-6 py-4 text-right text-sm font-semibold text-white/80">Gift Score</th>
+                  <th className="px-6 py-4 text-center text-sm font-semibold text-white/80">Games</th>
                 </tr>
               </thead>
               <tbody>
                 {leaderboardData.map((player, index) => (
                   <motion.tr
                     key={player.rank}
-                    className="border-b border-gray-700 hover:bg-gray-750 transition-colors"
+                    className={`border-b border-white/10 hover:bg-surface/50 transition-colors ${
+                      index % 2 === 0 ? 'bg-surface/20' : 'bg-transparent'
+                    }`}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.4, delay: 0.8 + index * 0.1 }}
@@ -204,23 +206,23 @@ const Leaderboard = () => {
                     <td className="px-6 py-4">
                       <span className="text-white font-mono">{player.wallet}</span>
                     </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className="text-yellow-400 font-bold text-lg">
+                    <td className="px-6 py-4 text-right">
+                      <span className="text-accent-main font-bold text-lg">
                         {player.totalScore.toLocaleString()}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className="text-blue-400 font-semibold">
+                    <td className="px-6 py-4 text-right">
+                      <span className="text-positive font-semibold">
                         {player.gameScore.toLocaleString()}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className="text-green-400 font-semibold">
+                    <td className="px-6 py-4 text-right">
+                      <span className="text-accent-main font-semibold">
                         {player.giftScore.toLocaleString()}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <span className="text-gray-300">{player.gamesPlayed}</span>
+                      <span className="text-white/80">{player.gamesPlayed}</span>
                     </td>
                   </motion.tr>
                 ))}
@@ -235,7 +237,7 @@ const Leaderboard = () => {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 1.2 }}
         >
-          <p className="text-gray-400">
+          <p className="text-white/60">
             Rankings are updated in real-time. Keep playing to climb the leaderboard!
           </p>
         </motion.div>

@@ -32,6 +32,32 @@ const Home = () => {
     { icon: <Send className="w-5 h-5" />, label: "Telegram", href: "https://telegram.org" }
   ];
 
+  // Animated background elements component
+  const AnimatedBackground = () => (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {[...Array(20)].map((_, i) => (
+        <motion.div
+          key={i}
+          className="absolute w-2 h-2 bg-accent-main rounded-full opacity-30"
+          animate={{
+            x: [0, Math.random() * 100],
+            y: [0, Math.random() * 100],
+            scale: [0, 1, 0],
+          }}
+          transition={{
+            duration: Math.random() * 3 + 2,
+            repeat: Infinity,
+            delay: Math.random() * 2,
+          }}
+          style={{
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+          }}
+        />
+      ))}
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-bg-primary">
       {/* Hero Section */}
@@ -44,7 +70,7 @@ const Home = () => {
             transition={{ duration: 0.8 }}
           >
             <h1 className="text-6xl sm:text-8xl font-heading font-bold text-white mb-6">
-              🎮 <span className="text-accent-main">NUNU GAMES</span>
+              <span className="text-accent-main">NUNU GAMES</span>
             </h1>
             <p className="text-xl sm:text-2xl text-white/80 mb-8 max-w-3xl mx-auto">
               Roll the dice, collect gifts, avoid traps, and find shortcuts in this thrilling blockchain board game!
@@ -67,61 +93,46 @@ const Home = () => {
           </motion.div>
         </div>
 
-        {/* Animated background elements */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {[...Array(20)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute w-2 h-2 bg-accent-main rounded-full opacity-30"
-              animate={{
-                x: [0, Math.random() * 100],
-                y: [0, Math.random() * 100],
-                scale: [0, 1, 0],
-              }}
-              transition={{
-                duration: Math.random() * 3 + 2,
-                repeat: Infinity,
-                delay: Math.random() * 2,
-              }}
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-              }}
-            />
-          ))}
-        </div>
+        <AnimatedBackground />
       </div>
 
       {/* Community Progress */}
-      <CommunityProgress />
+      <div className="relative overflow-hidden">
+        <CommunityProgress />
+        <AnimatedBackground />
+      </div>
 
       {/* Game Features Section */}
-      <div className="max-w-7xl mx-auto px-4 py-20">
-        <motion.h2
-          className="text-heading-2 font-heading font-bold text-white text-center mb-16"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          Game Features
-        </motion.h2>
+      <div className="relative overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 py-20">
+          <motion.h2
+            className="text-heading-2 font-heading font-bold text-white text-center mb-16"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            Game Features
+          </motion.h2>
 
-        <div className="grid md:grid-cols-3 gap-8">
-          {features.map((feature, index) => (
-            <motion.div
-              key={index}
-              className="panel hover:shadow-[0_0_0_1px_theme(colors.accent-main/40)] transition-all duration-300"
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: index * 0.2 }}
-              whileHover={{ scale: 1.02 }}
-            >
-              <div className="mb-4">{feature.icon}</div>
-              <h3 className="text-xl font-semibold text-white mb-3">{feature.title}</h3>
-              <p className="text-white/70">{feature.description}</p>
-            </motion.div>
-          ))}
+          <div className="grid md:grid-cols-3 gap-8">
+            {features.map((feature, index) => (
+              <motion.div
+                key={index}
+                className="panel hover:shadow-[0_0_0_1px_theme(colors.accent-main/40)] transition-all duration-300"
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.2 }}
+                whileHover={{ scale: 1.02 }}
+              >
+                <div className="mb-4">{feature.icon}</div>
+                <h3 className="text-xl font-semibold text-white mb-3">{feature.title}</h3>
+                <p className="text-white/70">{feature.description}</p>
+              </motion.div>
+            ))}
+          </div>
         </div>
+
+        <AnimatedBackground />
       </div>
 
       {/* NUNU Ecosystem Section */}
