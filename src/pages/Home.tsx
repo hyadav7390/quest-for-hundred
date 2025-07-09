@@ -1,6 +1,6 @@
 
 import { motion } from 'framer-motion';
-import { Play, Target, Gift, Zap, Trophy, Twitter, MessageCircle, Send, FileText } from 'lucide-react';
+import { Play, Target, Gift, Zap, Trophy, X, MessageCircle, Send, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import CommunityProgress from '@/components/CommunityProgress';
@@ -27,7 +27,7 @@ const Home = () => {
   ];
 
   const socialLinks = [
-    { icon: <Twitter className="w-5 h-5" />, label: "Twitter", href: "https://twitter.com" },
+    { icon: <X className="w-5 h-5" />, label: "Twitter", href: "https://twitter.com" },
     { icon: <MessageCircle className="w-5 h-5" />, label: "Discord", href: "https://discord.com" },
     { icon: <Send className="w-5 h-5" />, label: "Telegram", href: "https://telegram.org" }
   ];

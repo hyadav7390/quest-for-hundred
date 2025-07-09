@@ -2,15 +2,11 @@ import { motion } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Wallet } from 'lucide-react';
-import React from 'react';
 import { TOKEN_SYMBOLS } from '@/config';
 import { formatEther } from 'viem/utils';
 import { useWalletBalancesAndWithdraw } from '@/hooks/useWalletBalancesAndWithdraw';
 import LogoButton from './LogoButton';
-import DesktopNavigation from './DesktopNavigation';
 import WalletPopover from './WalletPopover';
-import MobileMenuButton from './MobileMenuButton';
-import MobileMenu from './MobileMenu';
 import SendModal from './Sendmodal';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 
@@ -110,23 +106,7 @@ const Header = () => {
               </button>
             )}
           </div>
-          {/* Mobile Menu Button */}
-          <MobileMenuButton isOpen={mobileMenuOpen} onClick={() => setMobileMenuOpen(open => !open)} />
         </div>
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <MobileMenu
-            navigationItems={navigationItems}
-            isActivePath={isActivePath}
-            navigate={navigate}
-            setMobileMenuOpen={setMobileMenuOpen}
-            ready={ready}
-            authenticated={authenticated}
-            formatBalance={formatBalance}
-            login={login}
-            logout={logout}
-          />
-        )}
         {/* Withdraw Modal (reuse SendMonadModal) */}
         {withdrawModal.open && (
           <SendModal
