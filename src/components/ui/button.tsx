@@ -10,12 +10,12 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-accent-main text-bg-primary hover:shadow-[0_0_16px_theme(colors.accent-main)] hover:scale-105",
-        destructive: "bg-danger text-white hover:shadow-[0_0_16px_theme(colors.danger)] hover:scale-105",
-        outline: "border border-accent-main/30 bg-surface-1 text-text-high hover:bg-surface-2 hover:shadow-[0_0_8px_theme(colors.accent-main/50)]",
-        secondary: "bg-surface-1 text-text-high border border-accent-main/30 hover:bg-surface-2 hover:shadow-[0_0_8px_theme(colors.accent-main/50)]",
-        ghost: "bg-transparent text-text-high hover:bg-surface-1 hover:text-accent-main",
-        link: "text-accent-main underline-offset-4 hover:underline hover:text-accent-alt",
+        default: "bg-accent-main text-bg-primary hover:shadow-glow hover:scale-105",
+        destructive: "bg-negative text-white hover:shadow-[0_0_8px_theme(colors.negative)] hover:scale-105",
+        outline: "border border-accent-main/30 bg-surface text-white hover:bg-surface hover:shadow-[0_0_8px_theme(colors.accent-main/50)]",
+        secondary: "bg-surface text-white border border-accent-main/30 hover:bg-surface hover:shadow-[0_0_8px_theme(colors.accent-main/50)]",
+        ghost: "bg-transparent text-white/90 hover:bg-surface hover:text-accent-main",
+        link: "text-accent-main underline-offset-4 hover:underline",
       },
       size: {
         default: "h-10 px-6 py-3",

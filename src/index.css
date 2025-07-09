@@ -6,87 +6,75 @@
 
 @layer base {
   :root {
-    /* Gaming theme - dark foundation */
+    /* Simplified gaming theme */
     --background: 0 0% 5%; /* #0d0d0d */
-    --foreground: 0 0% 87%; /* rgba(255,255,255,0.87) */
+    --foreground: 0 0% 100%; /* white */
 
-    --card: 0 0% 9%; /* #161616 surface-1 */
-    --card-foreground: 0 0% 87%;
+    --card: 0 0% 9%; /* #181818 surface */
+    --card-foreground: 0 0% 100%;
 
     --popover: 0 0% 9%;
-    --popover-foreground: 0 0% 87%;
+    --popover-foreground: 0 0% 100%;
 
     --primary: 200 100% 50%; /* #00aaff accent-main */
     --primary-foreground: 0 0% 5%;
 
-    --secondary: 0 0% 13%; /* #222222 surface-2 */
-    --secondary-foreground: 0 0% 87%;
+    --secondary: 0 0% 9%; /* #181818 surface */
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 0 0% 13%;
-    --muted-foreground: 0 0% 60%; /* text-low */
+    --muted: 0 0% 9%;
+    --muted-foreground: 0 0% 60%; /* white/60 */
 
     --accent: 200 100% 50%; /* #00aaff accent-main */
     --accent-foreground: 0 0% 5%;
 
-    --destructive: 351 100% 60%; /* #ff3355 danger */
-    --destructive-foreground: 0 0% 87%;
+    --destructive: 351 100% 67%; /* #ff355e negative */
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 20%;
-    --input: 0 0% 10%; /* #1a1a1a */
+    --border: 0 0% 13%; /* #222 surface-2 */
+    --input: 0 0% 9%; /* #181818 surface */
     --ring: 200 100% 50%; /* accent-main */
 
     --radius: 0.5rem;
 
     --sidebar-background: 0 0% 9%;
-    --sidebar-foreground: 0 0% 87%;
+    --sidebar-foreground: 0 0% 100%;
     --sidebar-primary: 200 100% 50%;
     --sidebar-primary-foreground: 0 0% 5%;
-    --sidebar-accent: 0 0% 13%;
-    --sidebar-accent-foreground: 0 0% 87%;
-    --sidebar-border: 0 0% 20%;
+    --sidebar-accent: 0 0% 9%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 13%;
     --sidebar-ring: 200 100% 50%;
-
-    /* Gaming specific colors */
-    --bg-primary: 0 0% 5%; /* #0d0d0d */
-    --surface-1: 0 0% 9%; /* #161616 */
-    --surface-2: 0 0% 13%; /* #222222 */
-    --accent-main: 200 100% 50%; /* #00aaff */
-    --accent-alt: 300 100% 50%; /* #ff00ff */
-    --success: 84 100% 50%; /* #aaff00 */
-    --warn: 40 100% 50%; /* #ffaa00 */
-    --danger: 351 100% 60%; /* #ff3355 */
-    --text-high: 0 0% 87%;
-    --text-low: 0 0% 60%;
   }
 
   .dark {
-    /* Keep dark theme consistent with gaming theme */
+    /* Keep consistent with base theme */
     --background: 0 0% 5%;
-    --foreground: 0 0% 87%;
+    --foreground: 0 0% 100%;
     --card: 0 0% 9%;
-    --card-foreground: 0 0% 87%;
+    --card-foreground: 0 0% 100%;
     --popover: 0 0% 9%;
-    --popover-foreground: 0 0% 87%;
+    --popover-foreground: 0 0% 100%;
     --primary: 200 100% 50%;
     --primary-foreground: 0 0% 5%;
-    --secondary: 0 0% 13%;
-    --secondary-foreground: 0 0% 87%;
-    --muted: 0 0% 13%;
+    --secondary: 0 0% 9%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 0 0% 9%;
     --muted-foreground: 0 0% 60%;
     --accent: 200 100% 50%;
     --accent-foreground: 0 0% 5%;
-    --destructive: 351 100% 60%;
-    --destructive-foreground: 0 0% 87%;
-    --border: 0 0% 20%;
-    --input: 0 0% 10%;
+    --destructive: 351 100% 67%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 13%;
+    --input: 0 0% 9%;
     --ring: 200 100% 50%;
     --sidebar-background: 0 0% 9%;
-    --sidebar-foreground: 0 0% 87%;
+    --sidebar-foreground: 0 0% 100%;
     --sidebar-primary: 200 100% 50%;
     --sidebar-primary-foreground: 0 0% 5%;
-    --sidebar-accent: 0 0% 13%;
-    --sidebar-accent-foreground: 0 0% 87%;
-    --sidebar-border: 0 0% 20%;
+    --sidebar-accent: 0 0% 9%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 13%;
     --sidebar-ring: 200 100% 50%;
   }
 }
@@ -97,55 +85,63 @@
   }
 
   body {
-    @apply bg-bg-primary text-text-high font-body;
-    font-size: clamp(0.95rem, 0.4vw + 0.8rem, 1.1rem);
+    @apply bg-bg-primary text-white font-body;
+    font-size: 16px;
+    line-height: 24px;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1 {
+    @apply font-heading;
+    font-size: 40px;
+    line-height: 52px;
+  }
+
+  h2 {
+    @apply font-heading;
+    font-size: 28px;
+    line-height: 36px;
+  }
+
+  h3, h4, h5, h6 {
     @apply font-heading;
   }
 }
 
 @layer components {
+  .panel {
+    @apply rounded-lg bg-surface p-6 shadow-[0_0_0_1px_theme(colors.accent-main/20)];
+  }
+
   .btn-primary {
     @apply bg-accent-main text-bg-primary font-semibold px-6 py-3 rounded-lg transition-all duration-300;
-    @apply hover:shadow-[0_0_16px_theme(colors.accent-main)] hover:scale-105;
+    @apply hover:shadow-glow hover:scale-105;
     @apply focus:outline-none focus:ring-2 focus:ring-accent-main focus:ring-offset-2 focus:ring-offset-bg-primary;
   }
 
-  .btn-secondary {
-    @apply bg-surface-1 text-text-high border border-accent-main/30 font-semibold px-6 py-3 rounded-lg transition-all duration-300;
-    @apply hover:bg-surface-2 hover:shadow-[0_0_8px_theme(colors.accent-main)];
+  .btn-ghost {
+    @apply bg-transparent text-white/90 font-semibold px-6 py-3 rounded-lg transition-all duration-300;
+    @apply hover:bg-surface hover:text-accent-main;
     @apply focus:outline-none focus:ring-2 focus:ring-accent-main focus:ring-offset-2 focus:ring-offset-bg-primary;
   }
 
   .btn-danger {
-    @apply bg-danger text-white font-semibold px-6 py-3 rounded-lg transition-all duration-300;
-    @apply hover:shadow-[0_0_16px_theme(colors.danger)] hover:scale-105;
-    @apply focus:outline-none focus:ring-2 focus:ring-danger focus:ring-offset-2 focus:ring-offset-bg-primary;
+    @apply bg-negative text-white font-semibold px-6 py-3 rounded-lg transition-all duration-300;
+    @apply hover:shadow-[0_0_8px_theme(colors.negative)] hover:scale-105;
+    @apply focus:outline-none focus:ring-2 focus:ring-negative focus:ring-offset-2 focus:ring-offset-bg-primary;
   }
 
-  .btn-ghost {
-    @apply bg-transparent text-text-high font-semibold px-6 py-3 rounded-lg transition-all duration-300;
-    @apply hover:bg-surface-1 hover:text-accent-main;
-    @apply focus:outline-none focus:ring-2 focus:ring-accent-main focus:ring-offset-2 focus:ring-offset-bg-primary;
+  .input-field {
+    @apply bg-surface/70 border border-white/10 text-white placeholder:text-white/60 rounded px-4 py-2;
+    @apply focus:border-accent-main focus:shadow-[inset_0_0_8px_theme(colors.accent-main/20)] focus:outline-none transition-all duration-300;
   }
+}
 
-  .card-surface {
-    @apply bg-surface-1 border border-accent-main/20 rounded-xl p-6 shadow-lg;
-    @apply hover:bg-surface-2 hover:shadow-[0_0_8px_theme(colors.accent-main/50)] transition-all duration-300;
+@keyframes flash {
+  0% {
+    background-color: #00aaff;
   }
-
-  .input-gaming {
-    @apply bg-[#1a1a1a] border border-[#333] text-text-high placeholder:text-text-low rounded px-4 py-2;
-    @apply focus:border-accent-main focus:shadow-[0_0_8px_theme(colors.accent-main/50)] focus:outline-none transition-all duration-300;
-  }
-
-  .text-gradient-main {
-    background: linear-gradient(90deg, #00aaff 0%, #ff00ff 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+  100% {
+    background-color: #181818;
   }
 }
 

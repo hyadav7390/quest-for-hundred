@@ -43,8 +43,7 @@ export default {
 				},
 				accent: {
 					DEFAULT: 'hsl(var(--accent))',
-					foreground: 'hsl(var(--accent-foreground))',
-					alt: '#ff00ff'
+					foreground: 'hsl(var(--accent-foreground))'
 				},
 				popover: {
 					DEFAULT: 'hsl(var(--popover))',
@@ -64,17 +63,12 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				// Gaming theme colors
+				// Simplified gaming theme colors
 				'bg-primary': '#0d0d0d',
-				'surface-1': '#161616',
-				'surface-2': '#222222',
+				'surface': '#181818',
 				'accent-main': '#00aaff',
-				'accent-alt': '#ff00ff',
-				'success': '#aaff00',
-				'warn': '#ffaa00',
-				'danger': '#ff3355',
-				'text-high': 'rgba(255,255,255,0.87)',
-				'text-low': 'rgba(255,255,255,0.60)'
+				'positive': '#7cd321',
+				'negative': '#ff355e'
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -87,7 +81,13 @@ export default {
 				sans: ['Inter', 'sans-serif']
 			},
 			fontSize: {
-				base: 'clamp(0.95rem, 0.4vw + 0.8rem, 1.1rem)'
+				base: '16px',
+				'heading-1': ['40px', '52px'],
+				'heading-2': ['28px', '36px'],
+				body: ['16px', '24px']
+			},
+			boxShadow: {
+				glow: '0 0 8px #00aaff'
 			},
 			keyframes: {
 				'accordion-down': {
@@ -106,32 +106,19 @@ export default {
 						height: '0'
 					}
 				},
-				'pulse-glow': {
-					'0%, 100%': {
-						boxShadow: '0 0 8px var(--accent-main)',
-						transform: 'scale(1)'
-					},
-					'50%': {
-						boxShadow: '0 0 16px var(--accent-main)',
-						transform: 'scale(1.02)'
-					}
-				},
-				'float-score': {
+				'flash': {
 					'0%': {
-						opacity: '1',
-						transform: 'translateY(0px)'
+						backgroundColor: '#00aaff'
 					},
 					'100%': {
-						opacity: '0',
-						transform: 'translateY(-20px)'
+						backgroundColor: '#181818'
 					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
-				'pulse-glow': 'pulse-glow 2.5s ease-in-out infinite',
-				'float-score': 'float-score 1s ease-out forwards'
+				'flash': 'flash 300ms ease-out'
 			}
 		}
 	},
