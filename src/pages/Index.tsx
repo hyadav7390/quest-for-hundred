@@ -440,7 +440,6 @@ const Index = () => {
             </div>
             {contractState && (
               <div className="text-sm text-purple-400 mt-2 space-y-1">
-                <p>On-chain game • Contract: {contractInfo.CONTRACT_ADDRESS}</p>
                 {playerRank > 0 && (
                   <p className="text-yellow-400">🏅 Your Rank: #{playerRank}</p>
                 )}
