@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -42,7 +43,8 @@ export default {
 				},
 				accent: {
 					DEFAULT: 'hsl(var(--accent))',
-					foreground: 'hsl(var(--accent-foreground))'
+					foreground: 'hsl(var(--accent-foreground))',
+					alt: '#ff00ff'
 				},
 				popover: {
 					DEFAULT: 'hsl(var(--popover))',
@@ -61,12 +63,31 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+				// Gaming theme colors
+				'bg-primary': '#0d0d0d',
+				'surface-1': '#161616',
+				'surface-2': '#222222',
+				'accent-main': '#00aaff',
+				'accent-alt': '#ff00ff',
+				'success': '#aaff00',
+				'warn': '#ffaa00',
+				'danger': '#ff3355',
+				'text-high': 'rgba(255,255,255,0.87)',
+				'text-low': 'rgba(255,255,255,0.60)'
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
 				sm: 'calc(var(--radius) - 4px)'
+			},
+			fontFamily: {
+				heading: ['Orbitron', 'sans-serif'],
+				body: ['Inter', 'sans-serif'],
+				sans: ['Inter', 'sans-serif']
+			},
+			fontSize: {
+				base: 'clamp(0.95rem, 0.4vw + 0.8rem, 1.1rem)'
 			},
 			keyframes: {
 				'accordion-down': {
@@ -84,11 +105,33 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'pulse-glow': {
+					'0%, 100%': {
+						boxShadow: '0 0 8px var(--accent-main)',
+						transform: 'scale(1)'
+					},
+					'50%': {
+						boxShadow: '0 0 16px var(--accent-main)',
+						transform: 'scale(1.02)'
+					}
+				},
+				'float-score': {
+					'0%': {
+						opacity: '1',
+						transform: 'translateY(0px)'
+					},
+					'100%': {
+						opacity: '0',
+						transform: 'translateY(-20px)'
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'pulse-glow': 'pulse-glow 2.5s ease-in-out infinite',
+				'float-score': 'float-score 1s ease-out forwards'
 			}
 		}
 	},

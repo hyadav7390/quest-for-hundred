@@ -23,13 +23,13 @@ import { useWalletBalancesAndWithdraw } from '@/hooks/useWalletBalancesAndWithdr
 // Helper components defined outside Index to prevent re-mounting on every render
 const BalanceWarning = () => (
   <motion.div
-    className="bg-red-600/20 border border-red-600/40 rounded-lg p-4 mb-6 text-center"
+    className="bg-danger/20 border border-danger/40 rounded-lg p-4 mb-6 text-center"
     initial={{ opacity: 0, y: -10 }}
     animate={{ opacity: 1, y: 0 }}
   >
     <div className="flex items-center justify-center space-x-2">
-      <Wallet className="w-5 h-5 text-red-400" />
-      <span className="text-red-200">
+      <Wallet className="w-5 h-5 text-danger" />
+      <span className="text-danger">
         No balance detected. Please add MON tokens to your wallet to play the game.
       </span>
     </div>
@@ -38,13 +38,13 @@ const BalanceWarning = () => (
 
 const VRFWaitingIndicator = () => (
   <motion.div
-    className="bg-yellow-600/20 border border-yellow-600/40 rounded-lg p-4 mb-6 text-center"
+    className="bg-warn/20 border border-warn/40 rounded-lg p-4 mb-6 text-center"
     initial={{ opacity: 0, y: -10 }}
     animate={{ opacity: 1, y: 0 }}
   >
     <div className="flex items-center justify-center space-x-2">
-      <RefreshCw className="w-5 h-5 animate-spin text-yellow-400" />
-      <span className="text-yellow-200">
+      <RefreshCw className="w-5 h-5 animate-spin text-warn" />
+      <span className="text-warn">
         Waiting for Chainlink VRF result... This may take a few moments.
       </span>
     </div>
@@ -336,18 +336,18 @@ const Index = () => {
   // Show wallet connection prompt if not connected
   if (!isConnected) {
     return (
-      <div className="min-h-screen bg-black p-4">
+      <div className="min-h-screen bg-bg-primary p-4">
         <div className="max-w-7xl mx-auto">
           <div className="flex justify-center items-center min-h-[60vh]">
             <motion.div
-              className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-8 shadow-xl border border-gray-600 text-center max-w-md"
+              className="card-surface text-center max-w-md"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5 }}
             >
-              <Wallet className="w-16 h-16 text-purple-400 mx-auto mb-4" />
-              <h2 className="text-2xl font-bold text-white mb-4">Connect Your Wallet</h2>
-              <p className="text-gray-300 mb-6">
+              <Wallet className="w-16 h-16 text-accent-main mx-auto mb-4" />
+              <h2 className="text-2xl font-heading font-bold text-text-high mb-4">Connect Your Wallet</h2>
+              <p className="text-text-low mb-6">
                 To play NUNU Games on-chain, you need to connect your wallet. 
                 Your progress will be stored on the blockchain and you'll earn real NUNU tokens!
               </p>
@@ -361,30 +361,30 @@ const Index = () => {
   // Show game start prompt if game not started
   if (contractState && !contractState.boardGenerated) {
     return (
-      <div className="min-h-screen bg-black p-4">
+      <div className="min-h-screen bg-bg-primary p-4">
         <div className="max-w-7xl mx-auto">
           <div className="flex justify-center items-center min-h-[60vh]">
             <motion.div
-              className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-8 shadow-xl border border-gray-600 text-center max-w-md"
+              className="card-surface text-center max-w-md"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5 }}
             >
-              <h2 className="text-2xl font-bold text-white mb-4">Start Your Game</h2>
-              <p className="text-gray-300 mb-6">
+              <h2 className="text-2xl font-heading font-bold text-text-high mb-4">Start Your Game</h2>
+              <p className="text-text-low mb-6">
                 Ready to begin your journey to tile 100? Your game board will be generated on-chain 
                 with unique gifts and challenges using Chainlink VRF for randomness.
               </p>
               {hasNoBalance && (
-                <div className="bg-red-600/20 border border-red-600/40 rounded-lg p-3 mb-4">
-                  <p className="text-red-200 text-sm">
+                <div className="bg-danger/20 border border-danger/40 rounded-lg p-3 mb-4">
+                  <p className="text-danger text-sm">
                     ⚠️ You need MON tokens to pay for transaction fees. Please add funds to your wallet.
                   </p>
                 </div>
               )}
               <Button
                 onClick={restartGame}
-                className="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold rounded-lg shadow-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-200"
+                className="btn-primary w-full py-3 rounded-lg shadow-lg"
                 disabled={isLoadingStartGame || hasNoBalance}
               >
                 {isLoadingStartGame ? (
@@ -404,7 +404,7 @@ const Index = () => {
   }
   
   return (
-    <div className="min-h-screen bg-black p-4">
+    <div className="min-h-screen bg-bg-primary p-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <motion.div
@@ -414,8 +414,8 @@ const Index = () => {
           transition={{ duration: 0.6 }}
         >
           <div className="text-center flex-1">
-            <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">🎲 NUNU Games</h1>
-            <p className="text-lg sm:text-xl text-gray-300">
+            <h1 className="text-3xl sm:text-4xl font-heading font-bold text-text-high mb-2">🎲 NUNU Games</h1>
+            <p className="text-lg sm:text-xl text-text-low">
               Roll the dice, collect NUNU tokens, and reach tile 100 on-chain!
             </p>
             <div className="flex justify-center gap-4 mt-4">
@@ -423,7 +423,7 @@ const Index = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => setShowGameRules(true)}
-                className="border-purple-500 text-purple-400 hover:bg-purple-500/10 hover:text-purple-400 focus:text-purple-400"
+                className="border-accent-main text-accent-main hover:bg-accent-main/10 hover:text-accent-main focus:text-accent-main"
               >
                 <HelpCircle className="w-4 h-4 mr-2" />
                 Game Rules
@@ -432,16 +432,16 @@ const Index = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => navigate('/game/leaderboard')}
-                className="border-yellow-500 text-yellow-400 hover:bg-yellow-500/10 hover:text-yellow-400 focus:text-yellow-400"
+                className="border-success text-success hover:bg-success/10 hover:text-success focus:text-success"
               >
                 <Trophy className="w-4 h-4 mr-2" />
                 Leaderboard
               </Button>
             </div>
             {contractState && (
-              <div className="text-sm text-purple-400 mt-2 space-y-1">
+              <div className="text-sm text-accent-main mt-2 space-y-1">
                 {playerRank > 0 && (
-                  <p className="text-yellow-400">🏅 Your Rank: #{playerRank}</p>
+                  <p className="text-success">🏅 Your Rank: #{playerRank}</p>
                 )}
               </div>
             )}
@@ -453,10 +453,36 @@ const Index = () => {
         </motion.div>
 
         {/* Balance Warning */}
-        {hasNoBalance && <BalanceWarning />}
+        {hasNoBalance && (
+          <motion.div
+            className="bg-danger/20 border border-danger/40 rounded-lg p-4 mb-6 text-center"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <div className="flex items-center justify-center space-x-2">
+              <Wallet className="w-5 h-5 text-danger" />
+              <span className="text-danger">
+                No balance detected. Please add MON tokens to your wallet to play the game.
+              </span>
+            </div>
+          </motion.div>
+        )}
 
         {/* VRF Waiting Indicator */}
-        {isWaitingForVRF && <VRFWaitingIndicator />}
+        {isWaitingForVRF && (
+          <motion.div
+            className="bg-warn/20 border border-warn/40 rounded-lg p-4 mb-6 text-center"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <div className="flex items-center justify-center space-x-2">
+              <RefreshCw className="w-5 h-5 animate-spin text-warn" />
+              <span className="text-warn">
+                Waiting for Chainlink VRF result... This may take a few moments.
+              </span>
+            </div>
+          </motion.div>
+        )}
 
         {/* Mobile Layout */}
         <div className="block lg:hidden space-y-6">
@@ -552,17 +578,15 @@ const Index = () => {
           onComplete={hideSplash}
         />
 
-        {/* Board Loader Overlay */}
         {showBoardLoader && (
-          <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-60">
+          <div className="fixed inset-0 flex items-center justify-center z-50 bg-bg-primary/80 backdrop-blur-sm">
             <div className="flex flex-col items-center">
-              <RefreshCw className="w-10 h-10 text-purple-400 animate-spin mb-4" />
-              <span className="text-white text-lg font-semibold">Generating new game board...</span>
+              <RefreshCw className="w-10 h-10 text-accent-main animate-spin mb-4" />
+              <span className="text-text-high text-lg font-semibold">Generating new game board...</span>
             </div>
           </div>
         )}
 
-        {/* Victory Modal */}
         <VictoryModal
           isOpen={showVictoryModal && gameState.gameStatus === 'won'}
           score={gameState.score}

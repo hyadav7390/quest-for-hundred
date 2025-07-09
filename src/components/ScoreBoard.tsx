@@ -38,62 +38,62 @@ const ScoreBoard = ({
 
   return (
     <motion.div
-      className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-6 shadow-xl border border-gray-600"
+      className="card-surface"
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
       <div className="flex justify-between items-center mb-2">
-        <h2 className="text-2xl font-bold text-white">Game Stats</h2>
+        <h2 className="text-2xl font-heading font-bold text-text-high">Game Stats</h2>
         <motion.button
           onClick={onToggleSound}
-          className="p-2 rounded-lg bg-gray-700 hover:bg-gray-600 transition-colors"
+          className="p-2 rounded-lg bg-surface-2 hover:bg-accent-main/20 transition-colors"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
           {isSoundMuted ? (
-            <VolumeX className="w-5 h-5 text-gray-400" />
+            <VolumeX className="w-5 h-5 text-text-low" />
           ) : (
-            <Volume2 className="w-5 h-5 text-blue-400" />
+            <Volume2 className="w-5 h-5 text-accent-main" />
           )}
         </motion.button>
       </div>
       
       <div className="grid grid-cols-2 gap-4">
-        <div className="bg-gray-700 rounded-lg p-3 text-center">
-          <Trophy className="w-8 h-8 text-yellow-400 mx-auto mb-3" />
-          <p className="text-sm text-gray-300">Score</p>
-          <p className="text-2xl font-bold text-white">{score}</p>
+        <div className="bg-surface-2 rounded-lg p-3 text-center border border-accent-main/20">
+          <Trophy className="w-8 h-8 text-success mx-auto mb-3" />
+          <p className="text-sm text-text-low">Score</p>
+          <p className="text-2xl font-bold text-text-high">{score}</p>
         </div>
 
-        <div className="bg-gray-700 rounded-lg p-3 text-center">
-          <Dices className="w-8 h-8 text-red-400 mx-auto mb-3" />
-          <p className="text-sm text-gray-300">Dice Rolled</p>
-          <p className="text-2xl font-bold text-white">{displayDiceRolls}</p>
+        <div className="bg-surface-2 rounded-lg p-3 text-center border border-accent-main/20">
+          <Dices className="w-8 h-8 text-danger mx-auto mb-3" />
+          <p className="text-sm text-text-low">Dice Rolled</p>
+          <p className="text-2xl font-bold text-text-high">{displayDiceRolls}</p>
         </div>
 
-        <div className="bg-gray-700 rounded-lg p-3 text-center">
-          <Gift className="w-8 h-8 text-green-400 mx-auto mb-3" />
-          <p className="text-sm text-gray-300">Gifts</p>
-          <p className="text-2xl font-bold text-white">{displayGifts}</p>
+        <div className="bg-surface-2 rounded-lg p-3 text-center border border-accent-main/20">
+          <Gift className="w-8 h-8 text-success mx-auto mb-3" />
+          <p className="text-sm text-text-low">Gifts</p>
+          <p className="text-2xl font-bold text-text-high">{displayGifts}</p>
         </div>
         
-        <div className="bg-gray-700 rounded-lg p-3 text-center">
-          <Target className="w-8 h-8 text-yellow-400 mx-auto mb-3" />
-          <p className="text-sm text-gray-300">Position</p>
-          <p className="text-2xl font-bold text-white">{position}/100</p>
+        <div className="bg-surface-2 rounded-lg p-3 text-center border border-accent-main/20">
+          <Target className="w-8 h-8 text-warn mx-auto mb-3" />
+          <p className="text-sm text-text-low">Position</p>
+          <p className="text-2xl font-bold text-text-high">{position}/100</p>
         </div>
         
-        <div className="bg-gray-700 rounded-lg p-3 text-center">
-          <TrendingDown className="w-8 h-8 text-red-400 mx-auto mb-3" />
-          <p className="text-sm text-gray-300">Detours</p>
-          <p className="text-2xl font-bold text-white">{displayDetours}</p>
+        <div className="bg-surface-2 rounded-lg p-3 text-center border border-accent-main/20">
+          <TrendingDown className="w-8 h-8 text-danger mx-auto mb-3" />
+          <p className="text-sm text-text-low">Detours</p>
+          <p className="text-2xl font-bold text-text-high">{displayDetours}</p>
         </div>
         
-        <div className="bg-gray-700 rounded-lg p-3 text-center">
-          <TrendingUp className="w-8 h-8 text-green-400 mx-auto mb-3" />
-          <p className="text-sm text-gray-300">Shortcuts</p>
-          <p className="text-2xl font-bold text-white">{displayShortcuts}</p>
+        <div className="bg-surface-2 rounded-lg p-3 text-center border border-accent-main/20">
+          <TrendingUp className="w-8 h-8 text-success mx-auto mb-3" />
+          <p className="text-sm text-text-low">Shortcuts</p>
+          <p className="text-2xl font-bold text-text-high">{displayShortcuts}</p>
         </div>
       </div>
     </motion.div>

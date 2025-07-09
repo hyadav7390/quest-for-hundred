@@ -10,17 +10,17 @@ const Home = () => {
 
   const features = [
     {
-      icon: <Target className="w-8 h-8" style={{color: 'hsl(var(--neon-purple))'}}/>,
+      icon: <Target className="w-8 h-8 text-accent-main"/>,
       title: "Race to 100",
       description: "Navigate through 100 tiles in this thrilling board game adventure"
     },
     {
-      icon: <Gift className="w-8 h-8" style={{color: 'hsl(var(--neon-yellow))'}}/>,
+      icon: <Gift className="w-8 h-8 text-success"/>,
       title: "Earn NUNU Coins",
       description: "Collect gifts to earn NUNU coins (50-300 coins each)"
     },
     {
-      icon: <Zap className="w-8 h-8" style={{color: 'hsl(var(--neon-green))'}}/>,
+      icon: <Zap className="w-8 h-8 text-warn"/>,
       title: "Unpredictable Journey",
       description: "Face detour traps and find shortcut gates that change your path"
     }
@@ -33,7 +33,7 @@ const Home = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-bg-primary">
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 py-20">
@@ -43,10 +43,10 @@ const Home = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <h1 className="text-6xl sm:text-8xl font-bold text-white mb-6 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+            <h1 className="text-6xl sm:text-8xl font-heading font-bold text-text-high mb-6 text-gradient-main">
               🎮 NUNU GAMES
             </h1>
-            <p className="text-xl sm:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto">
+            <p className="text-xl sm:text-2xl text-text-low mb-8 max-w-3xl mx-auto">
               Roll the dice, collect gifts, avoid traps, and find shortcuts in this thrilling blockchain board game!
             </p>
             
@@ -58,7 +58,7 @@ const Home = () => {
               <Button
                 size="lg"
                 onClick={() => navigate('/game')}
-                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-12 py-6 text-xl font-bold rounded-2xl shadow-2xl transform hover:scale-105 transition-all duration-200"
+                className="btn-primary animate-pulse-glow px-12 py-6 text-xl font-bold rounded-2xl shadow-2xl"
               >
                 <Play className="w-6 h-6 mr-3" />
                 Play Now
@@ -72,7 +72,7 @@ const Home = () => {
           {[...Array(20)].map((_, i) => (
             <motion.div
               key={i}
-              className="absolute w-2 h-2 bg-purple-400 rounded-full opacity-30"
+              className="absolute w-2 h-2 bg-accent-main rounded-full opacity-30"
               animate={{
                 x: [0, Math.random() * 100],
                 y: [0, Math.random() * 100],
@@ -98,7 +98,7 @@ const Home = () => {
       {/* Platform Features Section */}
       <div className="max-w-7xl mx-auto px-4 py-20">
         <motion.h2
-          className="text-4xl font-bold text-white text-center mb-16"
+          className="text-4xl font-heading font-bold text-text-high text-center mb-16"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
@@ -110,22 +110,22 @@ const Home = () => {
           {features.map((feature, index) => (
             <motion.div
               key={index}
-              className="bg-gray-800 rounded-2xl p-8 border border-gray-700 hover:border-purple-500 transition-all duration-300"
+              className="card-surface"
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: index * 0.2 }}
               whileHover={{ scale: 1.05 }}
             >
               <div className="mb-4">{feature.icon}</div>
-              <h3 className="text-xl font-bold text-white mb-3">{feature.title}</h3>
-              <p className="text-gray-300">{feature.description}</p>
+              <h3 className="text-xl font-semibold text-text-high mb-3">{feature.title}</h3>
+              <p className="text-text-low">{feature.description}</p>
             </motion.div>
           ))}
         </div>
       </div>
 
       {/* NUNU Ecosystem Section */}
-      <div className="bg-gray-900 py-20">
+      <div className="bg-surface-1 py-20">
         <div className="max-w-7xl mx-auto px-4">
           <motion.div
             className="text-center"
@@ -133,30 +133,30 @@ const Home = () => {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <h2 className="text-4xl font-bold text-white mb-8">The NUNU Ecosystem</h2>
-            <p className="text-xl text-gray-300 max-w-4xl mx-auto mb-12">
+            <h2 className="text-4xl font-heading font-bold text-text-high mb-8">The NUNU Ecosystem</h2>
+            <p className="text-xl text-text-low max-w-4xl mx-auto mb-12">
               NUNU Games is building the future of blockchain gaming where players are rewarded for their time and skill. 
               Our ecosystem revolves around NUNU coins - earn them by collecting gifts, reaching tile 100, and 
               competing on the leaderboard in this thrilling board game adventure.
             </p>
             
             <div className="grid sm:grid-cols-3 gap-8">
-              <div className="bg-gradient-to-br from-yellow-500 to-amber-600 rounded-xl p-6">
-                <Gift className="w-12 h-12 text-white mx-auto mb-4" />
-                <h3 className="text-lg font-bold text-white mb-2">Earn NUNU Coins</h3>
-                <p className="text-white opacity-90">Collect gifts and complete games to earn coins</p>
+              <div className="bg-gradient-to-br from-success/20 to-success/10 border border-success/30 rounded-xl p-6">
+                <Gift className="w-12 h-12 text-success mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-text-high mb-2">Earn NUNU Coins</h3>
+                <p className="text-text-low">Collect gifts and complete games to earn coins</p>
               </div>
               
-              <div className="bg-gradient-to-br from-purple-500 to-purple-700 rounded-xl p-6">
+              <div className="bg-gradient-to-br from-accent-main/20 to-accent-main/10 border border-accent-main/30 rounded-xl p-6">
                 <div className="text-4xl mb-4">🎲</div>
-                <h3 className="text-lg font-bold text-white mb-2">Blockchain Gaming</h3>
-                <p className="text-white opacity-90">Provably fair dice rolls using Chainlink VRF</p>
+                <h3 className="text-lg font-semibold text-text-high mb-2">Blockchain Gaming</h3>
+                <p className="text-text-low">Provably fair dice rolls using Chainlink VRF</p>
               </div>
               
-              <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl p-6">
+              <div className="bg-gradient-to-br from-warn/20 to-warn/10 border border-warn/30 rounded-xl p-6">
                 <div className="text-4xl mb-4">🏆</div>
-                <h3 className="text-lg font-bold text-white mb-2">Community Rewards</h3>
-                <p className="text-white opacity-90">Participate in global challenges and earn rare NFTs</p>
+                <h3 className="text-lg font-semibold text-text-high mb-2">Community Rewards</h3>
+                <p className="text-text-low">Participate in global challenges and earn rare NFTs</p>
               </div>
             </div>
 
@@ -167,7 +167,7 @@ const Home = () => {
             >
               <Button
                 size="lg"
-                className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-8 py-4 text-lg font-bold rounded-xl shadow-xl"
+                className="btn-secondary px-8 py-4 text-lg font-bold rounded-xl shadow-xl"
               >
                 <FileText className="w-5 h-5 mr-2" />
                 Read Whitepaper
@@ -184,8 +184,8 @@ const Home = () => {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <h2 className="text-4xl font-bold text-white mb-8">Ready to Start Gaming?</h2>
-          <p className="text-xl text-gray-300 mb-12">
+          <h2 className="text-4xl font-heading font-bold text-text-high mb-8">Ready to Start Gaming?</h2>
+          <p className="text-xl text-text-low mb-12">
             Join thousands of players earning NUNU coins and racing to tile 100!
           </p>
           
@@ -193,7 +193,7 @@ const Home = () => {
             <Button
               size="lg"
               onClick={() => navigate('/game')}
-              className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-12 py-6 text-xl font-bold rounded-2xl shadow-2xl transform hover:scale-105 transition-all duration-200"
+              className="btn-primary px-12 py-6 text-xl font-bold rounded-2xl shadow-2xl animate-pulse-glow"
             >
               <Play className="w-6 h-6 mr-3" />
               Play Now
@@ -201,7 +201,7 @@ const Home = () => {
             <Button
               size="lg"
               onClick={() => navigate('/game/leaderboard')}
-              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-12 py-6 text-xl font-bold rounded-2xl shadow-2xl transform hover:scale-105 transition-all duration-200"
+              className="btn-secondary px-12 py-6 text-xl font-bold rounded-2xl shadow-2xl"
             >
               🏆 Leaderboard
             </Button>
@@ -214,7 +214,7 @@ const Home = () => {
                 href={link.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center space-x-2 text-gray-300 hover:text-white transition-colors"
+                className="flex items-center space-x-2 text-text-low hover:text-accent-main transition-colors"
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
               >
