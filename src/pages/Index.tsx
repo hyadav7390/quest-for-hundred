@@ -441,18 +441,7 @@ const Index = () => {
               </div>
             )}
           </div>
-          
-          <div className="ml-4 hidden sm:block">
-            <ContractUserProfile />
-          </div>
         </motion.div>
-
-        {/* Mobile Profile - Better Placement */}
-        <div className="block sm:hidden mb-4">
-          <div className="flex justify-end">
-            <ContractUserProfile />
-          </div>
-        </div>
 
         {/* Balance Warning */}
         {hasNoBalance && <BalanceWarning />}

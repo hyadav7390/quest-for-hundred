@@ -57,14 +57,16 @@ const BlockchainLeaderboard = () => {
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-3xl font-heading font-bold text-white flex items-center gap-3">
             <Trophy className="w-8 h-8 text-accent-main" />
-            Blockchain Leaderboard
+            Leaderboard
           </h2>
-          <button
-            onClick={() => fetchLeaderboard()}
-            className="px-4 py-2 bg-accent-main hover:bg-accent-main/80 text-bg-primary rounded-lg transition-colors font-semibold"
-          >
-            Refresh
-          </button>
+          <div className="flex flex-wrap gap-2 mt-4">
+            <button
+              onClick={() => fetchLeaderboard()}
+              className="w-full sm:w-auto px-4 py-2 bg-accent-main hover:bg-accent-main/80 text-bg-primary rounded-lg transition-colors font-semibold"
+            >
+              Refresh
+            </button>
+          </div>
         </div>
 
         {leaderboard.length === 0 ? (

@@ -6,6 +6,7 @@ import { TOKEN_SYMBOLS } from '@/config';
 import { formatEther } from 'viem/utils';
 import { useWalletBalancesAndWithdraw } from '@/hooks/useWalletBalancesAndWithdraw';
 import LogoButton from './LogoButton';
+import ContractUserProfile from '@/components/ContractUserProfile';
 import WalletPopover from './WalletPopover';
 import SendModal from './Sendmodal';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
@@ -105,6 +106,10 @@ const Header = () => {
                 Connect Wallet
               </button>
             )}
+            {/* Contract Profile (desktop and mobile) */}
+            <div className="ml-2">
+              <ContractUserProfile />
+            </div>
           </div>
         </div>
         {/* Withdraw Modal (reuse SendMonadModal) */}

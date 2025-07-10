@@ -11,13 +11,8 @@ const GameLeaderboard = () => {
   return (
     <div className="min-h-screen bg-bg-primary p-4">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <motion.div
-          className="flex items-center justify-between mb-8"
-          initial={{ opacity: 0, y: -30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
+        {/* Back Button - always above the panel, centered on mobile */}
+        <div className="mb-4 flex justify-center sm:justify-start">
           <Button
             variant="ghost"
             size="lg"
@@ -27,8 +22,9 @@ const GameLeaderboard = () => {
             <ArrowLeft className="w-5 h-5 mr-2" />
             Back to Game
           </Button>
-        </motion.div>
+        </div>
 
+        {/* Leaderboard Panel */}
         <BlockchainLeaderboard />
       </div>
     </div>
