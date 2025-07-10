@@ -44,26 +44,26 @@ const WalletPopover: React.FC<WalletPopoverProps> = ({
   nunugtBalance,
   onWithdrawNUNU
 }) => (
-  <Card className="rounded-lg shadow-lg bg-gray-900">
+  <Card className="rounded-lg shadow-lg bg-surface border border-accent-main/20">
     <CardHeader className="p-2">
-      <CardTitle className="text-white">Wallet</CardTitle>
-      <CardDescription>Manage your wallets and balances</CardDescription>
+      <CardTitle className="text-text-high">Wallet{ sortedWallets.length > 1 && ` (2)`}</CardTitle>
+      <CardDescription className="text-text-low">Manage your wallets and balances</CardDescription>
     </CardHeader>
     <CardContent className="space-y-4 p-2">
       {currentWallet && (
-        <div className="border rounded-lg p-2 bg-gray-800 relative">
+        <div className="border border-accent-main/10 rounded-lg p-2 bg-surface relative">
           {/* Slider arrows */}
           {sortedWallets.length > 1 && (
             <>
               <button
-                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-gray-700/80 rounded-full p-1 text-white hover:bg-accent-main focus:outline-none"
+                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-bg-primary/80 rounded-full p-1 text-text-high hover:bg-accent-main focus:outline-none"
                 onClick={() => setWalletIndex((walletIndex - 1 + sortedWallets.length) % sortedWallets.length)}
                 aria-label="Previous wallet"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
               <button
-                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-gray-700/80 rounded-full p-1 text-white hover:bg-accent-main focus:outline-none"
+                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-bg-primary/80 rounded-full p-1 text-text-high hover:bg-accent-main focus:outline-none"
                 onClick={() => setWalletIndex((walletIndex + 1) % sortedWallets.length)}
                 aria-label="Next wallet"
               >
@@ -72,33 +72,33 @@ const WalletPopover: React.FC<WalletPopoverProps> = ({
             </>
           )}
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-gray-400">
+            <span className="text-xs text-text-low">
               {currentWallet.connectorType === 'embedded' ? 'Embedded Wallet' : 'External Wallet'}
             </span>
             <Button
               variant="ghost"
               size="icon"
-              className="text-white hover:text-accent-main"
+              className="text-text-high hover:text-accent-main"
               onClick={() => handleCopy(currentWallet.address)}
             >
               <Copy className="w-4 h-4" />
             </Button>
           </div>
           <Input
-            className="mb-2 text-xs font-mono bg-gray-900 border-gray-700 cursor-pointer text-white"
+            className="mb-2 text-xs font-mono bg-surface border-accent-main/20 cursor-pointer text-text-high"
             value={shortenAddress(currentWallet.address)}
             readOnly
             onClick={() => handleCopy(currentWallet.address)}
-            style={{ color: 'white' }}
+            style={{ color: 'inherit' }}
           />
           <div className="flex items-center justify-between">
-            <span className="text-sm text-white font-medium">
+            <span className="text-sm text-text-high font-medium">
               {formatMon(currentBalance)} MON
             </span>
             <Button
               size="sm"
               variant="outline"
-              className="px-2 py-1 text-xs"
+              className="px-2 py-1 text-xs hover:bg-accent-main/10 hover:text-accent-main focus:text-accent-main"
               onClick={() => setWithdrawModal({ open: true, address: currentWallet.address, token: 'MON' })}
             >
               Send
@@ -106,13 +106,13 @@ const WalletPopover: React.FC<WalletPopoverProps> = ({
           </div>
           {/* NUNU Balance and Withdraw */}
           <div className="flex items-center justify-between mt-2">
-            <span className="text-sm text-purple-200 font-medium">
+            <span className="text-sm text-accent-main font-medium">
               {nunugtBalance} {NUNUGT_TOKEN.symbol}
             </span>
             <Button
               size="sm"
               variant="outline"
-              className="px-2 py-1 text-xs"
+              className="px-2 py-1 text-xs hover:bg-accent-main/10 hover:text-accent-main focus:text-accent-main"
               onClick={onWithdrawNUNU}
             >
               Send
@@ -124,7 +124,7 @@ const WalletPopover: React.FC<WalletPopoverProps> = ({
       <Button
         size="sm"
         variant="destructive"
-        className="w-full mt-1"
+        className="w-full mt-1 bg-danger/90 text-white hover:bg-danger"
         onClick={() => {
           if (currentWallet?.connectorType === 'embedded') {
             logout();
