@@ -31,7 +31,7 @@ const CrawlingCharacter = ({ isMoving }: CrawlingCharacterProps) => {
         }}
       >
         {/* Main Body */}
-        <div className="w-10 h-8 bg-gradient-to-b from-amber-100 to-amber-300 rounded-full border-2 border-amber-400 shadow-lg relative">
+        <div className="w-8 h-7 bg-gradient-to-b from-amber-100 to-amber-300 rounded-full border-2 border-amber-400 shadow-lg relative">
           
           {/* Head */}
           <motion.div
