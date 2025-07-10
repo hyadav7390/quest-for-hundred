@@ -506,7 +506,7 @@ const Index = () => {
             />
           </div>
 
-          <div className="lg:col-span-1 space-y-3">
+          <div className="lg:col-span-1 space-y-5">
             <ScoreBoard
               score={gameState.score}
               position={gameState.playerPosition}
