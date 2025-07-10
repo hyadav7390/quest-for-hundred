@@ -56,14 +56,14 @@ const WalletPopover: React.FC<WalletPopoverProps> = ({
           {sortedWallets.length > 1 && (
             <>
               <button
-                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-gray-700/80 rounded-full p-1 text-white hover:bg-purple-600 focus:outline-none"
+                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-gray-700/80 rounded-full p-1 text-white hover:bg-accent-main focus:outline-none"
                 onClick={() => setWalletIndex((walletIndex - 1 + sortedWallets.length) % sortedWallets.length)}
                 aria-label="Previous wallet"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
               <button
-                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-gray-700/80 rounded-full p-1 text-white hover:bg-purple-600 focus:outline-none"
+                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-gray-700/80 rounded-full p-1 text-white hover:bg-accent-main focus:outline-none"
                 onClick={() => setWalletIndex((walletIndex + 1) % sortedWallets.length)}
                 aria-label="Next wallet"
               >
@@ -78,7 +78,7 @@ const WalletPopover: React.FC<WalletPopoverProps> = ({
             <Button
               variant="ghost"
               size="icon"
-              className="text-white hover:text-purple-400"
+              className="text-white hover:text-accent-main"
               onClick={() => handleCopy(currentWallet.address)}
             >
               <Copy className="w-4 h-4" />
