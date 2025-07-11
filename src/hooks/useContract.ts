@@ -6,7 +6,7 @@ import { monadTestnet } from '@/types/monadTestnet';
 
 // Contract address - Replace with your actual contract address
 // const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}` || '0x9d5c35e1a0db4db616211982a0e7b889e3df3b95';
-const CONTRACT_ADDRESS = '0x1101f541a7d375d6ed503dff3a680eacc3e50606';
+const CONTRACT_ADDRESS = '0x0ef0e80f9031993e23bcd12b1bc0a0e52b6c02f3';
 
 interface BoardData {
   giftTiles: { index: number; points: number }[];
@@ -242,10 +242,10 @@ export const useContract = () => {
         abi: GAME_ABI,
         functionName: 'rollDice' as const,
         args: [currentPosition] as const,
-        value: BigInt('1000000000000000'), // 0.001 ETH in wei
+        value: BigInt('100000000000000000'), // 0.001 ETH in wei
         chain: monadTestnet,
         account: address,
-        gas: 200000n
+        gas: 200000n,
       };
       
       console.log('📋 [CONTRACT] Roll dice transaction config:', txConfig);
