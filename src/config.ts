@@ -48,7 +48,7 @@ export const config = createConfig({
 });
 
 export const NUNUGT_TOKEN = {
-  address: '0xfB3aAF8e3905081e16B5df7325eA6fBb949E134a',
+  address: '0xb3c134c0d118b0c5aba55cb4c105c215c4853aa9',
   symbol: 'NUNUGT',
 };
 
