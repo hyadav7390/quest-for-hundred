@@ -46,7 +46,7 @@ const WalletPopover: React.FC<WalletPopoverProps> = ({
 }) => (
   <Card className="rounded-lg shadow-lg bg-surface border border-accent-main/20">
     <CardHeader className="p-2">
-      <CardTitle className="text-text-high">Wallet{ sortedWallets.length > 1 && ` (2)`}</CardTitle>
+      <CardTitle className="text-text-high">Wallet{ sortedWallets.length > 1 && ` (`+ sortedWallets.length +`)`}</CardTitle>
       <CardDescription className="text-text-low">Manage your wallets and balances</CardDescription>
     </CardHeader>
     <CardContent className="space-y-4 p-2">

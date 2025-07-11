@@ -51,69 +51,69 @@ const VictoryModal = ({
 
   return (
     <motion.div
-      className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-surface/95 flex items-center justify-center z-50 p-4"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
     >
       <motion.div
-        className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-8 max-w-md w-full shadow-2xl border border-gray-600"
+        className="bg-surface rounded-2xl p-8 max-w-md w-full shadow-2xl shadow-glow border border-accent-main/20"
         initial={{ scale: 0.5, y: 50 }}
         animate={{ scale: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 25 }}
       >
         <div className="text-center mb-6">
           <motion.div
-            className="inline-block p-4 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full mb-4"
+            className="inline-block p-4 bg-gradient-to-r from-accent-main to-success rounded-full mb-4"
             animate={{ rotate: 360 }}
             transition={{ duration: 2, ease: "easeInOut" }}
           >
             <Trophy className="w-12 h-12 text-white" />
           </motion.div>
 
-          <h2 className="text-3xl font-bold text-white mb-2">Congratulations!</h2>
-          <p className="text-gray-300">You've reached tile 100!</p>
-          <p className="text-yellow-400 font-bold">+ 1000 NUNU Coins Bonus!</p>
+          <h2 className="text-3xl font-bold text-text-high mb-2">Congratulations!</h2>
+          <p className="text-text-low">You've reached tile 100!</p>
+          <p className="text-accent-main font-bold">+ 1000 NUNU Coins Bonus!</p>
         </div>
 
         <div className="space-y-4 mb-6">
-          <div className="bg-gray-700 rounded-lg p-4">
+          <div className="bg-surface border border-accent-main/10 rounded-lg p-4">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-lg font-semibold text-white">Final Score</span>
-              <span className="text-2xl font-bold text-yellow-400">{score}</span>
+              <span className="text-lg font-semibold text-text-high">Final Score</span>
+              <span className="text-2xl font-bold text-accent-main">{score}</span>
             </div>
 
             <div className="grid grid-cols-2 gap-3 text-sm">
-              <div className="bg-gray-600 rounded p-2">
-                <div className="text-xs text-gray-300">Game Score</div>
-                <div className="text-white font-bold">{gameScore}</div>
+              <div className="bg-surface border border-accent-main/10 rounded p-2">
+                <div className="text-xs text-text-low">Game Score</div>
+                <div className="text-text-high font-bold">{gameScore}</div>
               </div>
 
-              <div className="bg-gray-600 rounded p-2">
-                <div className="text-xs text-gray-300">NUNU Coins</div>
-                <div className="text-yellow-400 font-bold">{nunuCoins}</div>
+              <div className="bg-surface border border-accent-main/10 rounded p-2">
+                <div className="text-xs text-text-low">NUNU Coins</div>
+                <div className="text-accent-main font-bold">{nunuCoins}</div>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4 text-sm mt-4">
               <div className="flex items-center space-x-2">
-                <Target className="w-4 h-4 text-blue-400" />
-                <span className="text-gray-300">Dice Rolls: {displayDiceRolls}</span>
+                <Target className="w-4 h-4 text-accent-main" />
+                <span className="text-text-low">Dice Rolls: {displayDiceRolls}</span>
               </div>
 
               <div className="flex items-center space-x-2">
-                <Gift className="w-4 h-4 text-yellow-400" />
-                <span className="text-gray-300">Gifts: {displayGifts}</span>
+                <Gift className="w-4 h-4 text-success" />
+                <span className="text-text-low">Gifts: {displayGifts}</span>
               </div>
 
               <div className="flex items-center space-x-2">
-                <TrendingDown className="w-4 h-4 text-red-400" />
-                <span className="text-gray-300">Detours: {displayDetours}</span>
+                <TrendingDown className="w-4 h-4 text-negative" />
+                <span className="text-text-low">Detours: {displayDetours}</span>
               </div>
 
               <div className="flex items-center space-x-2">
-                <TrendingUp className="w-4 h-4 text-green-400" />
-                <span className="text-gray-300">Shortcuts: {displayShortcuts}</span>
+                <TrendingUp className="w-4 h-4 text-success" />
+                <span className="text-text-low">Shortcuts: {displayShortcuts}</span>
               </div>
             </div>
           </div>
@@ -122,7 +122,7 @@ const VictoryModal = ({
         <div className="space-y-3">
           <motion.button
             onClick={onRestart}
-            className="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold rounded-lg shadow-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-200 disabled:opacity-50"
+            className="w-full py-3 bg-gradient-to-r from-accent-main to-success text-white font-bold rounded-lg shadow-lg hover:from-accent-main/80 hover:to-success/80 transition-all duration-200 disabled:opacity-50"
             whileHover={{ scale: isRestarting ? 1 : 1.02 }}
             whileTap={{ scale: isRestarting ? 1 : 0.98 }}
             disabled={isRestarting}
@@ -134,7 +134,7 @@ const VictoryModal = ({
           </motion.button>
 
           {isClaimRewardsPending && (
-            <div className="w-full py-3 text-center text-yellow-400 font-semibold bg-yellow-900/20 rounded-lg">
+            <div className="w-full py-3 text-center text-accent-main font-semibold bg-accent-main/10 rounded-lg">
               Claiming rewards in progress...
             </div>
           )}
@@ -142,7 +142,7 @@ const VictoryModal = ({
           {claimRewardsError && onClaimRewards && !isClaimRewardsPending && (
             <motion.button
               onClick={onClaimRewards}
-              className="w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold rounded-lg shadow-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-200"
+              className="w-full py-3 bg-gradient-to-r from-success to-accent-main text-white font-bold rounded-lg shadow-lg hover:from-success/80 hover:to-accent-main/80 transition-all duration-200"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               initial={{ opacity: 0, y: 10 }}

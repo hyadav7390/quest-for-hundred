@@ -79,7 +79,7 @@ const GameBoard = ({
   };
 
   return (
-    <div className="bg-gray-900 p-3 sm:p-6 rounded-2xl shadow-2xl">
+    <div className="bg-surface p-3 sm:p-6 rounded-2xl shadow-2xl shadow-glow">
       <div className="grid grid-cols-10 gap-1 sm:gap-2 justify-between">
         {Array.from({ length: 100 }, (_, index) => {
           const row = Math.floor(index / 10);

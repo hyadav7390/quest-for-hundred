@@ -70,7 +70,7 @@ const Home = () => {
             transition={{ duration: 0.8 }}
           >
             <h1 className="text-6xl sm:text-8xl font-heading font-bold text-white mb-6">
-              <span className="text-accent-main">NUNU GAMES</span>
+              <span className="text-accent-main">RUGG ROLL</span>
             </h1>
             <p className="text-xl sm:text-2xl text-white/80 mb-8 max-w-3xl mx-auto">
               Roll the dice, collect gifts, avoid traps, and find shortcuts in this thrilling blockchain board game!

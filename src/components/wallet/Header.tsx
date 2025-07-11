@@ -57,7 +57,7 @@ const Header = () => {
 
   return (
     <motion.header
-      className="bg-gray-900 border-b border-gray-700 sticky top-0 z-40"
+      className="bg-surface border-b border-gray-700 sticky top-0 z-40"
       initial={{ opacity: 0, y: -50 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
