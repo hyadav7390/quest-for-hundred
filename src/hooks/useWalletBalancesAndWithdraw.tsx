@@ -29,6 +29,13 @@ export function useWalletBalancesAndWithdraw() {
   const currentWallet = sortedWallets[walletIndex] || null;
   const embeddedWalletObj = sortedWallets.find(w => w.connectorType === 'embedded');
 
+  // Ensure embedded wallet is set as active on reload
+  useEffect(() => {
+    if (embeddedWalletObj && address?.toLowerCase() !== embeddedWalletObj.address.toLowerCase()) {
+      setActiveWallet(embeddedWalletObj);
+    }
+  }, [embeddedWalletObj, address]);
+
   // Withdraw modal state
   const [withdrawModal, setWithdrawModal] = useState<{ open: boolean; address: string | null; token: TokenSymbol }>({ open: false, address: null, token: TOKEN_SYMBOLS.MON });
   const withdrawWallet = withdrawModal.open
