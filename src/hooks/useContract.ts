@@ -6,7 +6,7 @@ import { monadTestnet } from '@/types/monadTestnet';
 
 // Contract address - Replace with your actual contract address
 // const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}` || '0x9d5c35e1a0db4db616211982a0e7b889e3df3b95';
-const CONTRACT_ADDRESS = '0x4ce72f45fa697cf2c6528627948ee8264a4a01bc';
+const CONTRACT_ADDRESS = '0x1101f541a7d375d6ed503dff3a680eacc3e50606';
 
 interface BoardData {
   giftTiles: { index: number; points: number }[];
