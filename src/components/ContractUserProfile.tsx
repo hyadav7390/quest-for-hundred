@@ -1,5 +1,4 @@
 
-import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { User, Coins, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';

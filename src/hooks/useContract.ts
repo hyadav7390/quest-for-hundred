@@ -446,7 +446,7 @@ export const useContract = () => {
         refetchGameStats(),
         refetchPlayerRank(),
       ]);
-      console.log('✅ [CONTRACT] All game data fetched successfully');
+      console.log('✅ [CONTRACT] All game data fetched successfully', result);
     } catch (error) {
       console.error('❌ [CONTRACT] Failed to fetch game data:', error);
       toast({

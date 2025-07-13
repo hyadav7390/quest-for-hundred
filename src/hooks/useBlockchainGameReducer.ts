@@ -24,38 +24,6 @@ const initialState: GameState = {
   diceRolled: false,
 };
 
-// Game statistics management in localStorage
-const getGameStats = () => {
-  try {
-    const stats = localStorage.getItem('hundredthTileGameStats');
-    return stats ? JSON.parse(stats) : {
-      totalGamesPlayed: 0,
-      totalDiceRolled: 0,
-      totalGiftsCollected: 0,
-      totalDetourTrapsTriggered: 0,
-      totalShortcutGatesTriggered: 0
-    };
-  } catch {
-    return {
-      totalGamesPlayed: 0,
-      totalDiceRolled: 0,
-      totalGiftsCollected: 0,
-      totalDetourTrapsTriggered: 0,
-      totalShortcutGatesTriggered: 0
-    };
-  }
-};
-
-const updateGameStats = (key: string, increment: number = 1) => {
-  try {
-    const stats = getGameStats();
-    stats[key] = (stats[key] || 0) + increment;
-    localStorage.setItem('hundredthTileGameStats', JSON.stringify(stats));
-  } catch (error) {
-    console.error('❌ [STATS] Failed to update game stats:', error);
-  }
-};
-
 const blockchainGameReducer = (state: GameState, action: GameAction): GameState => {
   switch (action.type) {
     case 'START_DICE_ANIMATION':
@@ -68,7 +36,6 @@ const blockchainGameReducer = (state: GameState, action: GameAction): GameState 
 
     case 'STOP_DICE_ANIMATION':
       console.log('🎲 [UI REDUCER] Stopping dice animation with value:', action.payload);
-      updateGameStats('totalDiceRolled');
       return {
         ...state,
         isRolling: false,
@@ -112,7 +79,6 @@ const blockchainGameReducer = (state: GameState, action: GameAction): GameState 
         const giftTile = state.giftTiles.find(tile => tile.index === steppedPosition);
         if (giftTile) {
           triggeredGift = true;
-          updateGameStats('totalGiftsCollected');
         }
         
         // Check if landed on a detour trap - compare with expected vs actual position
@@ -120,7 +86,6 @@ const blockchainGameReducer = (state: GameState, action: GameAction): GameState 
         if (detourTile && newPosition < steppedPosition) {
           triggeredDetour = true;
           shouldDelayPositionUpdate = true;
-          updateGameStats('totalDetourTrapsTriggered');
         }
         
         // Check if landed on a shortcut gate - compare with expected vs actual position  
@@ -128,7 +93,6 @@ const blockchainGameReducer = (state: GameState, action: GameAction): GameState 
         if (shortcutTile && newPosition > steppedPosition) {
           triggeredShortcut = true;
           shouldDelayPositionUpdate = true;
-          updateGameStats('totalShortcutGatesTriggered');
         }
       }
       
@@ -184,7 +148,6 @@ const blockchainGameReducer = (state: GameState, action: GameAction): GameState 
 
     case 'RESET_GAME': {
       console.log('🔄 [UI REDUCER] Resetting game');
-      updateGameStats('totalGamesPlayed');
       return {
         ...initialState,
         isSoundMuted: state.isSoundMuted, // Preserve sound setting
@@ -371,7 +334,6 @@ export const useBlockchainGameReducer = () => {
       ...state,
       isRolling: state.isRolling || isWaitingForVRF,
       isMoving: state.isMoving,
-      gameStats: getGameStats(), // Expose game stats
     },
     {
       dispatch,
