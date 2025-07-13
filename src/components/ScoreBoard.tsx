@@ -73,15 +73,15 @@ const ScoreBoard = ({
         </div>
 
         <div className="bg-surface rounded-lg p-3 text-center border border-accent-main/20">
-          <Gift className="w-8 h-8 text-positive mx-auto mb-2" />
-          <p className="text-xs text-white/60">Gifts</p>
-          <p className="text-xl font-bold text-white">{displayGifts}</p>
-        </div>
-        
-        <div className="bg-surface rounded-lg p-3 text-center border border-accent-main/20">
           <Target className="w-8 h-8 text-accent-main mx-auto mb-2" />
           <p className="text-xs text-white/60">Position</p>
           <p className="text-xl font-bold text-white">{position}/100</p>
+        </div>
+
+        <div className="bg-surface rounded-lg p-3 text-center border border-accent-main/20">
+          <Gift className="w-8 h-8 text-yellow-400 mx-auto mb-2" />
+          <p className="text-xs text-white/60">Gifts</p>
+          <p className="text-xl font-bold text-white">{displayGifts}</p>
         </div>
         
         <div className="bg-surface rounded-lg p-3 text-center border border-accent-main/20">
