@@ -102,7 +102,7 @@ const CommunityProgress = () => {
 
         {/* CTA Footer */}
         <div className="text-center">
-          <p className="text-white/80 mb-4">Start playing and earn NUNU coins today!</p>
+          <p className="text-white/80 mb-4">Every roll adds MONAD liquidity. Every gift mints NUNU.</p>
           <Button 
             onClick={() => navigate('/game')}
             className="btn-primary px-8 py-3"

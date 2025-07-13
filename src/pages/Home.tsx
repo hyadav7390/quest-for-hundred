@@ -86,8 +86,7 @@ const Home = () => {
                 onClick={() => navigate('/game')}
                 className="px-12 py-6 text-xl font-bold rounded-2xl hover:shadow-glow hover:scale-105 transition-all duration-300"
               >
-                <Play className="w-6 h-6 mr-3" />
-                Play Now
+                🎲 Let’s Rug!
               </Button>
             </motion.div>
           </motion.div>
@@ -170,21 +169,6 @@ const Home = () => {
                 <p className="text-white/70">Participate in global challenges and earn rare NFTs</p>
               </div>
             </div>
-
-            <motion.div
-              className="mt-12"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <Button
-                variant="secondary"
-                size="lg"
-                className="px-8 py-4 text-lg font-bold rounded-xl"
-              >
-                <FileText className="w-5 h-5 mr-2" />
-                Read Whitepaper
-              </Button>
-            </motion.div>
           </motion.div>
         </div>
       </div>
