@@ -26,7 +26,7 @@ const CommunityProgress = () => {
   };
 
   return (
-    <section className="panel max-w-6xl mx-4 mt-12 mb-2 sm:mx-auto">
+    <section className="panel max-w-6xl mx-4 mt-12 mb-2 xl:mx-auto">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
