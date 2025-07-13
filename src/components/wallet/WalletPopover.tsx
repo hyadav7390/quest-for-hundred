@@ -7,14 +7,10 @@ import { NUNUGT_TOKEN } from '@/config';
 interface WalletPopoverProps {
   currentWallet: any;
   currentBalance: any;
-  sortedWallets: any[];
-  walletIndex: number;
-  setWalletIndex: (i: number) => void;
   handleCopy: (address: string) => void;
   setWithdrawModal: (v: { open: boolean; address: string | null; token: 'MON' | 'NUNUGT' }) => void;
   logout: () => void;
   disconnect: () => void;
-  setActiveWallet: (w: any) => void;
   authenticated: boolean;
   ready: boolean;
   formatMon: (data: any) => string;
@@ -30,14 +26,10 @@ const shortenAddress = (address: string) => {
 const WalletPopover: React.FC<WalletPopoverProps> = ({
   currentWallet,
   currentBalance,
-  sortedWallets,
-  walletIndex,
-  setWalletIndex,
   handleCopy,
   setWithdrawModal,
   logout,
   disconnect,
-  setActiveWallet,
   authenticated,
   ready,
   formatMon,
@@ -46,35 +38,14 @@ const WalletPopover: React.FC<WalletPopoverProps> = ({
 }) => (
   <Card className="rounded-lg shadow-lg bg-surface border border-accent-main/20">
     <CardHeader className="p-2">
-      <CardTitle className="text-text-high">Wallet{ sortedWallets.length > 1 && ` (`+ sortedWallets.length +`)`}</CardTitle>
-      <CardDescription className="text-text-low">Manage your wallets and balances</CardDescription>
+      <CardTitle className="text-text-high">Wallet</CardTitle>
+      <CardDescription className="text-text-low">Manage your wallet and balances</CardDescription>
     </CardHeader>
     <CardContent className="space-y-4 p-2">
-      {currentWallet && (
+      {currentWallet ? (
         <div className="border border-accent-main/10 rounded-lg p-2 bg-surface relative">
-          {/* Slider arrows */}
-          {sortedWallets.length > 1 && (
-            <>
-              <button
-                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-bg-primary/80 rounded-full p-1 text-text-high hover:bg-accent-main focus:outline-none"
-                onClick={() => setWalletIndex((walletIndex - 1 + sortedWallets.length) % sortedWallets.length)}
-                aria-label="Previous wallet"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <button
-                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-bg-primary/80 rounded-full p-1 text-text-high hover:bg-accent-main focus:outline-none"
-                onClick={() => setWalletIndex((walletIndex + 1) % sortedWallets.length)}
-                aria-label="Next wallet"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </>
-          )}
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-text-low">
-              {currentWallet.connectorType === 'embedded' ? 'Embedded Wallet' : 'External Wallet'}
-            </span>
+            <span className="text-xs text-text-low">Embedded Wallet</span>
             <Button
               variant="ghost"
               size="icon"
@@ -119,20 +90,15 @@ const WalletPopover: React.FC<WalletPopoverProps> = ({
             </Button>
           </div>
         </div>
+      ) : (
+        <div className="text-center text-text-low py-4">No embedded wallet found. Please reconnect.</div>
       )}
-      {/* Common Disconnect button */}
+      {/* Disconnect button */}
       <Button
         size="sm"
         variant="destructive"
         className="w-full mt-1 bg-danger/90 text-white hover:bg-danger"
-        onClick={() => {
-          if (currentWallet?.connectorType === 'embedded') {
-            logout();
-          } else {
-            disconnect();
-            setActiveWallet(null);
-          }
-        }}
+        onClick={logout}
       >
         Disconnect
       </Button>

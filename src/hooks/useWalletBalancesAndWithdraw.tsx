@@ -23,64 +23,63 @@ export function useWalletBalancesAndWithdraw() {
   const { setActiveWallet } = useSetActiveWallet();
   const { address } = useAccount();
 
-  // Wallet sorting and state
-  const sortedWallets = useMemo(() => [...wallets].sort((a, b) => (a.connectorType === 'embedded' ? -1 : 1)), [wallets]);
-  const [walletIndex, setWalletIndex] = useState(0);
-  const currentWallet = sortedWallets[walletIndex] || null;
-  const embeddedWalletObj = sortedWallets.find(w => w.connectorType === 'embedded');
+  // Only track the embedded wallet
+  const embeddedWalletObj = useMemo(() => wallets.find(w => w.connectorType === 'embedded') || null, [wallets]);
+
+  // If no embedded wallet, treat as disconnected
+  const isEmbeddedConnected = !!embeddedWalletObj;
 
   // Ensure embedded wallet is set as active on reload
   useEffect(() => {
     if (embeddedWalletObj && address?.toLowerCase() !== embeddedWalletObj.address.toLowerCase()) {
       setActiveWallet(embeddedWalletObj);
     }
-  }, [embeddedWalletObj, address]);
+  }, [embeddedWalletObj, address, setActiveWallet]);
 
   // Withdraw modal state
   const [withdrawModal, setWithdrawModal] = useState<{ open: boolean; address: string | null; token: TokenSymbol }>({ open: false, address: null, token: TOKEN_SYMBOLS.MON });
-  const withdrawWallet = withdrawModal.open
-    ? sortedWallets.find(w => w.address === withdrawModal.address) || currentWallet
-    : currentWallet;
+  const withdrawWallet = embeddedWalletObj;
 
-  // Balances for current and withdraw wallets
+  // Balances for embedded wallet
   const { data: currentBalance } = useBalance({
-    address: currentWallet?.address as `0x${string}` | undefined,
+    address: embeddedWalletObj?.address as `0x${string}` | undefined,
     chainId: monadTestnet.id,
   });
   const { data: nunugtBalanceRaw } = useReadContract({
     address: NUNUGT_TOKEN.address as `0x${string}`,
     abi: NUNUGT_ABI,
     functionName: 'balanceOf',
-    args: currentWallet?.address ? [currentWallet.address as `0x${string}`] : undefined,
-    query: { enabled: !!currentWallet?.address },
+    args: embeddedWalletObj?.address ? [embeddedWalletObj.address as `0x${string}`] : undefined,
+    query: { enabled: !!embeddedWalletObj?.address },
   });
   const { data: nunugtDecimals } = useReadContract({
     address: NUNUGT_TOKEN.address as `0x${string}`,
     abi: NUNUGT_ABI,
     functionName: 'decimals',
-    query: { enabled: !!currentWallet?.address },
+    query: { enabled: !!embeddedWalletObj?.address },
   });
   const nunugtBalance = useMemo(() => {
     if (!nunugtBalanceRaw || !nunugtDecimals) return '0';
     return (Number(nunugtBalanceRaw) / 10 ** Number(nunugtDecimals)).toLocaleString(undefined, { maximumFractionDigits: 4 });
   }, [nunugtBalanceRaw, nunugtDecimals]);
 
+  // Withdraw balances (same as embedded wallet)
   const { data: withdrawMonBalance } = useBalance({
-    address: withdrawWallet?.address as `0x${string}` | undefined,
+    address: embeddedWalletObj?.address as `0x${string}` | undefined,
     chainId: monadTestnet.id,
   });
   const { data: withdrawNunugtBalanceRaw } = useReadContract({
     address: NUNUGT_TOKEN.address as `0x${string}`,
     abi: NUNUGT_ABI,
     functionName: 'balanceOf',
-    args: withdrawWallet?.address ? [withdrawWallet.address as `0x${string}`] : undefined,
-    query: { enabled: !!withdrawWallet?.address },
+    args: embeddedWalletObj?.address ? [embeddedWalletObj.address as `0x${string}`] : undefined,
+    query: { enabled: !!embeddedWalletObj?.address },
   });
   const { data: withdrawNunugtDecimals } = useReadContract({
     address: NUNUGT_TOKEN.address as `0x${string}`,
     abi: NUNUGT_ABI,
     functionName: 'decimals',
-    query: { enabled: !!withdrawWallet?.address },
+    query: { enabled: !!embeddedWalletObj?.address },
   });
   const withdrawNunugtBalance = useMemo(() => {
     if (!withdrawNunugtBalanceRaw || !withdrawNunugtDecimals) return '0';
@@ -167,11 +166,12 @@ export function useWalletBalancesAndWithdraw() {
     return window.location.pathname.startsWith(path);
   }, []);
 
-  // Withdraw handler
+  // Withdraw handler (only for embedded wallet)
   const handleSend = useCallback(
-    (recipient: string, amount: string, token: TokenSymbol, fromAddress?: string) => {
+    (recipient: string, amount: string, token: TokenSymbol) => {
+      if (!embeddedWalletObj) return;
       if (token === TOKEN_SYMBOLS.NUNUGT) {
-        if (!nunugtDecimals || !fromAddress) return;
+        if (!nunugtDecimals) return;
         const value = BigInt(Math.floor(Number(amount) * 10 ** Number(nunugtDecimals)));
         writeNUNUGTTransfer({
           address: NUNUGT_TOKEN.address as `0x${string}`,
@@ -179,51 +179,22 @@ export function useWalletBalancesAndWithdraw() {
           functionName: 'transfer',
           args: [recipient, value],
           chain: monadTestnet,
-          account: fromAddress as `0x${string}`,
+          account: embeddedWalletObj.address as `0x${string}`,
         });
       } else {
         sendTransaction({ to: recipient as `0x${string}`, value: parseEther(amount) });
       }
     },
-    [nunugtDecimals, writeNUNUGTTransfer, sendTransaction]
+    [nunugtDecimals, writeNUNUGTTransfer, sendTransaction, embeddedWalletObj]
   );
 
   const handleWithdrawSend = useCallback(
     async (recipient: string, amount: string, token: TokenSymbol) => {
-      const withdrawWalletIdx = sortedWallets.findIndex(w => w.address === withdrawModal.address);
-      if (withdrawWalletIdx !== -1) {
-        if (address?.toLowerCase() !== sortedWallets[withdrawWalletIdx].address.toLowerCase()) {
-          await setActiveWallet(sortedWallets[withdrawWalletIdx]);
-          await new Promise<void>((resolve) => {
-            const check = () => {
-              const selected = typeof window !== 'undefined' && window.ethereum && typeof window.ethereum.selectedAddress === 'string'
-                ? window.ethereum.selectedAddress.toLowerCase()
-                : undefined;
-              if (
-                (selected === sortedWallets[withdrawWalletIdx].address.toLowerCase()) ||
-                (address?.toLowerCase() === sortedWallets[withdrawWalletIdx].address.toLowerCase())
-              ) {
-                resolve();
-              } else {
-                setTimeout(check, 100);
-              }
-            };
-            check();
-          });
-        }
-        await handleSend(recipient, amount, token, sortedWallets[withdrawWalletIdx].address);
-        if (embeddedWalletObj) {
-          setTimeout(() => setActiveWallet(embeddedWalletObj), 2000);
-        }
-      } else {
-        await handleSend(recipient, amount, token, currentWallet?.address);
-        if (embeddedWalletObj) {
-          setTimeout(() => setActiveWallet(embeddedWalletObj), 2000);
-        }
-      }
+      if (!embeddedWalletObj) return;
+      await handleSend(recipient, amount, token);
       setWithdrawModal({ open: false, address: null, token });
     },
-    [withdrawModal.address, sortedWallets, address, setActiveWallet, currentWallet, handleSend, embeddedWalletObj]
+    [handleSend, embeddedWalletObj]
   );
 
   return {
@@ -238,20 +209,16 @@ export function useWalletBalancesAndWithdraw() {
     isTxError,
     setWithdrawModal,
     withdrawModal,
-    sortedWallets,
-    walletIndex,
-    setWalletIndex,
-    currentWallet,
     embeddedWalletObj,
     handleCopy,
     ready,
-    authenticated,
+    authenticated: authenticated && isEmbeddedConnected,
     login,
     logout,
     disconnect,
     setActiveWallet,
     nunugtDecimals,
-    address,
+    address: embeddedWalletObj?.address,
     navigationItems,
     isActivePath,
     mobileMenuOpen,

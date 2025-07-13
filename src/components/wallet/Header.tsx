@@ -26,10 +26,6 @@ const Header = () => {
     isTxError,
     setWithdrawModal,
     withdrawModal,
-    sortedWallets,
-    walletIndex,
-    setWalletIndex,
-    currentWallet,
     embeddedWalletObj,
     handleCopy,
     ready,
@@ -80,21 +76,17 @@ const Header = () => {
                 </PopoverTrigger>
                 <PopoverContent className="p-0">
                   <WalletPopover
-                    currentWallet={currentWallet}
+                    currentWallet={embeddedWalletObj}
                     currentBalance={currentBalance}
-                    sortedWallets={sortedWallets}
-                    walletIndex={walletIndex}
-                    setWalletIndex={setWalletIndex}
                     handleCopy={handleCopy}
                     setWithdrawModal={setWithdrawModal}
                     logout={logout}
                     disconnect={disconnect}
-                    setActiveWallet={setActiveWallet}
                     authenticated={authenticated}
                     ready={ready}
                     formatMon={formatMon}
                     nunugtBalance={nunugtBalance}
-                    onWithdrawNUNU={() => setWithdrawModal({ open: true, address: currentWallet?.address ?? null, token: TOKEN_SYMBOLS.NUNUGT })}
+                    onWithdrawNUNU={() => setWithdrawModal({ open: true, address: embeddedWalletObj?.address ?? null, token: TOKEN_SYMBOLS.NUNUGT })}
                   />
                 </PopoverContent>
               </Popover>
