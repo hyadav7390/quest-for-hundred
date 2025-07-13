@@ -11,7 +11,7 @@ const LogoButton: React.FC<LogoButtonProps> = ({ navigate }) => (
     whileHover={{ scale: 1.05 }}
     whileTap={{ scale: 0.95 }}
   >
-    <img src="./logo.png" className="h-24 w-26 pt-3" />
+    <img src="./logo.png" className="h-32 pt-1" />
   </motion.button>
 );
 
