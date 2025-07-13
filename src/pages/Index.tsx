@@ -111,7 +111,7 @@ const Index = () => {
   const { embeddedWalletObj, setActiveWallet, address: embeddedWalletAddress } = useWalletBalancesAndWithdraw();
   // Get balance for validation
   const { data: balance } = useBalance({
-    address: embeddedWalletAddress,
+    address: embeddedWalletAddress as `0x${string}` | undefined,
     chainId: monadTestnet.id,
   });
 

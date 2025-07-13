@@ -37,13 +37,13 @@ const WalletPopover: React.FC<WalletPopoverProps> = ({
   onWithdrawNUNU
 }) => (
   <Card className="rounded-lg shadow-lg bg-surface border border-accent-main/20">
-    <CardHeader className="p-2">
+    <CardHeader className="p-4 pb-2">
       <CardTitle className="text-text-high">Wallet</CardTitle>
       <CardDescription className="text-text-low">Manage your wallet and balances</CardDescription>
     </CardHeader>
-    <CardContent className="space-y-4 p-2">
+    <CardContent className="space-y-4 p-4 pt-2">
       {currentWallet ? (
-        <div className="border border-accent-main/10 rounded-lg p-2 bg-surface relative">
+        <div className="bg-surface border border-accent-main/10 rounded-lg p-4 text-center">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs text-text-low">Embedded Wallet</span>
             <Button
@@ -56,7 +56,7 @@ const WalletPopover: React.FC<WalletPopoverProps> = ({
             </Button>
           </div>
           <Input
-            className="mb-2 text-xs font-mono bg-surface border-accent-main/20 cursor-pointer text-text-high"
+            className="mb-2 text-xs font-mono bg-surface border-accent-main/20 cursor-pointer text-text-high text-center"
             value={shortenAddress(currentWallet.address)}
             readOnly
             onClick={() => handleCopy(currentWallet.address)}
