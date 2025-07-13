@@ -1,6 +1,6 @@
 
 import { motion } from 'framer-motion';
-import { Trophy, Target, Gift, TrendingDown, Dices, Volume2, VolumeX, TrendingUp } from 'lucide-react';
+import { Trophy, Target, Gift, Dices, Volume2, VolumeX, DoorClosed } from 'lucide-react';
 
 interface ScoreBoardProps {
   score: number;
@@ -85,13 +85,13 @@ const ScoreBoard = ({
         </div>
         
         <div className="bg-surface rounded-lg p-3 text-center border border-accent-main/20">
-          <TrendingDown className="w-8 h-8 text-negative mx-auto mb-2" />
+          <DoorClosed className="w-8 h-8 text-red-500 mx-auto mb-2" />
           <p className="text-xs text-white/60">Detours</p>
           <p className="text-xl font-bold text-white">{displayDetours}</p>
         </div>
         
         <div className="bg-surface rounded-lg p-3 text-center border border-accent-main/20">
-          <TrendingUp className="w-8 h-8 text-positive mx-auto mb-2" />
+          <DoorClosed className="w-8 h-8 text-green-500 mx-auto mb-2" />
           <p className="text-xs text-white/60">Shortcuts</p>
           <p className="text-xl font-bold text-white">{displayShortcuts}</p>
         </div>

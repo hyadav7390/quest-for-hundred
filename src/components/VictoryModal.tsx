@@ -11,7 +11,7 @@ interface VictoryModalProps {
   gameScore: number;
   nunuCoins: number;
   onRestart: () => void;
-  onClaimRewards?: () => void;
+  onClaimRewards: () => void;
   showClaimButton?: boolean;
   // New props from contract
   diceRolls?: number;
@@ -20,6 +20,7 @@ interface VictoryModalProps {
   isRestarting?: boolean;
   isClaimRewardsPending?: boolean;
   claimRewardsError?: string | null;
+  onClose: () => void;
 }
 
 const VictoryModal = ({
@@ -40,6 +41,7 @@ const VictoryModal = ({
   isRestarting = false,
   isClaimRewardsPending = false,
   claimRewardsError = null,
+  onClose,
 }: VictoryModalProps) => {
   if (!isOpen) return null;
 
@@ -65,7 +67,7 @@ const VictoryModal = ({
         {/* Close (X) Button */}
         <button
           aria-label="Close"
-          onClick={onRestart}
+          onClick={onClose}
           className="absolute top-4 right-4 p-2 rounded-full hover:bg-accent-main/10 focus:outline-none focus:ring-2 focus:ring-accent-main"
         >
           <X className="w-5 h-5 text-text-high" />

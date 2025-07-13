@@ -570,6 +570,7 @@ const Index = () => {
           isRestarting={showBoardLoader}
           isClaimRewardsPending={contractInfo.isClaimRewardsPending}
           claimRewardsError={claimRewardsError}
+          onClose={() => setShowVictoryModal(false)}
         />
 
         <NewGameConfirmation
