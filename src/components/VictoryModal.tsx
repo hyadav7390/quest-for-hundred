@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Trophy, RotateCcw, Gift, Target, TrendingDown, ArrowUp, TrendingUp, Coins } from 'lucide-react';
+import { Trophy, RotateCcw, Gift, Target, TrendingDown, ArrowUp, TrendingUp, Coins, X } from 'lucide-react';
 
 interface VictoryModalProps {
   isOpen: boolean;
@@ -57,11 +57,19 @@ const VictoryModal = ({
       transition={{ duration: 0.3 }}
     >
       <motion.div
-        className="bg-surface rounded-2xl p-8 max-w-md w-full shadow-2xl shadow-glow border border-accent-main/20"
+        className="bg-surface rounded-2xl p-8 max-w-md w-full shadow-2xl shadow-glow border border-accent-main/20 relative"
         initial={{ scale: 0.5, y: 50 }}
         animate={{ scale: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 25 }}
       >
+        {/* Close (X) Button */}
+        <button
+          aria-label="Close"
+          onClick={onRestart}
+          className="absolute top-4 right-4 p-2 rounded-full hover:bg-accent-main/10 focus:outline-none focus:ring-2 focus:ring-accent-main"
+        >
+          <X className="w-5 h-5 text-text-high" />
+        </button>
         <div className="text-center mb-6">
           <motion.div
             className="inline-block p-4 bg-gradient-to-r from-accent-main to-success rounded-full mb-4"
