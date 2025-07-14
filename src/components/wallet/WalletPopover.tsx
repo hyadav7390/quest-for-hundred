@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Wallet, Copy, AlertTriangle, Coins } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { NUNUGT_TOKEN } from '@/config';
+import { REWARD_TOKEN } from '@/config';
 
 interface WalletPopoverProps {
   currentWallet: any;
@@ -107,7 +107,7 @@ const WalletPopover: React.FC<WalletPopoverProps> = ({
                 <div className="flex items-center justify-between w-full">
                   <span className="flex items-center gap-1 text-sm text-accent-main font-medium bg-accent-main/10 px-3 py-1 rounded-full">
                     <Coins className="w-4 h-4 text-accent-main" />
-                    {nunugtBalance} {NUNUGT_TOKEN.symbol}
+                    {nunugtBalance} {REWARD_TOKEN.symbol}
                   </span>
                   <Button
                     size="sm"

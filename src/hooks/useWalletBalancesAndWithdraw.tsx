@@ -1,18 +1,12 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAccount, useBalance, useSendTransaction, useWaitForTransactionReceipt, useDisconnect, useReadContract, useWriteContract } from 'wagmi';
-import { usePublicClient } from 'wagmi';
 import { monadTestnet } from '@/types/monadTestnet';
 import { toast } from '@/hooks/use-toast';
 import { parseEther, formatEther } from 'viem/utils';
 import { NUNUGT_ABI } from '@/abi/nunugtABI';
-import { NUNUGT_TOKEN, TOKEN_SYMBOLS, TokenSymbol } from '@/config';
+import { NATIVE_TOKEN, REWARD_TOKEN, TokenSymbol } from '@/config';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { useSetActiveWallet } from '@privy-io/wagmi';
-import WalletPopover from '@/components/wallet/WalletPopover';
-import DesktopNavigation from '@/components/wallet/DesktopNavigation';
-import MobileMenu from '@/components/wallet/MobileMenu';
-import MobileMenuButton from '@/components/wallet/MobileMenuButton';
-import SendModal from '@/components/wallet/Sendmodal';
 import { Home, Gamepad2 } from 'lucide-react';
 
 export function useWalletBalancesAndWithdraw() {
@@ -37,7 +31,7 @@ export function useWalletBalancesAndWithdraw() {
   }, [embeddedWalletObj, address, setActiveWallet]);
 
   // Withdraw modal state
-  const [withdrawModal, setWithdrawModal] = useState<{ open: boolean; address: string | null; token: TokenSymbol }>({ open: false, address: null, token: TOKEN_SYMBOLS.MON });
+  const [withdrawModal, setWithdrawModal] = useState<{ open: boolean; address: string | null; token: TokenSymbol }>({ open: false, address: null, token: NATIVE_TOKEN.symbol });
   const withdrawWallet = embeddedWalletObj;
 
   // Balances for embedded wallet
@@ -46,14 +40,14 @@ export function useWalletBalancesAndWithdraw() {
     chainId: monadTestnet.id,
   });
   const { data: nunugtBalanceRaw } = useReadContract({
-    address: NUNUGT_TOKEN.address as `0x${string}`,
+    address: REWARD_TOKEN.address as `0x${string}`,
     abi: NUNUGT_ABI,
     functionName: 'balanceOf',
     args: embeddedWalletObj?.address ? [embeddedWalletObj.address as `0x${string}`] : undefined,
     query: { enabled: !!embeddedWalletObj?.address },
   });
   const { data: nunugtDecimals } = useReadContract({
-    address: NUNUGT_TOKEN.address as `0x${string}`,
+    address: REWARD_TOKEN.address as `0x${string}`,
     abi: NUNUGT_ABI,
     functionName: 'decimals',
     query: { enabled: !!embeddedWalletObj?.address },
@@ -69,14 +63,14 @@ export function useWalletBalancesAndWithdraw() {
     chainId: monadTestnet.id,
   });
   const { data: withdrawNunugtBalanceRaw } = useReadContract({
-    address: NUNUGT_TOKEN.address as `0x${string}`,
+    address: REWARD_TOKEN.address as `0x${string}`,
     abi: NUNUGT_ABI,
     functionName: 'balanceOf',
     args: embeddedWalletObj?.address ? [embeddedWalletObj.address as `0x${string}`] : undefined,
     query: { enabled: !!embeddedWalletObj?.address },
   });
   const { data: withdrawNunugtDecimals } = useReadContract({
-    address: NUNUGT_TOKEN.address as `0x${string}`,
+    address: REWARD_TOKEN.address as `0x${string}`,
     abi: NUNUGT_ABI,
     functionName: 'decimals',
     query: { enabled: !!embeddedWalletObj?.address },
@@ -170,11 +164,11 @@ export function useWalletBalancesAndWithdraw() {
   const handleSend = useCallback(
     (recipient: string, amount: string, token: TokenSymbol) => {
       if (!embeddedWalletObj) return;
-      if (token === TOKEN_SYMBOLS.NUNUGT) {
+      if (token === REWARD_TOKEN.symbol) {
         if (!nunugtDecimals) return;
         const value = BigInt(Math.floor(Number(amount) * 10 ** Number(nunugtDecimals)));
         writeNUNUGTTransfer({
-          address: NUNUGT_TOKEN.address as `0x${string}`,
+          address: REWARD_TOKEN.address as `0x${string}`,
           abi: NUNUGT_ABI,
           functionName: 'transfer',
           args: [recipient, value],

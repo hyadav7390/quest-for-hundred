@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Wallet } from 'lucide-react';
-import { TOKEN_SYMBOLS } from '@/config';
+import { NATIVE_TOKEN, REWARD_TOKEN } from '@/config';
 import { formatEther } from 'viem/utils';
 import { useWalletBalancesAndWithdraw } from '@/hooks/useWalletBalancesAndWithdraw';
 import LogoButton from './LogoButton';
@@ -86,7 +86,7 @@ const Header = () => {
                     ready={ready}
                     formatMon={formatMon}
                     nunugtBalance={nunugtBalance}
-                    onWithdrawNUNU={() => setWithdrawModal({ open: true, address: embeddedWalletObj?.address ?? null, token: TOKEN_SYMBOLS.NUNUGT })}
+                    onWithdrawNUNU={() => setWithdrawModal({ open: true, address: embeddedWalletObj?.address ?? null, token: REWARD_TOKEN.symbol })}
                   />
                 </PopoverContent>
               </Popover>
@@ -111,7 +111,7 @@ const Header = () => {
             onClose={() => setWithdrawModal({ open: false, address: null, token: withdrawModal.token })}
             onSend={handleWithdrawSend}
             token={withdrawModal.token}
-            maxBalance={withdrawModal.token === TOKEN_SYMBOLS.MON
+            maxBalance={withdrawModal.token === NATIVE_TOKEN.symbol
               ? (withdrawMonBalance ? parseFloat(formatEther(withdrawMonBalance.value)).toFixed(4) : '0.0000')
               : withdrawNunugtBalance}
           />

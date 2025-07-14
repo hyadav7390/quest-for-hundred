@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 import { parseEther } from 'viem/utils';
-import { TOKEN_SYMBOLS, TokenSymbol } from '@/config';
+import { NATIVE_TOKEN, REWARD_TOKEN, TokenSymbol } from '@/config';
 
 interface SendMonadModalProps {
   onSend: (recipient: string, amount: string, token: TokenSymbol) => void;

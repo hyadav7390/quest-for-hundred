@@ -47,13 +47,15 @@ export const config = createConfig({
     },
 });
 
-export const NUNUGT_TOKEN = {
-  address: '0x9a80c12a72991e74e652fd52ec325ae07dffa950',
-  symbol: 'NUNUGT',
+// Native token (e.g., MON) and reward token (e.g., NUNUGT) configuration
+export const NATIVE_TOKEN = {
+  address: '', // Native tokens typically don't have an address, but can be set if needed
+  symbol: 'MON',
 };
 
-export const TOKEN_SYMBOLS = {
-  MON: 'MON',
-  NUNUGT: 'NUNUGT',
-} as const;
-export type TokenSymbol = typeof TOKEN_SYMBOLS[keyof typeof TOKEN_SYMBOLS];
+export const REWARD_TOKEN = {
+  address: '0x9a80c12a72991e74e652fd52ec325ae07dffa950',
+  symbol: 'NUNU',
+};
+
+export type TokenSymbol = typeof NATIVE_TOKEN.symbol | typeof REWARD_TOKEN.symbol;
