@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Trophy, RotateCcw, Gift, Target, TrendingDown, ArrowUp, TrendingUp, Coins, X } from 'lucide-react';
+import { Trophy, RotateCcw, Gift, Target, TrendingDown, ArrowUp, TrendingUp, Coins, X, DoorClosed } from 'lucide-react';
 
 interface VictoryModalProps {
   isOpen: boolean;
@@ -112,17 +112,17 @@ const VictoryModal = ({
               </div>
 
               <div className="flex items-center space-x-2">
-                <Gift className="w-4 h-4 text-success" />
+                <Gift className="w-4 h-4 text-yellow-400" />
                 <span className="text-text-low">Gifts: {displayGifts}</span>
               </div>
 
               <div className="flex items-center space-x-2">
-                <TrendingDown className="w-4 h-4 text-negative" />
+                <DoorClosed className="w-4 h-4 text-red-500" />
                 <span className="text-text-low">Detours: {displayDetours}</span>
               </div>
 
               <div className="flex items-center space-x-2">
-                <TrendingUp className="w-4 h-4 text-success" />
+                <DoorClosed className="w-4 h-4 text-green-500" />
                 <span className="text-text-low">Shortcuts: {displayShortcuts}</span>
               </div>
             </div>
