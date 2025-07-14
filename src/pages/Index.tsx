@@ -36,20 +36,20 @@ const BalanceWarning = () => (
   </motion.div>
 );
 
-const VRFWaitingIndicator = () => (
-  <motion.div
-    className="bg-accent-main/20 border border-accent-main/40 rounded-lg p-4 mb-6 text-center"
-    initial={{ opacity: 0, y: -10 }}
-    animate={{ opacity: 1, y: 0 }}
-  >
-    <div className="flex items-center justify-center space-x-2">
-      <RefreshCw className="w-5 h-5 animate-spin text-accent-main" />
-      <span className="text-accent-main">
-        Waiting for Chainlink VRF result... This may take a few moments.
-      </span>
-    </div>
-  </motion.div>
-);
+// const VRFWaitingIndicator = () => (
+//   <motion.div
+//     className="bg-accent-main/20 border border-accent-main/40 rounded-lg p-4 mb-6 text-center"
+//     initial={{ opacity: 0, y: -10 }}
+//     animate={{ opacity: 1, y: 0 }}
+//   >
+//     <div className="flex items-center justify-center space-x-2">
+//       <RefreshCw className="w-5 h-5 animate-spin text-accent-main" />
+//       <span className="text-accent-main">
+//         Waiting for Chainlink VRF result... This may take a few moments.
+//       </span>
+//     </div>
+//   </motion.div>
+// );
 
 const DiceSection = ({ gameState, isWaitingForVRF, rollDice, isDiceDisabled, contractState, hasNoBalance }) => (
   <motion.div
@@ -447,7 +447,7 @@ const Index = () => {
         {hasNoBalance && <BalanceWarning />}
 
         {/* VRF Waiting Indicator */}
-        {isWaitingForVRF && <VRFWaitingIndicator />}
+        {/* {isWaitingForVRF && <VRFWaitingIndicator />} */}
 
         {/* Mobile Layout */}
         <div className="block lg:hidden space-y-6">

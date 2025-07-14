@@ -55,7 +55,7 @@ const SendModal: React.FC<SendMonadModalProps> = ({ isOpen, onClose, onSend, tok
         <CardContent>
           <div className="space-y-4">
             <div className="text-xs text-gray-400 mb-2">
-              Available: <span className="font-mono text-black">{maxBalance} {token}</span>
+              Available: <span className="font-mono text-white">{maxBalance} {token}</span>
             </div>
             <div>
               <Label htmlFor="recipient">Recipient Address</Label>
