@@ -66,9 +66,11 @@ const WalletPopover: React.FC<WalletPopoverProps> = ({
               {/* Address Row */}
               <div className="flex items-center w-full justify-between mb-2 gap-2">
                 <Input
-                  className="text-[11px] font-mono bg-surface border-accent-main/20 cursor-pointer text-text-high text-left rounded-lg shadow-inner focus:border-accent-main focus:shadow-glow transition-all px-2 py-1 h-7 flex-1"
+                  className="text-[11px] font-mono bg-surface border-accent-main/20 cursor-pointer text-text-high text-left rounded-lg shadow-inner focus:border-accent-main focus:shadow-glow transition-all px-2 py-1 h-7 flex-1 select-none"
                   value={shortenAddress(currentWallet.address)}
                   readOnly
+                  tabIndex={-1}
+                  onMouseDown={e => e.preventDefault()} // Prevent focus on click
                   onClick={() => handleCopy(currentWallet.address)}
                   style={{ color: 'inherit' }}
                 />
