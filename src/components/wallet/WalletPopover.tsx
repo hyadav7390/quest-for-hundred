@@ -19,6 +19,8 @@ interface WalletPopoverProps {
   nunugtBalance: string;
   onWithdrawNUNU: () => void;
   onRefreshBalances: () => void;
+  canExportEmbeddedWallet: boolean;
+  exportEmbeddedWallet: () => void;
 }
 
 const shortenAddress = (address: string) => {
@@ -38,7 +40,9 @@ const WalletPopover: React.FC<WalletPopoverProps> = ({
   formatMon,
   nunugtBalance,
   onWithdrawNUNU,
-  onRefreshBalances
+  onRefreshBalances,
+  canExportEmbeddedWallet,
+  exportEmbeddedWallet
 }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [justRefreshed, setJustRefreshed] = useState(false);
@@ -183,6 +187,17 @@ const WalletPopover: React.FC<WalletPopoverProps> = ({
               </motion.div>
             )}
           </AnimatePresence>
+          {/* Export Private Key Button */}
+          {canExportEmbeddedWallet && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="w-full mt-2 border-accent-main/40 text-accent-main hover:bg-accent-main/10 hover:text-accent-main focus:ring-2 focus:ring-accent-main"
+              onClick={exportEmbeddedWallet}
+            >
+              Export Private Key
+            </Button>
+          )}
           {/* Disconnect button */}
           <Button
             size="sm"

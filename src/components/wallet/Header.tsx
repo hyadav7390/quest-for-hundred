@@ -41,7 +41,9 @@ const Header = () => {
     mobileMenuOpen,
     setMobileMenuOpen,
     refetchCurrentBalance,
-    refetchNunugtBalance
+    refetchNunugtBalance,
+    canExportEmbeddedWallet,
+    exportEmbeddedWallet
   } = hookResult;
 
   const navigate = useNavigate();
@@ -93,6 +95,8 @@ const Header = () => {
                       if (refetchCurrentBalance) refetchCurrentBalance();
                       if (refetchNunugtBalance) refetchNunugtBalance();
                     }}
+                    canExportEmbeddedWallet={canExportEmbeddedWallet}
+                    exportEmbeddedWallet={exportEmbeddedWallet}
                   />
                 </PopoverContent>
               </Popover>

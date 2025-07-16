@@ -11,7 +11,7 @@ import { Home, Gamepad2 } from 'lucide-react';
 
 export function useWalletBalancesAndWithdraw() {
   // Privy hooks
-  const { ready, user, authenticated, login, logout } = usePrivy();
+  const { ready, user, authenticated, login, logout, exportWallet } = usePrivy();
   const { wallets } = useWallets();
   const { disconnect } = useDisconnect();
   const { setActiveWallet } = useSetActiveWallet();
@@ -196,6 +196,22 @@ export function useWalletBalancesAndWithdraw() {
     [handleSend, embeddedWalletObj]
   );
 
+  // Export embedded wallet functionality
+  const canExportEmbeddedWallet = ready && authenticated && !!embeddedWalletObj;
+
+  const exportEmbeddedWallet = useCallback(async () => {
+    if (!canExportEmbeddedWallet || !embeddedWalletObj?.address) return;
+    try {
+      await exportWallet({ address: embeddedWalletObj.address });
+    } catch (err) {
+      toast({
+        title: 'Export failed',
+        description: 'Could not export embedded wallet. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  }, [canExportEmbeddedWallet, embeddedWalletObj, exportWallet]);
+
   return {
     currentBalance,
     nunugtBalance,
@@ -224,5 +240,7 @@ export function useWalletBalancesAndWithdraw() {
     setMobileMenuOpen,
     refetchCurrentBalance,
     refetchNunugtBalance,
+    canExportEmbeddedWallet,
+    exportEmbeddedWallet,
   };
 } 
