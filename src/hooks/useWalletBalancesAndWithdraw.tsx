@@ -35,17 +35,22 @@ export function useWalletBalancesAndWithdraw() {
   const withdrawWallet = embeddedWalletObj;
 
   // Balances for embedded wallet
-  const { data: currentBalance } = useBalance({
+  const balanceResult = useBalance({
     address: embeddedWalletObj?.address as `0x${string}` | undefined,
     chainId: monadTestnet.id,
   });
-  const { data: nunugtBalanceRaw } = useReadContract({
+  const currentBalance = balanceResult.data;
+  const refetchCurrentBalance = balanceResult.refetch;
+
+  const nunugtBalanceResult = useReadContract({
     address: REWARD_TOKEN.address as `0x${string}`,
     abi: NUNUGT_ABI,
     functionName: 'balanceOf',
     args: embeddedWalletObj?.address ? [embeddedWalletObj.address as `0x${string}`] : undefined,
     query: { enabled: !!embeddedWalletObj?.address },
   });
+  const nunugtBalanceRaw = nunugtBalanceResult.data;
+  const refetchNunugtBalance = nunugtBalanceResult.refetch;
   const { data: nunugtDecimals } = useReadContract({
     address: REWARD_TOKEN.address as `0x${string}`,
     abi: NUNUGT_ABI,
@@ -217,5 +222,7 @@ export function useWalletBalancesAndWithdraw() {
     isActivePath,
     mobileMenuOpen,
     setMobileMenuOpen,
+    refetchCurrentBalance,
+    refetchNunugtBalance,
   };
 } 

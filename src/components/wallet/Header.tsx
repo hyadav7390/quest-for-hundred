@@ -39,7 +39,9 @@ const Header = () => {
     navigationItems,
     isActivePath,
     mobileMenuOpen,
-    setMobileMenuOpen
+    setMobileMenuOpen,
+    refetchCurrentBalance,
+    refetchNunugtBalance
   } = hookResult;
 
   const navigate = useNavigate();
@@ -87,6 +89,10 @@ const Header = () => {
                     formatMon={formatMon}
                     nunugtBalance={nunugtBalance}
                     onWithdrawNUNU={() => setWithdrawModal({ open: true, address: embeddedWalletObj?.address ?? null, token: REWARD_TOKEN.symbol })}
+                    onRefreshBalances={() => {
+                      if (refetchCurrentBalance) refetchCurrentBalance();
+                      if (refetchNunugtBalance) refetchNunugtBalance();
+                    }}
                   />
                 </PopoverContent>
               </Popover>
