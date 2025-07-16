@@ -3,27 +3,27 @@ import { motion } from 'framer-motion';
 import { Info, Users, Gamepad2, Coins } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { useContract } from '@/hooks/useContract';
 
 const CommunityProgress = () => {
   const navigate = useNavigate();
   
-  // Mock data - in real app this would come from backend
-  const totalMinted = 12847000;
-  const totalSupply = 1000000000;
-  const progressPercentage = (totalMinted / totalSupply) * 100;
-  
-  // Community stats
+  // Get contract stats
+  const { gameStats } = useContract();
+  const gamesPlayed = gameStats?.gamesCompleted ?? null;
+  const nunuMinted = gameStats?.totalNunuEarned ?? null;
+  // Community stats from contract
   const stats = [
-    { icon: <Users className="w-6 h-6" />, label: "Total Players", value: "2,847" },
-    { icon: <Gamepad2 className="w-6 h-6" />, label: "Games Played", value: "15,942" },
-    { icon: <Coins className="w-6 h-6" />, label: "NUNU Minted", value: totalMinted.toLocaleString() },
+    { icon: <Gamepad2 className="w-6 h-6" />, label: "Games Played", value: gamesPlayed !== null ? gamesPlayed.toLocaleString() : '-' },
+    { icon: <Coins className="w-6 h-6" />, label: "NUNU Minted", value: nunuMinted !== null ? nunuMinted.toLocaleString() : '-' },
+    { icon: <Users className="w-6 h-6" />, label: "Total Players", value: 99 }
   ];
 
-  const getProgressBarColor = () => {
-    if (progressPercentage === 0) return 'bg-surface';
-    if (progressPercentage >= 100) return 'bg-accent-main shadow-glow';
-    return 'bg-accent-main/70';
-  };
+  const nunuTotalSupply = 1_000_000;
+  const progressPercentage = nunuMinted && nunuTotalSupply > 0 ? (nunuMinted / nunuTotalSupply) * 100 : 0;
+
+  // Remove progress bar color logic since progressPercentage is not available
+  const getProgressBarColor = () => 'bg-accent-main/70';
 
   return (
     <section className="panel max-w-6xl mx-4 mt-12 mb-2 xl:mx-auto">
@@ -65,38 +65,21 @@ const CommunityProgress = () => {
           ))}
         </div>
 
-        {/* Progress Section */}
+        {/* Progress Bar */}
         <div className="mb-8">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold text-white">NUNU Token Supply</h3>
-            <span className="text-sm text-white/60">
-              {(progressPercentage).toFixed(4)}% Minted
-            </span>
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-sm text-white/70 font-medium">NUNU Minted</span>
+            <span className="text-xs text-white/50">{progressPercentage.toFixed(2)}%</span>
           </div>
-          
-          {/* Progress Bar */}
-          <div className="relative mb-4">
-            <div className="h-12 bg-surface rounded-lg border border-accent-main/20 overflow-hidden relative">
-              <motion.div
-                className={`h-full ${getProgressBarColor()} transition-all duration-1000`}
-                initial={{ width: 0 }}
-                animate={{ width: `${Math.min(progressPercentage, 100)}%` }}
-                transition={{ duration: 1.5, ease: "easeOut" }}
-              />
-              
-              {/* Progress Percentage Overlay */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="font-heading text-2xl text-white font-bold">
-                  {progressPercentage.toFixed(4)}%
-                </span>
-              </div>
-            </div>
-            
-            {/* Progress Text */}
-            <div className="flex justify-between items-center mt-2 text-sm text-white/60">
-              <span>{totalMinted.toLocaleString()} NUNU Minted</span>
-              <span>{totalSupply.toLocaleString()} Total Supply</span>
-            </div>
+          <div className="w-full h-4 bg-surface border border-accent-main/20 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-accent-main/70 transition-all duration-700"
+              style={{ width: `${progressPercentage}%` }}
+            />
+          </div>
+          <div className="flex justify-between text-xs text-white/50 mt-1">
+            <span>{nunuMinted !== null ? nunuMinted.toLocaleString() : '-'}</span>
+            <span>{nunuTotalSupply.toLocaleString()}</span>
           </div>
         </div>
 

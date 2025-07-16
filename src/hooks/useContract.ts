@@ -182,6 +182,19 @@ export const useContract = () => {
     },
   });
 
+  // New: Player stats (lifetime)
+  const { data: playerStatsData, refetch: refetchPlayerStats } = useReadContract({
+    address: CONTRACT_ADDRESS,
+    abi: GAME_ABI,
+    functionName: 'getPlayerStats',
+    args: address ? [address] : undefined,
+    query: {
+      enabled: !!address,
+      refetchInterval: false,
+      staleTime: 1000,
+    },
+  });
+
   // Contract interactions with comprehensive logging
   const startGame = useCallback(async () => {
     if (!address || isStartGamePending || isStartGameConfirming) {
@@ -430,6 +443,27 @@ export const useContract = () => {
     }
   }, [leaderboardData]);
 
+  // Parse playerStats
+  const playerStats = playerStatsData
+    ? {
+        totalNunuEarned: Number(playerStatsData[0]),
+        highestScore: Number(playerStatsData[1]),
+        gamesCompleted: Number(playerStatsData[2]),
+      }
+    : null;
+
+  // Parse gameStats (V2)
+  const gameStatsV2 = gameStatsData
+    ? {
+        gamesCompleted: Number(gameStatsData[0]),
+        totalNunuEarned: Number(gameStatsData[1]),
+      }
+    : null;
+
+  const totalSupply = null;
+  const totalMinted = null;
+  const rollFee = null;
+
   // Fetch all game data function with logging
   const fetchAllGameData = useCallback(async () => {
     if (!address) {
@@ -445,6 +479,7 @@ export const useContract = () => {
         refetchBoardData(),
         refetchGameStats(),
         refetchPlayerRank(),
+        refetchPlayerStats(),
       ]);
       console.log('✅ [CONTRACT] All game data fetched successfully', result);
     } catch (error) {
@@ -553,6 +588,7 @@ export const useContract = () => {
     gameState,
     boardData,
     gameStats,
+    playerStats,
     playerRank,
     leaderboard,
     isLoading,

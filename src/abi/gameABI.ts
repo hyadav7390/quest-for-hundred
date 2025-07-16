@@ -131,6 +131,35 @@ export const GAME_ABI = [
     "type": "function"
   },
   {
+    "inputs": [
+      {
+				"internalType": "address",
+				"name": "player",
+				"type": "address"
+			}
+    ],
+    "name": "getPlayerStats",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "_totalNunuEarned",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint16",
+        "name": "highestScore",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint32",
+        "name": "_gamesCompleted",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "getLeaderboard",
     "outputs": [

@@ -1,15 +1,14 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Coins, Trophy, Sparkles } from 'lucide-react';
+import { User, Coins, Trophy, Sparkles, Star } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useContract } from '@/hooks/useContract';
 import CrawlingCharacter from './CrawlingCharacter';
 
 const ContractUserProfile = () => {
-  const { gameState, gameStats } = useContract();
-  const playerScore = gameState?.gameScore || 0;
-  const gamesCompleted = gameStats?.gamesCompleted || 0;
-  const totalNunuEarned = gameStats?.totalNunuEarned || 0;
+  const { gameState, playerStats } = useContract();
+  console.log('playerStats', playerStats);
+  console.log('gameState', gameState);
   const hasFinished = gameState?.hasFinished;
 
   return (
@@ -39,44 +38,38 @@ const ContractUserProfile = () => {
             <p className="text-xs text-text-low">Data from Smart Contract</p>
           </motion.div>
 
-          {/* Stats Section */}
+          {/* Stats Section (Lifetime) */}
           <div className="grid grid-cols-1 gap-4 px-6 py-5">
-            <motion.div
-              className="flex flex-col items-center bg-gradient-to-br from-accent-main/10 to-surface border-2 border-accent-main/30 rounded-xl py-4 shadow-glow"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-            >
-              <span className="text-sm text-text-low mb-1">Current Game Score</span>
-              <motion.span
-                className="text-3xl font-bold text-accent-main font-heading drop-shadow-glow"
-                initial={{ scale: 0.8 }}
-                animate={{ scale: 1 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-              >
-                {playerScore.toLocaleString()}
-              </motion.span>
-            </motion.div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-4">
               <motion.div
-                className="flex flex-col items-center bg-gradient-to-br from-green-500/10 to-surface border-2 border-green-500/30 rounded-xl py-3 shadow-glow"
+                className="flex flex-col items-center bg-gradient-to-br from-blue-500/10 to-surface border-2 border-accent-main/30 rounded-xl py-4 shadow-glow"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+              >
+                <Coins className="w-5 h-5 text-accent-main mb-1 animate-pulse" />
+                <span className="text-xs text-text-low">Total NUNU Earned</span>
+                <span className="text-lg font-bold text-accent-main font-heading">{playerStats ? playerStats.totalNunuEarned.toLocaleString() : '-'}</span>
+              </motion.div>
+              <motion.div
+                className="flex flex-col items-center bg-gradient-to-br from-purple-500/10 to-surface border-2 border-purple-500/30 rounded-xl py-4 shadow-glow"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
               >
-                <Trophy className="w-5 h-5 text-green-400 mb-1 animate-pulse" />
-                <span className="text-xs text-text-low">Games Completed</span>
-                <span className="text-lg font-bold text-green-400 font-heading">{gamesCompleted.toLocaleString()}</span>
+                <Star className="w-5 h-5 text-purple-400 mb-1 animate-pulse" />
+                <span className="text-xs text-text-low">Highest Score</span>
+                <span className="text-lg font-bold text-purple-400 font-heading">{playerStats ? playerStats.highestScore.toLocaleString() : '-'}</span>
               </motion.div>
               <motion.div
-                className="flex flex-col items-center bg-gradient-to-br from-blue-500/10 to-surface border-2 border-accent-main/30 rounded-xl py-3 shadow-glow"
+                className="flex flex-col items-center bg-gradient-to-br from-green-500/10 to-surface border-2 border-green-500/30 rounded-xl py-4 shadow-glow"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
               >
-                <Coins className="w-5 h-5 text-accent-main mb-1 animate-pulse" />
-                <span className="text-xs text-text-low">Total NUNU Earned</span>
-                <span className="text-lg font-bold text-accent-main font-heading">{totalNunuEarned.toLocaleString()}</span>
+                <Trophy className="w-5 h-5 text-green-400 mb-1 animate-pulse" />
+                <span className="text-xs text-text-low">Games Completed</span>
+                <span className="text-lg font-bold text-green-400 font-heading">{playerStats ? playerStats.gamesCompleted.toLocaleString() : '-'}</span>
               </motion.div>
             </div>
           </div>
