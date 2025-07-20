@@ -292,7 +292,7 @@ const Dice = ({ value, isRolling, onRoll, disabled, contractValue, isWaitingForV
           >
             ⏳
           </motion.span>
-          <span>Adding Liquidity of 0.1 MON</span>
+          <span>Adding Liquidity of 0.01 MON</span>
         </motion.p>
       )}
     </div>
