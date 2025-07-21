@@ -454,18 +454,25 @@ export const useContract = () => {
       }
     : null;
 
-  // Parse gameStats (V2)
-  const gameStatsV2 = gameStatsData
-    ? {
-        gamesCompleted: Number(gameStatsData[0]),
-        totalNunuEarned: Number(gameStatsData[1]),
-        totalPlayers: Number(gameStatsData[2])
-      }
-    : null;
+  
+
+  // Read ROLL_FEE from contract
+  const { data: rollFeeData, refetch: refetchRollFee } = useReadContract({
+    address: CONTRACT_ADDRESS,
+    abi: GAME_ABI,
+    functionName: 'ROLL_FEE',
+    query: {
+      enabled: true,
+      refetchInterval: false,
+      staleTime: 10000,
+    },
+  });
+
+  // Parse rollFee (as string, number, or BigInt)
+  const rollFee = rollFeeData ? BigInt(rollFeeData).toString() : null;
 
   const totalSupply = null;
   const totalMinted = null;
-  const rollFee = null;
 
   // Fetch all game data function with logging
   const fetchAllGameData = useCallback(async () => {
@@ -605,5 +612,6 @@ export const useContract = () => {
     claimRewards,
     claimRewardsError,
     isClaimRewardsPending: isClaimRewardsPending || isClaimRewardsConfirming,
+    rollFee,
   };
 };

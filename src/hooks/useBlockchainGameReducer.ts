@@ -184,6 +184,7 @@ export const useBlockchainGameReducer = () => {
     CONTRACT_ADDRESS,
     isClaimRewardsPending,
     claimRewardsError,
+    rollFee,
   } = useContract();
 
   const contractInfo = {
@@ -196,6 +197,7 @@ export const useBlockchainGameReducer = () => {
     CONTRACT_ADDRESS,
     isClaimRewardsPending,
     claimRewardsError,
+    rollFee,
   };
 
   // Sync contract state with UI state

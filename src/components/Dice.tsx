@@ -8,9 +8,10 @@ interface DiceProps {
   disabled: boolean;
   contractValue?: number | null;
   isWaitingForVRF: boolean;
+  rollFee?: string | null;
 }
 
-const Dice = ({ value, isRolling, onRoll, disabled, contractValue, isWaitingForVRF }: DiceProps) => {
+const Dice = ({ value, isRolling, onRoll, disabled, contractValue, isWaitingForVRF, rollFee }: DiceProps) => {
   const [animationValue, setAnimationValue] = useState(1);
   const animationIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const isAnimationRunningRef = useRef(false);
@@ -97,6 +98,18 @@ const Dice = ({ value, isRolling, onRoll, disabled, contractValue, isWaitingForV
 
   const isCurrentlyAnimating = isRolling || isWaitingForVRF || isAnimationRunningRef.current;
   const dots = useMemo(() => getDiceDots(animationValue), [animationValue]);
+
+  // Format roll fee (assume value is in wei, convert to MON)
+  const formatRollFee = (fee: string | null | undefined) => {
+    if (!fee) return '0.01';
+    try {
+      // 18 decimals for MON (like ETH)
+      const mon = (Number(fee) / 1e18).toFixed(2);
+      return mon;
+    } catch {
+      return '0.01';
+    }
+  };
 
   return (
     <div className="flex flex-col items-center space-y-4">
@@ -292,7 +305,7 @@ const Dice = ({ value, isRolling, onRoll, disabled, contractValue, isWaitingForV
           >
             ⏳
           </motion.span>
-          <span>Adding Liquidity of 0.01 MON</span>
+          <span>Adding Liquidity of {formatRollFee(rollFee)} MON</span>
         </motion.p>
       )}
     </div>

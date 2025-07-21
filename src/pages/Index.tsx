@@ -51,7 +51,7 @@ const BalanceWarning = () => (
 //   </motion.div>
 // );
 
-const DiceSection = ({ gameState, isWaitingForVRF, rollDice, isDiceDisabled, contractState, hasNoBalance }) => (
+const DiceSection = ({ gameState, isWaitingForVRF, rollDice, isDiceDisabled, contractState, hasNoBalance, rollFee = null }) => (
   <motion.div
     className="panel"
     initial={{ opacity: 0, scale: 0.9 }}
@@ -65,6 +65,7 @@ const DiceSection = ({ gameState, isWaitingForVRF, rollDice, isDiceDisabled, con
       disabled={isDiceDisabled}
       contractValue={contractState?.diceValue}
       isWaitingForVRF={isWaitingForVRF}
+      rollFee={rollFee}
     />
     {hasNoBalance && (
       <p className="text-center text-negative text-sm mt-2">
@@ -483,6 +484,7 @@ const Index = () => {
               isDiceDisabled={isDiceDisabled}
               contractState={contractState}
               hasNoBalance={hasNoBalance}
+              rollFee={contractInfo.rollFee}
             />
             <NewGameButton 
               handleNewGameClick={handleNewGameClick}
@@ -528,6 +530,7 @@ const Index = () => {
               isDiceDisabled={isDiceDisabled}
               contractState={contractState}
               hasNoBalance={hasNoBalance}
+              rollFee={contractInfo.rollFee}
             />
             <NewGameButton 
               handleNewGameClick={handleNewGameClick}
