@@ -12,11 +12,12 @@ const CommunityProgress = () => {
   const { gameStats } = useContract();
   const gamesPlayed = gameStats?.gamesCompleted ?? null;
   const nunuMinted = gameStats?.totalNunuEarned ?? null;
+  const totalPlayers = gameStats?.totalPlayers ?? null;
   // Community stats from contract
   const stats = [
     { icon: <Gamepad2 className="w-6 h-6" />, label: "Games Played", value: gamesPlayed !== null ? gamesPlayed.toLocaleString() : '-' },
     { icon: <Coins className="w-6 h-6" />, label: "NUNU Minted", value: nunuMinted !== null ? nunuMinted.toLocaleString() : '-' },
-    { icon: <Users className="w-6 h-6" />, label: "Total Players", value: 99 }
+    { icon: <Users className="w-6 h-6" />, label: "Total Players", value: totalPlayers !== null ? totalPlayers.toLocaleString() : '-' }
   ];
 
   const nunuTotalSupply = 1_000_000;

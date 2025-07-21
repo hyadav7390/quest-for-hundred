@@ -125,7 +125,12 @@ export const GAME_ABI = [
         "internalType": "uint256",
         "name": "_totalNunuEarned",
         "type": "uint256"
-      }
+      },
+      {
+        "internalType": "uint256",
+        "name": "_totalPlayers",
+        "type": "uint256"
+      },
     ],
     "stateMutability": "view",
     "type": "function"

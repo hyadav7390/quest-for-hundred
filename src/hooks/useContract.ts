@@ -6,7 +6,7 @@ import { monadTestnet } from '@/types/monadTestnet';
 
 // Contract address - Replace with your actual contract address
 // const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}` || '0x9d5c35e1a0db4db616211982a0e7b889e3df3b95';
-const CONTRACT_ADDRESS = '0x78dd3c63957572916fb090e6a9c407e44f045222';
+const CONTRACT_ADDRESS = '0x22ea5b45f8209c2fd7e9baba1ee2559194f48e12';
 
 interface BoardData {
   giftTiles: { index: number; points: number }[];
@@ -30,6 +30,7 @@ interface GameState {
 interface GameStats {
   gamesCompleted: number;
   totalNunuEarned: number;
+  totalPlayers: number;
 }
 
 export interface LeaderboardEntry {
@@ -421,6 +422,7 @@ export const useContract = () => {
       setGameStats({
         gamesCompleted: Number(gameStats[0]),
         totalNunuEarned: Number(gameStats[1]),
+        totalPlayers: Number(gameStats[2])
       });
     }
   }, [gameStatsData]);
@@ -457,6 +459,7 @@ export const useContract = () => {
     ? {
         gamesCompleted: Number(gameStatsData[0]),
         totalNunuEarned: Number(gameStatsData[1]),
+        totalPlayers: Number(gameStatsData[2])
       }
     : null;
 
