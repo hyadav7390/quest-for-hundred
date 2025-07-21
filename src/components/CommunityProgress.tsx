@@ -9,9 +9,9 @@ const CommunityProgress = () => {
   const navigate = useNavigate();
   
   // Get contract stats
-  const { gameStats } = useContract();
+  const { gameStats, totalSupply, maxSupply } = useContract();
   const gamesPlayed = gameStats?.gamesCompleted ?? null;
-  const nunuMinted = gameStats?.totalNunuEarned ?? null;
+  const nunuMinted = totalSupply ? parseFloat(totalSupply) : null;
   const totalPlayers = gameStats?.totalPlayers ?? null;
   // Community stats from contract
   const stats = [
@@ -20,10 +20,9 @@ const CommunityProgress = () => {
     { icon: <Users className="w-6 h-6" />, label: "Total Players", value: totalPlayers !== null ? totalPlayers.toLocaleString() : '-' }
   ];
 
-  const nunuTotalSupply = 1_000_000;
+  const nunuTotalSupply = maxSupply ? parseFloat(maxSupply) : 0;
   const progressPercentage = nunuMinted && nunuTotalSupply > 0 ? (nunuMinted / nunuTotalSupply) * 100 : 0;
 
-  // Remove progress bar color logic since progressPercentage is not available
   const getProgressBarColor = () => 'bg-accent-main/70';
 
   return (

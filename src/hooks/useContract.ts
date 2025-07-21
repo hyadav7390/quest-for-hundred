@@ -2,7 +2,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { useWriteContract, useReadContract, useWaitForTransactionReceipt, useAccount } from 'wagmi';
 import { toast } from '@/hooks/use-toast';
 import { GAME_ABI } from '@/abi/gameABI';
+import { NUNUGT_ABI } from '@/abi/nunugtABI';
 import { monadTestnet } from '@/types/monadTestnet';
+import { formatEther } from 'viem';
+import { REWARD_TOKEN } from '@/config';
 
 // Contract address - Replace with your actual contract address
 // const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}` || '0x9d5c35e1a0db4db616211982a0e7b889e3df3b95';
@@ -193,6 +196,28 @@ export const useContract = () => {
       enabled: !!address,
       refetchInterval: false,
       staleTime: 1000,
+    },
+  });
+
+  const { data: totalSupplyData, refetch: refetchTotalSupply } = useReadContract({
+    address: REWARD_TOKEN.address as `0x${string}`,
+    abi: NUNUGT_ABI,
+    functionName: 'totalSupply',
+    query: {
+      enabled: true,
+      refetchInterval: false,
+      staleTime: 10000,
+    },
+  });
+
+  const { data: maxSupplyData, refetch: refetchMaxSupply } = useReadContract({
+    address: REWARD_TOKEN.address as `0x${string}`,
+    abi: NUNUGT_ABI,
+    functionName: 'getMaxSupply',
+    query: {
+      enabled: true,
+      refetchInterval: false,
+      staleTime: 10000,
     },
   });
 
@@ -471,8 +496,8 @@ export const useContract = () => {
   // Parse rollFee (as string, number, or BigInt)
   const rollFee = rollFeeData ? BigInt(rollFeeData).toString() : null;
 
-  const totalSupply = null;
-  const totalMinted = null;
+  const totalSupply = totalSupplyData ? formatEther(BigInt(totalSupplyData as any)) : null;
+  const maxSupply = maxSupplyData ? formatEther(BigInt(maxSupplyData as any)) : null;
 
   // Fetch all game data function with logging
   const fetchAllGameData = useCallback(async () => {
@@ -490,6 +515,8 @@ export const useContract = () => {
         refetchGameStats(),
         refetchPlayerRank(),
         refetchPlayerStats(),
+        refetchTotalSupply(),
+        refetchMaxSupply(),
       ]);
       console.log('✅ [CONTRACT] All game data fetched successfully', result);
     } catch (error) {
@@ -502,7 +529,7 @@ export const useContract = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [address, refetchPlayerStatus, refetchBoardData, refetchGameStats, refetchPlayerRank]);
+  }, [address, refetchPlayerStatus, refetchBoardData, refetchGameStats, refetchPlayerRank, refetchTotalSupply, refetchMaxSupply]);
 
   const fetchLeaderboard = useCallback(async () => {
     console.log('🔄 [CONTRACT] Fetching leaderboard...');
@@ -613,5 +640,7 @@ export const useContract = () => {
     claimRewardsError,
     isClaimRewardsPending: isClaimRewardsPending || isClaimRewardsConfirming,
     rollFee,
+    totalSupply,
+    maxSupply,
   };
 };
