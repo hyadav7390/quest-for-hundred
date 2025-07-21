@@ -453,10 +453,7 @@ export const useGame = () => {
     try {
       await Promise.all([
         refetchPlayerStatus(),
-        refetchBoardData(),
-        refetchPlayerStats(),
-        refetchPlayerRank(),
-        refetchLeaderboard(),
+        refetchPlayerStats()
       ]);
     } catch (error) {
       console.error('❌ [CONTRACT] Failed to fetch player data:', error);

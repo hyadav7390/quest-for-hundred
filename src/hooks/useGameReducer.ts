@@ -58,7 +58,7 @@ const blockchainGameReducer = (state: GameState, action: GameAction): GameState 
 
     case 'UPDATE_FROM_CONTRACT': {
       const { position, score, nunuEarned, hasFinished, diceValue } = action.payload;
-      console.log('📊 [UI REDUCER] Updating from contract:', action.payload);
+      // console.log('📊 [UI REDUCER] Updating from contract:', action.payload);
       
       // Check if player moved to trigger animations
       const oldPosition = state.playerPosition;
@@ -116,11 +116,11 @@ const blockchainGameReducer = (state: GameState, action: GameAction): GameState 
 
     case 'UPDATE_BOARD_DATA': {
       const { giftTiles, detourTrapTiles, shortcutGateTiles } = action.payload;
-      console.log('📋 [UI REDUCER] Updating board data from contract:', {
-        gifts: giftTiles.length,
-        detours: detourTrapTiles.length,
-        shortcuts: shortcutGateTiles.length
-      });
+      // console.log('📋 [UI REDUCER] Updating board data from contract:', {
+      //   gifts: giftTiles.length,
+      //   detours: detourTrapTiles.length,
+      //   shortcuts: shortcutGateTiles.length
+      // });
       
       return {
         ...state,

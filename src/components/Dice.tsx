@@ -16,14 +16,14 @@ const Dice = ({ value, isRolling, onRoll, disabled, contractValue, isWaitingForV
   const animationIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const isAnimationRunningRef = useRef(false);
 
-  console.log('🎲 [DICE] Render state:', { 
-    value, 
-    isRolling, 
-    disabled, 
-    contractValue, 
-    isWaitingForVRF,
-    isAnimationRunning: isAnimationRunningRef.current
-  });
+  // console.log('🎲 [DICE] Render state:', { 
+  //   value, 
+  //   isRolling, 
+  //   disabled, 
+  //   contractValue, 
+  //   isWaitingForVRF,
+  //   isAnimationRunning: isAnimationRunningRef.current
+  // });
 
   // Handle keyboard input
   useEffect(() => {

@@ -223,7 +223,6 @@ const Index = () => {
   const isOperationInProgress = gameState.isRolling || isLoading || isWaitingForVRF;
 
   // Disable conditions
-  console.log('Disable conditions', gameState.isRolling, isWaitingForVRF, hasNoBalance, contractInfo.gameState?.boardGenerated );
   const isDiceDisabled = gameState.isRolling || isWaitingForVRF || !contractInfo.gameState?.boardGenerated || hasNoBalance;
   const isNewGameDisabled = gameState.isRolling || isWaitingForVRF || hasNoBalance;
 

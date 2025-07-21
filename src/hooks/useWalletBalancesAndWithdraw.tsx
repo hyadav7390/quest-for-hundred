@@ -24,7 +24,7 @@ export function useWalletBalancesAndWithdraw() {
 
   // Ensure embedded wallet is set as active on reload
   useEffect(() => {
-    if (embeddedWalletObj && address?.toLowerCase() !== embeddedWalletObj.address.toLowerCase()) {
+    if (embeddedWalletObj?.address && (embeddedWalletObj && address?.toLowerCase() !== embeddedWalletObj.address.toLowerCase())) {
       setActiveWallet(embeddedWalletObj);
     }
   }, [embeddedWalletObj, address, setActiveWallet]);
