@@ -1,6 +1,6 @@
 import { useReducer, useEffect, useCallback } from 'react';
 import { GameState, GameAction } from '@/types/game';
-import { useContract } from './useContract';
+import { useGame } from './useGame';
 import { toast } from '@/hooks/use-toast';
 
 // Pure UI state - no game logic, just UI animations and display
@@ -168,68 +168,27 @@ const blockchainGameReducer = (state: GameState, action: GameAction): GameState 
   }
 };
 
-export const useBlockchainGameReducer = () => {
+export const useGameReducer = () => {
   const [state, dispatch] = useReducer(blockchainGameReducer, initialState);
-  const { 
-    gameState: contractState, 
-    boardData,
-    isLoading,
-    isLoadingStartGame,
-    isWaitingForVRF,
-    startGame, 
-    rollDice, 
-    isConnected,
-    fetchAllGameData,
-    playerRank,
-    CONTRACT_ADDRESS,
-    isClaimRewardsPending,
-    claimRewardsError,
-    rollFee,
-  } = useContract();
+  const gameData = useGame();
 
-  const contractInfo = {
-    isConnected,
-    contractState,
-    isLoading,
-    isLoadingStartGame,
-    isWaitingForVRF,
-    playerRank,
-    CONTRACT_ADDRESS,
-    isClaimRewardsPending,
-    claimRewardsError,
-    rollFee,
-  };
-
-  // Sync contract state with UI state
+  // Sync contract state with UI state (from old code)
   useEffect(() => {
-    if (contractState) {
-      console.log('🔄 [UI REDUCER] Syncing contract state:', contractState);
-      
+    if (gameData.gameState) {
       // Stop dice animation when we get actual dice value from contract
-      if (contractState.diceValue > 0 && state.isRolling) {
-        console.log('🎲 [UI REDUCER] Contract dice value received, stopping animation');
-        dispatch({ type: 'STOP_DICE_ANIMATION', payload: contractState.diceValue });
+      if (gameData.gameState.diceValue > 0 && state.isRolling) {
+        dispatch({ type: 'STOP_DICE_ANIMATION', payload: gameData.gameState.diceValue });
       }
-      
       dispatch({
         type: 'UPDATE_FROM_CONTRACT',
-        payload: {
-          position: contractState.position,
-          score: contractState.gameScore,
-          nunuEarned: contractState.nunuEarned,
-          hasFinished: contractState.hasFinished,
-          diceValue: contractState.diceValue
-        }
+        payload: gameData.gameState,
       });
-
       // Handle game completion
-      if (contractState.hasFinished && state.gameStatus !== 'won') {
-        console.log('🎉 [UI REDUCER] Game completed, triggering win animation');
+      if (gameData.gameState.hasFinished && state.gameStatus !== 'won') {
         setTimeout(() => {
           dispatch({ type: 'WIN_GAME' });
         }, 2000); // Wait for animations to complete
       }
-
       // Stop movement animation after some time
       if (state.isMoving) {
         setTimeout(() => {
@@ -237,20 +196,19 @@ export const useBlockchainGameReducer = () => {
         }, 2000);
       }
     }
-  }, [contractState, state.isRolling, state.gameStatus, state.isMoving]);
+  }, [gameData.gameState, state.isRolling, state.gameStatus, state.isMoving]);
 
   // Sync board data from contract
   useEffect(() => {
-    if (boardData) {
-      console.log('📋 [UI REDUCER] Syncing board data from contract');
+    if (gameData.boardData) {
       dispatch({
         type: 'UPDATE_BOARD_DATA',
-        payload: boardData
+        payload: gameData.boardData,
       });
     }
-  }, [boardData]);
+  }, [gameData.boardData]);
 
-  // Add effect to handle delayed position updates after door animations
+  // Handle delayed position updates after door animations
   useEffect(() => {
     if (state.finalPosition) {
       const timer = setTimeout(() => {
@@ -260,88 +218,55 @@ export const useBlockchainGameReducer = () => {
     }
   }, [state.finalPosition]);
 
-  // Enhanced roll dice function that only handles UI animations
   const handleRollDice = useCallback(async () => {
-    console.log('🎲 [UI REDUCER] Handle roll dice called', {
-      isConnected,
-      isRolling: state.isRolling,
-      isLoading,
-      isWaitingForVRF,
-      boardGenerated: contractState?.boardGenerated
-    });
-
-    if (!isConnected) {
+    if (state.isRolling || gameData.isWaitingForVRF || gameData.isLoadingStartGame) {
+      return;
+    }
+    if (!gameData.isConnected) {
       toast({ title: 'Error', description: 'Please connect your wallet to play', variant: 'destructive' });
       return;
     }
-
-    if (state.isRolling || isLoading || isWaitingForVRF || isLoadingStartGame) {
-      console.log('🚫 [UI REDUCER] Roll dice blocked by loading states');
-      return;
-    }
-
-    if (!contractState?.boardGenerated) {
+    if (!gameData.gameState?.boardGenerated) {
       toast({ title: 'Error', description: 'Please start a new game first', variant: 'destructive' });
       return;
     }
-
     try {
-      // Start UI dice animation immediately
-      console.log('▶️ [UI REDUCER] Starting dice animation');
       dispatch({ type: 'START_DICE_ANIMATION' });
-      
-      // Call contract roll dice - this will trigger VRF and events
-      await rollDice(contractState.position);
-      
+      await gameData.rollDice(gameData.gameState.position);
     } catch (error) {
-      console.error('❌ [UI REDUCER] Error in dice roll:', error);
       dispatch({ type: 'STOP_DICE_ANIMATION', payload: 1 });
       toast({ title: 'Error', description: 'Failed to roll dice. Please try again.', variant: 'destructive' });
     }
-  }, [isConnected, state.isRolling, isLoading, isWaitingForVRF, isLoadingStartGame, contractState, rollDice]);
+  }, [state.isRolling, gameData]);
 
-  // Enhanced start game function
   const handleStartGame = useCallback(async () => {
-    console.log('🎮 [UI REDUCER] Handle start game called', {
-      isConnected,
-      isLoadingStartGame,
-      isLoading,
-      isRolling: state.isRolling,
-      isWaitingForVRF
-    });
-
-    if (!isConnected) {
+    if (gameData.isLoadingStartGame || state.isRolling || gameData.isWaitingForVRF) {
+      return;
+    }
+    if (!gameData.isConnected) {
       toast({ title: 'Error', description: 'Please connect your wallet to start a new game', variant: 'destructive' });
       return;
     }
-
-    if (isLoadingStartGame || isLoading || state.isRolling || isWaitingForVRF) {
-      console.log('🚫 [UI REDUCER] Start game blocked by loading states');
-      return;
-    }
-
     try {
-      console.log('🔄 [UI REDUCER] Resetting game state');
       dispatch({ type: 'RESET_GAME' });
-      await startGame();
-      
+      await gameData.startGame();
     } catch (error) {
-      console.error('❌ [UI REDUCER] Error starting game:', error);
       toast({ title: 'Error', description: 'Failed to start new game. Please try again.', variant: 'destructive' });
     }
-  }, [isConnected, isLoadingStartGame, isLoading, state.isRolling, isWaitingForVRF, startGame]);
+  }, [state.isRolling, gameData]);
 
   return [
     {
       ...state,
-      isRolling: state.isRolling || isWaitingForVRF,
+      isRolling: state.isRolling || gameData.isWaitingForVRF,
       isMoving: state.isMoving,
     },
     {
       dispatch,
       rollDice: handleRollDice,
       startGame: handleStartGame,
+      claimRewards: gameData.claimRewards,
     },
-    contractInfo
+    gameData,
   ] as const;
 };

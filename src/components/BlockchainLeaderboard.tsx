@@ -1,21 +1,18 @@
 
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Trophy, Medal, Award, Crown } from 'lucide-react';
-import { useContract, LeaderboardEntry } from '@/hooks/useContract';
+import React, { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Trophy, ChevronUp, ChevronDown, Award, User, Info, Loader2, Crown, Medal } from 'lucide-react';
+import { useGameReducer } from '@/hooks/useGameReducer';
+import { LeaderboardEntry } from '@/types/game';
 import { formatEther } from 'viem';
 
 const BlockchainLeaderboard = () => {
-  const { leaderboard, fetchLeaderboard } = useContract();
-  const [isLoading, setIsLoading] = useState(true);
+  const [, , contractInfo] = useGameReducer();
+  const { leaderboard, playerRank, isLoading, fetchLeaderboard } = contractInfo;
+  const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      await fetchLeaderboard();
-      setIsLoading(false);
-    };
-    fetchData();
+    fetchLeaderboard();
   }, [fetchLeaderboard]);
 
   const getRankIcon = (rank: number) => {
@@ -61,7 +58,7 @@ const BlockchainLeaderboard = () => {
           </h2>
           <div className="flex flex-wrap gap-2 mt-4">
             <button
-              onClick={() => fetchLeaderboard()}
+              onClick={fetchLeaderboard}
               className="w-full sm:w-auto px-4 py-2 bg-accent-main hover:bg-accent-main/80 text-bg-primary rounded-lg transition-colors font-semibold"
             >
               Refresh

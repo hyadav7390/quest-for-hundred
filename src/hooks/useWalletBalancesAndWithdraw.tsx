@@ -3,8 +3,7 @@ import { useAccount, useBalance, useSendTransaction, useWaitForTransactionReceip
 import { monadTestnet } from '@/types/monadTestnet';
 import { toast } from '@/hooks/use-toast';
 import { parseEther, formatEther } from 'viem/utils';
-import { NUNUGT_ABI } from '@/abi/nunugtABI';
-import { NATIVE_TOKEN, REWARD_TOKEN, TokenSymbol } from '@/config';
+import { NATIVE_TOKEN, REWARD_TOKEN, TokenSymbol, REWARD_TOKEN_ABI } from '@/configs';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { useSetActiveWallet } from '@privy-io/wagmi';
 import { Home, Gamepad2 } from 'lucide-react';
@@ -44,7 +43,7 @@ export function useWalletBalancesAndWithdraw() {
 
   const nunugtBalanceResult = useReadContract({
     address: REWARD_TOKEN.address as `0x${string}`,
-    abi: NUNUGT_ABI,
+    abi: REWARD_TOKEN_ABI,
     functionName: 'balanceOf',
     args: embeddedWalletObj?.address ? [embeddedWalletObj.address as `0x${string}`] : undefined,
     query: { enabled: !!embeddedWalletObj?.address },
@@ -53,7 +52,7 @@ export function useWalletBalancesAndWithdraw() {
   const refetchNunugtBalance = nunugtBalanceResult.refetch;
   const { data: nunugtDecimals } = useReadContract({
     address: REWARD_TOKEN.address as `0x${string}`,
-    abi: NUNUGT_ABI,
+    abi: REWARD_TOKEN_ABI,
     functionName: 'decimals',
     query: { enabled: !!embeddedWalletObj?.address },
   });
@@ -69,14 +68,14 @@ export function useWalletBalancesAndWithdraw() {
   });
   const { data: withdrawNunugtBalanceRaw } = useReadContract({
     address: REWARD_TOKEN.address as `0x${string}`,
-    abi: NUNUGT_ABI,
+    abi: REWARD_TOKEN_ABI,
     functionName: 'balanceOf',
     args: embeddedWalletObj?.address ? [embeddedWalletObj.address as `0x${string}`] : undefined,
     query: { enabled: !!embeddedWalletObj?.address },
   });
   const { data: withdrawNunugtDecimals } = useReadContract({
     address: REWARD_TOKEN.address as `0x${string}`,
-    abi: NUNUGT_ABI,
+    abi: REWARD_TOKEN_ABI,
     functionName: 'decimals',
     query: { enabled: !!embeddedWalletObj?.address },
   });
@@ -174,7 +173,7 @@ export function useWalletBalancesAndWithdraw() {
         const value = BigInt(Math.floor(Number(amount) * 10 ** Number(nunugtDecimals)));
         writeNUNUGTTransfer({
           address: REWARD_TOKEN.address as `0x${string}`,
-          abi: NUNUGT_ABI,
+          abi: REWARD_TOKEN_ABI,
           functionName: 'transfer',
           args: [recipient, value],
           chain: monadTestnet,

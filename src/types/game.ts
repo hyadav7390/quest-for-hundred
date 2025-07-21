@@ -54,3 +54,8 @@ export interface GameInfo {
   isAvailable: boolean;
   comingSoon?: boolean;
 }
+
+export interface LeaderboardEntry {
+  player: string;
+  score: number;
+}

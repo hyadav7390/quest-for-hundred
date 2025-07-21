@@ -1,9 +1,9 @@
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { config } from "./../../config";
-import { WagmiProvider } from '@privy-io/wagmi';
 import { PrivyProvider } from '@privy-io/react-auth';
-import { monadTestnet } from './../../types/monadTestnet';
+import { WagmiProvider } from '@privy-io/wagmi';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { wagmiConfig } from '@/configs';
+import { monadTestnet } from '@/types/monadTestnet';
 
 // Create a client for React Query
 const queryClient = new QueryClient({
@@ -51,7 +51,7 @@ const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       }}
     >
       <QueryClientProvider client={queryClient}>
-        <WagmiProvider config={config}>
+        <WagmiProvider config={wagmiConfig}>
           {children}
         </WagmiProvider>
       </QueryClientProvider>

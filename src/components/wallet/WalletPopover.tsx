@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Wallet, Copy, AlertTriangle, Coins, RotateCcw, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { REWARD_TOKEN } from '@/config';
+import { NATIVE_TOKEN, REWARD_TOKEN, TokenSymbol } from '@/configs';
 import { useState } from 'react';
 
 interface WalletPopoverProps {

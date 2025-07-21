@@ -1,0 +1,33 @@
+import { monadTestnet } from '@/types/monadTestnet';
+import { http, createConfig } from 'wagmi';
+import { sepolia, mainnet } from 'viem/chains';
+
+export * from './contracts';
+
+export const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID as string;
+export const supportedChains = [monadTestnet, sepolia, mainnet] as const;
+export const defaultChain = monadTestnet;
+
+export const wagmiConfig = createConfig({
+  chains: supportedChains,
+  transports: {
+    [monadTestnet.id]: http(),
+    [sepolia.id]: http(),
+    [mainnet.id]: http(),
+  },
+});
+
+export const NATIVE_TOKEN = {
+  name: 'Monad',
+  symbol: 'MON',
+  decimals: 18,
+};
+
+export const REWARD_TOKEN = {
+  name: 'Nunu Game Token',
+  symbol: 'NUNU',
+  decimals: 18,
+  address: '0x9a80c12a72991e74e652fd52ec325ae07dffa950',
+};
+
+export type TokenSymbol = typeof NATIVE_TOKEN.symbol | typeof REWARD_TOKEN.symbol;

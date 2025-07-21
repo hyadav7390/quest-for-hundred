@@ -3,20 +3,22 @@ import { motion } from 'framer-motion';
 import { Info, Users, Gamepad2, Coins } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { useContract } from '@/hooks/useContract';
+import { useGame } from '@/hooks/useGame';
+import { useEffect } from 'react';
 
 const CommunityProgress = () => {
   const navigate = useNavigate();
-  
-  // Get contract stats
-  const { gameStats, totalSupply, maxSupply } = useContract();
+  const { gameStats, totalSupply, maxSupply, fetchPlatformData } = useGame();
+  useEffect(() => {
+    fetchPlatformData();
+  }, [fetchPlatformData]);
   const gamesPlayed = gameStats?.gamesCompleted ?? null;
-  const nunuMinted = totalSupply ? parseFloat(totalSupply) : null;
+  const nunuMinted = totalSupply ? parseFloat(totalSupply) : 0;
   const totalPlayers = gameStats?.totalPlayers ?? null;
   // Community stats from contract
   const stats = [
     { icon: <Gamepad2 className="w-6 h-6" />, label: "Games Played", value: gamesPlayed !== null ? gamesPlayed.toLocaleString() : '-' },
-    { icon: <Coins className="w-6 h-6" />, label: "NUNU Minted", value: nunuMinted !== null ? nunuMinted.toLocaleString() : '-' },
+    { icon: <Coins className="w-6 h-6" />, label: "NUNU Minted", value: nunuMinted ? nunuMinted.toLocaleString() : '-' },
     { icon: <Users className="w-6 h-6" />, label: "Total Players", value: totalPlayers !== null ? totalPlayers.toLocaleString() : '-' }
   ];
 
@@ -78,8 +80,8 @@ const CommunityProgress = () => {
             />
           </div>
           <div className="flex justify-between text-xs text-white/50 mt-1">
-            <span>{nunuMinted !== null ? nunuMinted.toLocaleString() : '-'}</span>
-            <span>{nunuTotalSupply.toLocaleString()}</span>
+            <span>{nunuMinted ? nunuMinted.toLocaleString() : '-'}</span>
+            <span>{nunuTotalSupply ? nunuTotalSupply.toLocaleString() : '-'}</span>
           </div>
         </div>
 

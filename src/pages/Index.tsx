@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { useBlockchainGameReducer } from '@/hooks/useBlockchainGameReducer';
+import { useGameReducer } from '@/hooks/useGameReducer';
 import { useSoundEffects } from '@/hooks/useSoundEffects';
 import { useSplashAnimations } from '@/hooks/useSplashAnimations';
 import GameBoard from '@/components/GameBoard';
@@ -17,7 +17,6 @@ import { Wallet, RefreshCw, HelpCircle, Trophy } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAccount, useBalance } from 'wagmi';
 import { monadTestnet } from '@/types/monadTestnet';
-import { useContract } from '@/hooks/useContract';
 import { useWalletBalancesAndWithdraw } from '@/hooks/useWalletBalancesAndWithdraw';
 
 // Helper components defined outside Index to prevent re-mounting on every render
@@ -51,7 +50,7 @@ const BalanceWarning = () => (
 //   </motion.div>
 // );
 
-const DiceSection = ({ gameState, isWaitingForVRF, rollDice, isDiceDisabled, contractState, hasNoBalance, rollFee = null }) => (
+const DiceSection = ({ gameState, isWaitingForVRF, rollDice, isDiceDisabled, contractValue, hasNoBalance, rollFee = null }) => (
   <motion.div
     className="panel"
     initial={{ opacity: 0, scale: 0.9 }}
@@ -59,11 +58,11 @@ const DiceSection = ({ gameState, isWaitingForVRF, rollDice, isDiceDisabled, con
     transition={{ duration: 0.5, delay: 0.2 }}
   >
     <Dice
-      value={gameState.diceValue}
+      value={contractValue}
       isRolling={gameState.isRolling || isWaitingForVRF}
       onRoll={rollDice}
       disabled={isDiceDisabled}
-      contractValue={contractState?.diceValue}
+      contractValue={contractValue}
       isWaitingForVRF={isWaitingForVRF}
       rollFee={rollFee}
     />
@@ -89,7 +88,7 @@ const NewGameButton = ({ handleNewGameClick, isNewGameDisabled, isStartingGame }
 
 const Index = () => {
   const navigate = useNavigate();
-  const [gameState, gameActions, contractInfo] = useBlockchainGameReducer();
+  const [gameState, gameActions, contractInfo] = useGameReducer();
   const { playSound } = useSoundEffects(gameState.isSoundMuted);
   const { splash, hideSplash, triggerGiftSplash, triggerDetourSplash, triggerShortcutSplash } = useSplashAnimations();
   const [showNewGameConfirmation, setShowNewGameConfirmation] = useState(false);
@@ -99,16 +98,16 @@ const Index = () => {
 
   const { 
     isConnected, 
-    contractState, 
     isLoading, 
     isLoadingStartGame, 
     isWaitingForVRF, 
     playerRank, 
     CONTRACT_ADDRESS,
+    isPlayerStatusLoaded,
   } = contractInfo;
 
-  // Get claimRewards and claimRewardsError directly from useContract
-  const { claimRewards, claimRewardsError } = useContract();
+  const { rollDice, startGame, claimRewards } = gameActions;
+  const { claimRewardsError } = contractInfo;
   const { embeddedWalletObj, setActiveWallet, address: embeddedWalletAddress } = useWalletBalancesAndWithdraw();
   // Get balance for validation
   const { data: balance } = useBalance({
@@ -135,10 +134,10 @@ const Index = () => {
 
   // Handle tile interactions for splash animations and overshoot warning
   useEffect(() => {
-    if (!contractState) return;
+    if (!contractInfo.gameState) return;
     const prevPosition = prevPlayerPositionRef.current;
-    const newPosition = contractState.position;
-    const diceValue = contractState.diceValue;
+    const newPosition = contractInfo.gameState.position;
+    const diceValue = contractInfo.gameState.diceValue;
     const needed = 100 - prevPosition;
     // Only show warning if position did not change and diceValue overshoots
     if (
@@ -176,10 +175,24 @@ const Index = () => {
       playSound('gift');
     }
     // Only update previous position if game is not finished
-    if (!contractState.hasFinished) {
+    if (!contractInfo.gameState.hasFinished) {
       prevPlayerPositionRef.current = newPosition;
     }
-  }, [contractState?.position, contractState?.diceValue, contractState?.hasFinished, gameState.giftTiles, gameState.detourTrapTiles, gameState.shortcutGateTiles, triggerGiftSplash, triggerDetourSplash, triggerShortcutSplash, playSound, toast]);
+  }, [contractInfo.gameState, gameState.giftTiles, gameState.detourTrapTiles, gameState.shortcutGateTiles, playSound, triggerDetourSplash, triggerGiftSplash, triggerShortcutSplash]);
+
+  // Stop dice animation as soon as contract diceValue is received and isRolling is true
+  useEffect(() => {
+    if (contractInfo.gameState && contractInfo.gameState.diceValue > 0 && gameState.isRolling) {
+      gameActions.dispatch({ type: 'STOP_DICE_ANIMATION', payload: contractInfo.gameState.diceValue });
+    }
+  }, [contractInfo.gameState, gameState.isRolling, gameActions.dispatch]);
+
+  // Add after gameState/gameActions/contractInfo are defined
+  useEffect(() => {
+    if (contractInfo.gameState?.position === 100 && contractInfo.gameState?.hasFinished) {
+      contractInfo.refetchPlayerRank();
+    }
+  }, [contractInfo.gameState?.position, contractInfo.gameState?.hasFinished, contractInfo]);
 
   // Helper to ensure embedded wallet is active before game actions
   const ensureEmbeddedWalletActive = async () => {
@@ -209,46 +222,14 @@ const Index = () => {
   const hasNoBalance = balance && balance.value === 0n;
   const isOperationInProgress = gameState.isRolling || isLoading || isWaitingForVRF;
 
-  // Handle dice roll
-  const rollDice = useCallback(async () => {
-    if (isOperationInProgress) return;
-    
-    if (!isConnected) {
-      toast({
-        title: "Wallet Required",
-        description: "Please connect your wallet to play on-chain",
-        variant: "destructive",
-      });
-      return;
-    }
+  // Disable conditions
+  console.log('Disable conditions', gameState.isRolling, isWaitingForVRF, hasNoBalance, contractInfo.gameState?.boardGenerated );
+  const isDiceDisabled = gameState.isRolling || isWaitingForVRF || !contractInfo.gameState?.boardGenerated || hasNoBalance;
+  const isNewGameDisabled = gameState.isRolling || isWaitingForVRF || hasNoBalance;
 
-    if (!contractState?.boardGenerated) {
-      toast({
-        title: "Game Not Started",
-        description: "Please start a new game first",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (hasNoBalance) {
-      toast({
-        title: "Insufficient Balance",
-        description: "You need MON tokens to pay for transaction fees. Please add funds to your wallet.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    await ensureEmbeddedWalletActive();
-    await gameActions.rollDice();
-    playSound('diceRoll');
-  }, [isOperationInProgress, isConnected, contractState?.boardGenerated, hasNoBalance, gameActions, playSound, ensureEmbeddedWalletActive]);
-
-  // Handle new game
+  // Handle new game (match old code: use only reducer/UI state)
   const handleNewGameClick = async () => {
     if (isLoading || gameState.isRolling || isWaitingForVRF) return;
-    
     if (!isConnected) {
       toast({
         title: "Wallet Required",
@@ -257,7 +238,6 @@ const Index = () => {
       });
       return;
     }
-
     if (hasNoBalance) {
       toast({
         title: "Insufficient Balance",
@@ -266,12 +246,11 @@ const Index = () => {
       });
       return;
     }
-
     if (gameState.diceRolled && gameState.gameStatus === 'playing') {
       setShowNewGameConfirmation(true);
     } else {
       await ensureEmbeddedWalletActive();
-      await restartGame();
+      await startGame();
     }
   };
 
@@ -282,7 +261,7 @@ const Index = () => {
     setShowBoardLoader(true);
     try {
       await ensureEmbeddedWalletActive();
-      await gameActions.startGame();
+      await startGame();
       playSound('start');
       toast({
         title: "New Game Started!",
@@ -299,14 +278,6 @@ const Index = () => {
   const toggleSound = () => {
     gameActions.dispatch({ type: 'TOGGLE_SOUND' });
   };
-
-  // Disable conditions
-  const isDiceDisabled = isOperationInProgress ||
-           gameState.gameStatus === 'won' || 
-           !contractState?.boardGenerated ||
-           hasNoBalance;
-
-  const isNewGameDisabled = isLoading || gameState.isRolling || isWaitingForVRF || hasNoBalance;
 
   // Handle manual claim rewards
   const handleClaimRewards = async () => {
@@ -355,7 +326,7 @@ const Index = () => {
   }
 
   // Show game start prompt if game not started
-  if (contractState && !contractState.boardGenerated) {
+  if (contractInfo.gameState && !contractInfo.gameState.boardGenerated) {
     return (
       <div className="min-h-screen bg-bg-primary p-4">
         <div className="max-w-7xl mx-auto">
@@ -434,7 +405,7 @@ const Index = () => {
                 Leaderboard
               </Button>
             </div>
-            {contractState && (
+            {contractInfo && (
               <div className="text-sm text-accent-main mt-2 space-y-1">
                 {playerRank > 0 && (
                   <p className="text-positive">🏅 Your Rank: #{playerRank}</p>
@@ -453,17 +424,17 @@ const Index = () => {
         {/* Mobile Layout */}
         <div className="block lg:hidden space-y-6">
           <ScoreBoard
-            score={gameState.score}
+            score={contractInfo.gameState?.gameScore ?? gameState.score}
             position={gameState.playerPosition}
             turnsPlayed={gameState.turnsPlayed}
-            giftsCollected={gameState.giftsCollected}
+            giftsCollected={contractInfo.gameState?.giftsCollected ?? 0}
             detourTrapsTriggered={gameState.detourTrapsTriggered}
             shortcutGatesTriggered={gameState.shortcutGatesTriggered}
             isSoundMuted={gameState.isSoundMuted}
             onToggleSound={toggleSound}
-            diceRolls={contractState?.diceRolls}
-            shortcuts={contractState?.shortcuts}
-            detours={contractState?.detours}
+            diceRolls={contractInfo.gameState?.diceRolls}
+            shortcuts={contractInfo.gameState?.shortcuts}
+            detours={contractInfo.gameState?.detours}
           />
 
           <GameBoard
@@ -482,7 +453,7 @@ const Index = () => {
               isWaitingForVRF={isWaitingForVRF}
               rollDice={rollDice}
               isDiceDisabled={isDiceDisabled}
-              contractState={contractState}
+              contractValue={contractInfo.gameState?.diceValue}
               hasNoBalance={hasNoBalance}
               rollFee={contractInfo.rollFee}
             />
@@ -510,17 +481,17 @@ const Index = () => {
 
           <div className="lg:col-span-1 space-y-5">
             <ScoreBoard
-              score={gameState.score}
+              score={contractInfo.gameState?.gameScore ?? gameState.score}
               position={gameState.playerPosition}
               turnsPlayed={gameState.turnsPlayed}
-              giftsCollected={gameState.giftsCollected}
+              giftsCollected={contractInfo.gameState?.giftsCollected ?? 0}
               detourTrapsTriggered={gameState.detourTrapsTriggered}
               shortcutGatesTriggered={gameState.shortcutGatesTriggered}
               isSoundMuted={gameState.isSoundMuted}
               onToggleSound={toggleSound}
-              diceRolls={contractState?.diceRolls}
-              shortcuts={contractState?.shortcuts}
-              detours={contractState?.detours}
+              diceRolls={contractInfo.gameState?.diceRolls}
+              shortcuts={contractInfo.gameState?.shortcuts}
+              detours={contractInfo.gameState?.detours}
             />
 
             <DiceSection 
@@ -528,7 +499,7 @@ const Index = () => {
               isWaitingForVRF={isWaitingForVRF}
               rollDice={rollDice}
               isDiceDisabled={isDiceDisabled}
-              contractState={contractState}
+              contractValue={contractInfo.gameState?.diceValue}
               hasNoBalance={hasNoBalance}
               rollFee={contractInfo.rollFee}
             />
@@ -560,19 +531,19 @@ const Index = () => {
           isOpen={showVictoryModal && gameState.gameStatus === 'won'}
           score={gameState.score}
           turnsPlayed={gameState.turnsPlayed}
-          giftsCollected={contractState?.giftsCollected ?? 0}
+          giftsCollected={contractInfo.gameState?.giftsCollected ?? 0}
           detourTrapsTriggered={gameState.detourTrapsTriggered}
           shortcutGatesTriggered={gameState.shortcutGatesTriggered}
-          gameScore={gameState.score}
-          nunuCoins={contractState?.nunuEarned || 0}
+          gameScore={contractInfo.gameState?.gameScore ?? 0}
+          nunuCoins={contractInfo.gameState?.nunuEarned || 0}
           onRestart={restartGame}
           onClaimRewards={handleClaimRewards}
-          diceRolls={contractState?.diceRolls}
-          shortcuts={contractState?.shortcuts}
-          detours={contractState?.detours}
+          diceRolls={contractInfo.gameState?.diceRolls}
+          shortcuts={contractInfo.gameState?.shortcuts}
+          detours={contractInfo.gameState?.detours}
           isRestarting={showBoardLoader}
           isClaimRewardsPending={contractInfo.isClaimRewardsPending}
-          claimRewardsError={claimRewardsError}
+          claimRewardsError={contractInfo.claimRewardsError}
           onClose={() => setShowVictoryModal(false)}
         />
 

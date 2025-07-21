@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Wallet } from 'lucide-react';
-import { NATIVE_TOKEN, REWARD_TOKEN } from '@/config';
+import { NATIVE_TOKEN, REWARD_TOKEN } from '@/configs';
 import { formatEther } from 'viem/utils';
 import { useWalletBalancesAndWithdraw } from '@/hooks/useWalletBalancesAndWithdraw';
 import LogoButton from './LogoButton';

@@ -2,13 +2,11 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { User, Coins, Trophy, Sparkles, Star } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { useContract } from '@/hooks/useContract';
+import { useGame } from '@/hooks/useGame';
 import CrawlingCharacter from './CrawlingCharacter';
 
 const ContractUserProfile = () => {
-  const { gameState, playerStats } = useContract();
-  console.log('playerStats', playerStats);
-  console.log('gameState', gameState);
+  const { gameState, playerStats } = useGame();
   const hasFinished = gameState?.hasFinished;
 
   return (
