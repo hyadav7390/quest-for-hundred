@@ -6,12 +6,9 @@ import {
   useWaitForTransactionReceipt,
 } from 'wagmi';
 import { toast } from '@/hooks/use-toast';
-import {
-  SINGLE_PLAYER_GAME_ABI,
-  REWARD_TOKEN_ABI,
-  REWARD_TOKEN,
-  SINGLE_PLAYER_CONTRACT_ADDRESS,
-} from '@/configs';
+import { SINGLE_PLAYER_GAME_ABI } from '@/abi/singlePlayerGameABI';
+import { REWARDS_TOKEN_ABI } from '@/abi/rewardTokenABI';
+import { SINGLE_PLAYER_CONTRACT_ADDRESS, REWARD_TOKEN, } from '@/configs';
 import { monadTestnet } from '@/types/monadTestnet';
 import { formatEther } from 'viem';
 
@@ -99,7 +96,7 @@ export const useGame = () => {
   });
   const { data: totalSupplyData, refetch: refetchTotalSupply } = useReadContract({
     address: REWARD_TOKEN.address as `0x${string}`,
-    abi: REWARD_TOKEN_ABI,
+    abi: REWARDS_TOKEN_ABI,
     functionName: 'totalSupply',
     query: {
       enabled: true,
@@ -109,7 +106,7 @@ export const useGame = () => {
   });
   const { data: maxSupplyData, refetch: refetchMaxSupply } = useReadContract({
     address: REWARD_TOKEN.address as `0x${string}`,
-    abi: REWARD_TOKEN_ABI,
+    abi: REWARDS_TOKEN_ABI,
     functionName: 'getMaxSupply',
     query: {
       enabled: true,
@@ -193,13 +190,14 @@ export const useGame = () => {
       });
       return;
     }
-    console.log('🎮 [CONTRACT] Starting new game...', { address, contractAddress: SINGLE_PLAYER_GAME_ABI });
+    console.log('🎮 [CONTRACT] Starting new game...', { address, contractAddress: SINGLE_PLAYER_CONTRACT_ADDRESS });
     setIsLoadingStartGame(true);
     try {
       const txConfig = {
         address: SINGLE_PLAYER_CONTRACT_ADDRESS as `0x${string}`,
         abi: SINGLE_PLAYER_GAME_ABI,
         functionName: 'startGame' as const,
+        args: [],
         chain: monadTestnet,
         account: address,
         gas: 1000000n
@@ -257,6 +255,7 @@ export const useGame = () => {
         address: SINGLE_PLAYER_CONTRACT_ADDRESS as `0x${string}`,
         abi: SINGLE_PLAYER_GAME_ABI,
         functionName: 'claimRewards' as const,
+        args: [],
         chain: monadTestnet,
         account: address,
         gas: 500000n
@@ -387,7 +386,7 @@ export const useGame = () => {
   //   if (rollFeeData) setRollFee(BigInt(rollFeeData).toString());
   // }, [rollFeeData]);
 
-  const rollFee = rollFeeData ? BigInt(rollFeeData).toString() : null;
+  const rollFee = rollFeeData ? BigInt(rollFeeData as any).toString() : null;
 
   const totalSupply = totalSupplyData ? formatEther(BigInt(totalSupplyData as any)) : null;
   const maxSupply = maxSupplyData ? formatEther(BigInt(maxSupplyData as any)) : null;
@@ -453,7 +452,10 @@ export const useGame = () => {
     try {
       await Promise.all([
         refetchPlayerStatus(),
-        refetchPlayerStats()
+        refetchBoardData(),
+        refetchPlayerStats(),
+        refetchPlayerRank(),
+        refetchLeaderboard(),
       ]);
     } catch (error) {
       console.error('❌ [CONTRACT] Failed to fetch player data:', error);
