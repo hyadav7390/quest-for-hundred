@@ -168,9 +168,9 @@ const blockchainGameReducer = (state: GameState, action: GameAction): GameState 
   }
 };
 
-export const useGameReducer = () => {
+export const useGameReducer = (mode: 'single' | 'multi' = 'single') => {
   const [state, dispatch] = useReducer(blockchainGameReducer, initialState);
-  const gameData = useGame();
+  const gameData = useGame(mode);
 
   // Sync contract state with UI state (from old code)
   useEffect(() => {
@@ -232,7 +232,7 @@ export const useGameReducer = () => {
     }
     try {
       dispatch({ type: 'START_DICE_ANIMATION' });
-      await gameData.rollDice(gameData.gameState.position);
+      await gameData.rollDice();
     } catch (error) {
       dispatch({ type: 'STOP_DICE_ANIMATION', payload: 1 });
       toast({ title: 'Error', description: 'Failed to roll dice. Please try again.', variant: 'destructive' });

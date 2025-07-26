@@ -4,9 +4,11 @@ import { Play, Target, Gift, Zap, Trophy, X, MessageCircle, Send, FileText } fro
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import CommunityProgress from '@/components/CommunityProgress';
+import { useState } from 'react';
 
 const Home = () => {
   const navigate = useNavigate();
+  const [mode, setMode] = useState<'single' | 'multi'>('single');
 
   const features = [
     {
@@ -75,23 +77,35 @@ const Home = () => {
             <p className="text-xl sm:text-2xl text-white/80 mb-8 max-w-3xl mx-auto">
               Roll the dice, collect gifts, avoid traps, and find shortcuts in this thrilling blockchain board game!
             </p>
-            
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, delay: 0.3 }}
             >
+              <div className="flex justify-center gap-4 mb-4">
+                <Button
+                  variant={mode === 'single' ? 'default' : 'outline'}
+                  onClick={() => setMode('single')}
+                >
+                  Single Player
+                </Button>
+                <Button
+                  variant={mode === 'multi' ? 'default' : 'outline'}
+                  onClick={() => setMode('multi')}
+                >
+                  Multiplayer
+                </Button>
+              </div>
               <Button
                 size="lg"
-                onClick={() => navigate('/game')}
+                onClick={() => navigate('/game', { state: { mode } })}
                 className="px-12 py-6 text-xl font-bold rounded-2xl hover:shadow-glow hover:scale-105 transition-all duration-300"
               >
-                🎲 Let’s Rug!
+                🎲 Play Now
               </Button>
             </motion.div>
           </motion.div>
         </div>
-
         <AnimatedBackground />
       </div>
 

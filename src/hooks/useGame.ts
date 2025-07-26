@@ -7,15 +7,14 @@ import {
 } from 'wagmi';
 import { toast } from '@/hooks/use-toast';
 import { SINGLE_PLAYER_GAME_ABI } from '@/abi/singlePlayerGameABI';
+import { MULTI_PLAYER_GAME_ABI } from '@/abi/multiPlayerGameABI';
 import { REWARDS_TOKEN_ABI } from '@/abi/rewardTokenABI';
-import { SINGLE_PLAYER_CONTRACT_ADDRESS, REWARD_TOKEN, } from '@/configs';
+import { SINGLE_PLAYER_CONTRACT_ADDRESS, MULTI_PLAYER_CONTRACT_ADDRESS, REWARD_TOKEN } from '@/configs';
 import { monadTestnet } from '@/types/monadTestnet';
 import { formatEther } from 'viem';
 
-// Helper to handle contract errors and show user-friendly toast
 function handleContractError(error: any, fallbackMessage = 'Transaction failed') {
   const errorMsg = error?.message || '';
-  console.log('error', error.message);
   if (
     errorMsg.includes('insufficient balance') ||
     errorMsg.includes('Signer had insufficient balance') ||
@@ -30,8 +29,9 @@ function handleContractError(error: any, fallbackMessage = 'Transaction failed')
   }
 }
 
-export const useGame = () => {
+export const useGame = (mode: 'single' | 'multi' = 'single') => {
   const { address } = useAccount();
+  console.log(`[useGame] Initializing for mode: ${mode}`);
 
   // Game state
   const [gameState, setGameState] = useState<any>(null);
@@ -45,7 +45,19 @@ export const useGame = () => {
   const [isWaitingForVRF, setIsWaitingForVRF] = useState(false);
   const [isClaimRewardsPending, setIsClaimRewardsPending] = useState(false);
   const [claimRewardsError, setClaimRewardsError] = useState<string | null>(null);
-  const [isPlayerStatusLoaded, setIsPlayerStatusLoaded] = useState(false);
+  
+  // Contract selection
+  const { contractAddress, contractAbi } = useMemo(() => {
+    if (mode === 'multi') {
+      console.log('[useGame] Using MULTIPLAYER contracts');
+      return { contractAddress: MULTI_PLAYER_CONTRACT_ADDRESS, contractAbi: MULTI_PLAYER_GAME_ABI };
+    }
+    console.log('[useGame] Using SINGLE_PLAYER contracts');
+    return { contractAddress: SINGLE_PLAYER_CONTRACT_ADDRESS, contractAbi: SINGLE_PLAYER_GAME_ABI };
+  }, [mode]);
+
+  const rollFeeFunctionName = useMemo(() => (mode === 'multi' ? 'getRollFee' : 'ROLL_FEE'), [mode]);
+  console.log(`[useGame] Roll fee function name: ${rollFeeFunctionName}`);
 
   // Contract calls
   const {
@@ -81,12 +93,18 @@ export const useGame = () => {
     isSuccess: isClaimRewardsConfirmed,
     error: claimRewardsReceiptError
   } = useWaitForTransactionReceipt({ hash: claimRewardsHash });
+  // Multiplayer: join game
+  const {
+    writeContract: writeJoinGame,
+    data: joinGameHash,
+    isPending: isJoinGamePending,
+    error: joinGameError
+  } = useWriteContract();
 
   // Reads with staleTime/refetchInterval
-  // --- PLATFORM DATA ---
   const { data: gameStatsData, refetch: refetchGameStats } = useReadContract({
-    address: SINGLE_PLAYER_CONTRACT_ADDRESS,
-    abi: SINGLE_PLAYER_GAME_ABI,
+    address: contractAddress as `0x${string}`,
+    abi: contractAbi,
     functionName: 'getGameStats',
     query: {
       enabled: true,
@@ -114,21 +132,33 @@ export const useGame = () => {
       staleTime: 10000,
     },
   });
-  // --- PLAYER DATA ---
-  const { data: playerStatusData, refetch: refetchPlayerStatus } = useReadContract({
-    address: SINGLE_PLAYER_CONTRACT_ADDRESS,
-    abi: SINGLE_PLAYER_GAME_ABI,
+  const { 
+    data: playerStatusData, 
+    refetch: refetchPlayerStatus,
+    isFetched: isPlayerStatusFetched,
+    isError: isPlayerStatusError,
+    error: playerStatusError,
+  } = useReadContract({
+    address: contractAddress as `0x${string}`,
+    abi: contractAbi,
     functionName: 'getPlayerStatus',
     args: address ? [address] : undefined,
     query: {
       enabled: !!address,
+      retry: (failureCount, error) => {
+        // Don't retry if the error is "Player not in a game", as it's an expected state
+        if (error.message.includes('Player not in a game')) {
+          return false;
+        }
+        return failureCount < 3;
+      },
       refetchInterval: false,
       staleTime: 1000,
     },
   });
   const { data: boardDataData, refetch: refetchBoardData } = useReadContract({
-    address: SINGLE_PLAYER_CONTRACT_ADDRESS,
-    abi: SINGLE_PLAYER_GAME_ABI,
+    address: contractAddress as `0x${string}`,
+    abi: contractAbi,
     functionName: 'getBoard',
     args: address ? [address] : undefined,
     query: {
@@ -137,30 +167,9 @@ export const useGame = () => {
       staleTime: 30000,
     },
   });
-  const { data: playerRankData, refetch: refetchPlayerRank } = useReadContract({
-    address: SINGLE_PLAYER_CONTRACT_ADDRESS,
-    abi: SINGLE_PLAYER_GAME_ABI,
-    functionName: 'getPlayerRank',
-    args: address ? [address] : undefined,
-    query: {
-      enabled: !!address,
-      refetchInterval: false,
-      staleTime: 5000,
-    },
-  });
-  const { data: leaderboardData, refetch: refetchLeaderboard } = useReadContract({
-    address: SINGLE_PLAYER_CONTRACT_ADDRESS,
-    abi: SINGLE_PLAYER_GAME_ABI,
-    functionName: 'getLeaderboard',
-    query: {
-      enabled: true,
-      refetchInterval: false,
-      staleTime: 15000,
-    },
-  });
   const { data: playerStatsData, refetch: refetchPlayerStats } = useReadContract({
-    address: SINGLE_PLAYER_CONTRACT_ADDRESS,
-    abi: SINGLE_PLAYER_GAME_ABI,
+    address: contractAddress as `0x${string}`,
+    abi: contractAbi,
     functionName: 'getPlayerStats',
     args: address ? [address] : undefined,
     query: {
@@ -170,9 +179,9 @@ export const useGame = () => {
     },
   });
   const { data: rollFeeData, refetch: refetchRollFee } = useReadContract({
-    address: SINGLE_PLAYER_CONTRACT_ADDRESS,
-    abi: SINGLE_PLAYER_GAME_ABI,
-    functionName: 'ROLL_FEE',
+    address: contractAddress as `0x${string}`,
+    abi: contractAbi,
+    functionName: rollFeeFunctionName,
     query: {
       enabled: true,
       refetchInterval: false,
@@ -180,123 +189,166 @@ export const useGame = () => {
     },
   });
 
-  // Contract interactions
+  const rollFee = rollFeeData ? BigInt(rollFeeData as any).toString() : null;
+  const totalSupply = totalSupplyData ? formatEther(BigInt(totalSupplyData as any)) : null;
+  const maxSupply = maxSupplyData ? formatEther(BigInt(maxSupplyData as any)) : null;
+
+  // --- Single Player ---
   const startGame = useCallback(async () => {
-    if (!address || isStartGamePending || isStartGameConfirming) {
-      console.log('🚫 [CONTRACT] Start game blocked:', {
-        address: !!address,
-        isStartGamePending,
-        isStartGameConfirming
-      });
+    if (mode !== 'single' || !address || isStartGamePending || isStartGameConfirming) {
       return;
     }
-    console.log('🎮 [CONTRACT] Starting new game...', { address, contractAddress: SINGLE_PLAYER_CONTRACT_ADDRESS });
+    console.log('[useGame] Attempting to start SINGLE player game...');
     setIsLoadingStartGame(true);
     try {
-      const txConfig = {
+      writeStartGame({
         address: SINGLE_PLAYER_CONTRACT_ADDRESS as `0x${string}`,
         abi: SINGLE_PLAYER_GAME_ABI,
-        functionName: 'startGame' as const,
+        functionName: 'startGame',
         args: [],
         chain: monadTestnet,
         account: address,
         gas: 1000000n
-      };
-      console.log('📋 [CONTRACT] Start game transaction config:', txConfig);
-      writeStartGame(txConfig);
+      });
     } catch (error: any) {
-      console.error('❌ [CONTRACT] Failed to start game:', error);
+      console.error('[useGame] Failed to start SINGLE player game:', error);
       setIsLoadingStartGame(false);
     }
-  }, [address, writeStartGame, isStartGamePending, isStartGameConfirming]);
+  }, [address, writeStartGame, isStartGamePending, isStartGameConfirming, mode]);
 
-  const rollDice = useCallback(async (currentPosition: number) => {
+  const { isSuccess: isJoinGameConfirmed } = useWaitForTransactionReceipt({ hash: joinGameHash });
+
+  // --- Multiplayer: Auto-join and start game flow ---
+  useEffect(() => {
+    console.log('[useGame] Multiplayer effect triggered.', {
+      mode,
+      address,
+      isPlayerStatusFetched,
+      isPlayerStatusError,
+      playerStatusData,
+    });
+
+    if (mode === 'multi' && address && isPlayerStatusFetched) {
+      const isNotInGame = isPlayerStatusError && playerStatusError?.message.includes("Player not in a game");
+
+      // Case 1: Player is not in a game yet.
+      if (isNotInGame) {
+        console.log('[useGame] Player not in game. Attempting to join...');
+        writeJoinGame({
+          address: MULTI_PLAYER_CONTRACT_ADDRESS as `0x${string}`,
+          abi: MULTI_PLAYER_GAME_ABI,
+          functionName: 'joinGame',
+          args: [1],
+          value: BigInt('100000000000000000'), // 0.1 ETH
+          chain: monadTestnet,
+          account: address,
+        });
+      }
+      // Case 2: Player is in a game, but the board hasn't been generated.
+      else if (playerStatusData && !playerStatusData[6]) { // CORRECTED INDEX: boardGenerated is at index 6 for multi-player
+        console.log('[useGame] Player in game, but board not generated. Attempting to start game...');
+        writeStartGame({
+          address: MULTI_PLAYER_CONTRACT_ADDRESS as `0x${string}`,
+          abi: MULTI_PLAYER_GAME_ABI,
+          functionName: 'startGame',
+          args: [1],
+          chain: monadTestnet,
+          account: address,
+        });
+      } else if (playerStatusData && playerStatusData[6]) { // CORRECTED INDEX
+        console.log('[useGame] Player in game and board is generated. Ready to play.');
+      } else if (isPlayerStatusError) {
+        console.error('[useGame] getPlayerStatus failed with an unexpected error:', playerStatusError);
+        toast({ title: 'Network Error', description: 'Could not check game status. Please try again later.', variant: 'destructive' });
+      }
+    }
+  }, [mode, address, isPlayerStatusFetched, playerStatusData, isPlayerStatusError, playerStatusError, writeJoinGame, writeStartGame]);
+  
+  // After a successful join, refetch status to trigger board generation.
+  useEffect(() => {
+    if (isJoinGameConfirmed) {
+      toast({ title: "Joined Multiplayer Game!", description: "The game board is now being set up." });
+      console.log('[useGame] Join game confirmed. Refetching player status...');
+      refetchPlayerStatus();
+    }
+  }, [isJoinGameConfirmed, refetchPlayerStatus]);
+
+
+  // --- Roll Dice ---
+  const rollDice = useCallback(async () => {
     if (!address || isRollDicePending || isRollDiceConfirming) {
-      console.log('🚫 [CONTRACT] Roll dice blocked:', {
-        address: !!address,
-        isRollDicePending,
-        isRollDiceConfirming
-      });
       return;
     }
-    console.log('🎲 [CONTRACT] Rolling dice...', { address, currentPosition, contractAddress: SINGLE_PLAYER_CONTRACT_ADDRESS });
+    if (!gameState || typeof gameState.position !== 'number') {
+      toast({ title: 'Error', description: 'Game not ready or position unknown.', variant: 'destructive' });
+      return;
+    }
+    console.log(`[useGame] Rolling dice for position ${gameState.position} with fee ${rollFee}`);
     setIsWaitingForVRF(true);
     try {
-      const txConfig = {
-        address: SINGLE_PLAYER_CONTRACT_ADDRESS as `0x${string}`,
-        abi: SINGLE_PLAYER_GAME_ABI,
-        functionName: 'rollDice' as const,
-        args: [currentPosition] as const,
+      writeRollDice({
+        address: contractAddress as `0x${string}`,
+        abi: contractAbi,
+        functionName: 'rollDice',
+        args: [gameState.position],
         value: BigInt(rollFee || 0),
         chain: monadTestnet,
         account: address,
         gas: 200000n,
-      };
-      console.log('📋 [CONTRACT] Roll dice transaction config:', txConfig);
-      writeRollDice(txConfig);
+      });
     } catch (error: any) {
-      console.error('❌ [CONTRACT] Failed to roll dice:', error);
       setIsWaitingForVRF(false);
     }
-  }, [address, writeRollDice, isRollDicePending, isRollDiceConfirming]);
+  }, [address, writeRollDice, isRollDicePending, isRollDiceConfirming, contractAddress, contractAbi, rollFee, gameState]);
 
+  // --- Claim Rewards ---
   const claimRewards = useCallback(async () => {
     if (!address || !gameState?.hasFinished) {
-      console.log('🚫 [CONTRACT] Claim rewards blocked:', {
-        address: !!address,
-        hasFinished: gameState?.hasFinished
-      });
       return;
     }
-    console.log('💰 [CONTRACT] Claiming rewards...', { address, nunuEarned: gameState.nunuEarned });
     try {
       setClaimRewardsError(null);
-      const txConfig = {
-        address: SINGLE_PLAYER_CONTRACT_ADDRESS as `0x${string}`,
-        abi: SINGLE_PLAYER_GAME_ABI,
-        functionName: 'claimRewards' as const,
-        args: [],
-        chain: monadTestnet,
-        account: address,
-        gas: 500000n
-      };
-      console.log('📋 [CONTRACT] Claim rewards transaction config:', txConfig);
+      const txConfig = mode === 'multi'
+        ? {
+            address: MULTI_PLAYER_CONTRACT_ADDRESS as `0x${string}`,
+            abi: MULTI_PLAYER_GAME_ABI,
+            functionName: 'claimRewards' as const,
+            args: [1],
+            chain: monadTestnet,
+            account: address,
+            gas: 500000n
+          }
+        : {
+            address: SINGLE_PLAYER_CONTRACT_ADDRESS as `0x${string}`,
+            abi: SINGLE_PLAYER_GAME_ABI,
+            functionName: 'claimRewards' as const,
+            args: [],
+            chain: monadTestnet,
+            account: address,
+            gas: 500000n
+          };
       writeClaimRewards(txConfig);
     } catch (error: any) {
-      console.error('❌ [CONTRACT] Error claiming rewards:', error);
+      //
     }
-  }, [address, gameState?.hasFinished, gameState?.nunuEarned, writeClaimRewards]);
-
-  // Handle claim rewards success
-  useEffect(() => {
-    if (isClaimRewardsConfirmed) {
-      console.log('✅ [CONTRACT] Rewards claimed successfully');
-      toast({
-        title: 'Success',
-        description: 'Rewards claimed successfully!',
-      });
-      setClaimRewardsError(null);
-      fetchAllGameData();
-    }
-  }, [isClaimRewardsConfirmed]);
-
-  // Handle claim rewards errors
-  useEffect(() => {
-    if (claimRewardsReceiptError) {
-      console.error('❌ [CONTRACT] Claim rewards error:', claimRewardsWriteError, claimRewardsReceiptError);
-      const errorMessage = claimRewardsReceiptError?.message?.includes('finish first')
-        ? 'Game not finished yet'
-        : claimRewardsReceiptError?.message?.includes('no reward')
-        ? 'No rewards to claim'
-        : 'Transaction failed';
-      setClaimRewardsError(errorMessage);
-    }
-  }, [claimRewardsReceiptError]);
+  }, [address, gameState?.hasFinished, writeClaimRewards, mode]);
 
   // Process contract data
   useEffect(() => {
     if (playerStatusData) {
-      setGameState({
+      console.log('[useGame] Received playerStatusData:', playerStatusData);
+      const data = mode === 'multi' ? {
+        position: Number(playerStatusData[1]),
+        diceValue: Number(playerStatusData[2]),
+        nunuEarned: Number(playerStatusData[3]),
+        gameScore: Number(playerStatusData[4]),
+        hasFinished: playerStatusData[5],
+        boardGenerated: playerStatusData[6],
+        diceRolls: Number(playerStatusData[7]),
+        giftsCollected: Number(playerStatusData[8]),
+        shortcuts: Number(playerStatusData[9]),
+        detours: Number(playerStatusData[10]),
+      } : {
         position: Number(playerStatusData[0]),
         diceValue: Number(playerStatusData[1]),
         nunuEarned: Number(playerStatusData[2]),
@@ -307,10 +359,13 @@ export const useGame = () => {
         giftsCollected: Number(playerStatusData[7]),
         shortcuts: Number(playerStatusData[8]),
         detours: Number(playerStatusData[9]),
-      });
-      setIsPlayerStatusLoaded(true);
+      };
+      setGameState(data);
+    } else {
+      console.log('[useGame] playerStatusData is null/undefined, clearing gameState.');
+      setGameState(null);
     }
-  }, [playerStatusData]);
+  }, [playerStatusData, mode]);
 
   useEffect(() => {
     if (boardDataData) {
@@ -349,20 +404,6 @@ export const useGame = () => {
   }, [gameStatsData]);
 
   useEffect(() => {
-    if (playerRankData) setPlayerRank(Number(playerRankData));
-  }, [playerRankData]);
-
-  useEffect(() => {
-    if (leaderboardData) {
-      const formattedLeaderboard = (leaderboardData as any[]).map((entry: any) => ({
-        player: entry.player,
-        score: Number(entry.score),
-      }));
-      setLeaderboard(formattedLeaderboard);
-    }
-  }, [leaderboardData]);
-
-  useEffect(() => {
     if (playerStatsData) {
       setPlayerStats({
         totalNunuEarned: Number(playerStatsData[0]),
@@ -372,48 +413,20 @@ export const useGame = () => {
     }
   }, [playerStatsData]);
 
-  // useEffect(() => {
-  //   console.log('totalSupplyData', totalSupplyData);
-  //   if (totalSupplyData) setTotalSupply(formatEther(BigInt(totalSupplyData as any)));
-  // }, [totalSupplyData]);
-
-  // useEffect(() => {
-  //   console.log('maxSupplyData', maxSupplyData);
-  //   if (maxSupplyData) setMaxSupply(formatEther(BigInt(maxSupplyData as any)));
-  // }, [maxSupplyData]);
-
-  // useEffect(() => {
-  //   if (rollFeeData) setRollFee(BigInt(rollFeeData).toString());
-  // }, [rollFeeData]);
-
-  const rollFee = rollFeeData ? BigInt(rollFeeData as any).toString() : null;
-
-  const totalSupply = totalSupplyData ? formatEther(BigInt(totalSupplyData as any)) : null;
-  const maxSupply = maxSupplyData ? formatEther(BigInt(maxSupplyData as any)) : null;
-
-  
-
   // Fetch all game data function with logging
   const fetchAllGameData = useCallback(async () => {
-    if (!address) {
-      console.log('🚫 [CONTRACT] Cannot fetch data - no address');
-      return;
-    }
-    console.log('🔄 [CONTRACT] Fetching all game data...');
+    if (!address) return;
     setIsLoading(true);
     try {
-      const result = await Promise.all([
+      await Promise.all([
         refetchPlayerStatus(),
         refetchBoardData(),
         refetchGameStats(),
-        refetchPlayerRank(),
         refetchPlayerStats(),
         refetchTotalSupply(),
         refetchMaxSupply(),
       ]);
-      console.log('✅ [CONTRACT] All game data fetched successfully', result);
     } catch (error) {
-      console.error('❌ [CONTRACT] Failed to fetch game data:', error);
       toast({
         title: 'Failed to fetch game data',
         description: error as string,
@@ -422,9 +435,8 @@ export const useGame = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [address, refetchPlayerStatus, refetchBoardData, refetchGameStats, refetchPlayerRank, refetchPlayerStats, refetchTotalSupply, refetchMaxSupply]);
+  }, [address, refetchPlayerStatus, refetchBoardData, refetchGameStats, refetchPlayerStats, refetchTotalSupply, refetchMaxSupply]);
 
-  // --- PLATFORM DATA FETCH ---
   const fetchPlatformData = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -434,7 +446,6 @@ export const useGame = () => {
         refetchMaxSupply(),
       ]);
     } catch (error) {
-      console.error('❌ [CONTRACT] Failed to fetch platform data:', error);
       toast({
         title: 'Failed to fetch platform data',
         description: error as string,
@@ -445,7 +456,6 @@ export const useGame = () => {
     }
   }, [refetchGameStats, refetchTotalSupply, refetchMaxSupply]);
 
-  // --- PLAYER DATA FETCH ---
   const fetchPlayerData = useCallback(async () => {
     if (!address) return;
     setIsLoading(true);
@@ -454,11 +464,8 @@ export const useGame = () => {
         refetchPlayerStatus(),
         refetchBoardData(),
         refetchPlayerStats(),
-        refetchPlayerRank(),
-        refetchLeaderboard(),
       ]);
     } catch (error) {
-      console.error('❌ [CONTRACT] Failed to fetch player data:', error);
       toast({
         title: 'Failed to fetch player data',
         description: error as string,
@@ -467,31 +474,22 @@ export const useGame = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [address, refetchPlayerStatus, refetchBoardData, refetchPlayerStats, refetchPlayerRank, refetchLeaderboard]);
+  }, [address, refetchPlayerStatus, refetchBoardData, refetchPlayerStats]);
 
-  // --- Manual leaderboard fetch ---
   const fetchLeaderboard = useCallback(async () => {
-    try {
-      await refetchLeaderboard();
-    } catch (error) {
-      console.error('❌ [CONTRACT] Failed to fetch leaderboard:', error);
-    }
-  }, [refetchLeaderboard]);
+    // TODO: Implement leaderboard fetch for multiplayer if available
+  }, []);
 
-  // --- ON MOUNT: Fetch platform data always ---
   useEffect(() => {
     fetchPlatformData();
-    // Optionally, set up polling for platform data here if needed
   }, [fetchPlatformData]);
 
-  // --- ON WALLET CONNECT: Fetch player data ---
   useEffect(() => {
     if (address) {
       fetchPlayerData();
     }
   }, [address, fetchPlayerData]);
 
-  // --- ON DICE ROLL CONFIRM: Only refetch playerStatus and playerStats ---
   useEffect(() => {
     if (isRollDiceConfirmed) {
       setIsWaitingForVRF(false);
@@ -503,7 +501,6 @@ export const useGame = () => {
     }
   }, [isRollDiceConfirmed, refetchPlayerStatus, refetchPlayerStats]);
 
-  // --- ON START GAME CONFIRM: Fetch all player data ---
   useEffect(() => {
     if (isStartGameConfirmed) {
       setIsLoadingStartGame(false);
@@ -516,10 +513,8 @@ export const useGame = () => {
     }
   }, [isStartGameConfirmed, fetchPlayerData]);
 
-  // Handle transaction errors with proper loading state cleanup
   useEffect(() => {
     if (startGameError || startGameReceiptError) {
-      console.error('❌ [CONTRACT] Start game error:', startGameError || startGameReceiptError);
       setIsLoadingStartGame(false);
       handleContractError(startGameError || startGameReceiptError, 'Failed to start game');
     }
@@ -527,16 +522,13 @@ export const useGame = () => {
 
   useEffect(() => {
     if (rollDiceError || rollDiceReceiptError) {
-      console.error('❌ [CONTRACT] Roll dice error:', rollDiceError || rollDiceReceiptError);
       setIsWaitingForVRF(false);
       handleContractError(rollDiceError || rollDiceReceiptError, 'Failed to roll dice');
     }
   }, [rollDiceError, rollDiceReceiptError]);
 
-  // Auto-trigger claim rewards when player finishes game
   useEffect(() => {
     if (gameState?.hasFinished && gameState.nunuEarned > 0 && !claimRewardsError) {
-      console.log('🎉 [CONTRACT] Game finished, auto-claiming rewards...');
       const timer = setTimeout(() => {
         claimRewards();
       }, 1000);
@@ -547,7 +539,7 @@ export const useGame = () => {
   return useMemo(() => ({
     address,
     isConnected: !!address,
-    CONTRACT_ADDRESS: SINGLE_PLAYER_CONTRACT_ADDRESS,
+    CONTRACT_ADDRESS: contractAddress,
     gameState,
     boardData,
     gameStats,
@@ -565,17 +557,18 @@ export const useGame = () => {
     fetchPlatformData,
     fetchPlayerData,
     fetchLeaderboard,
-    startGame,
+    startGame: mode === 'single' ? startGame : undefined,
     rollDice,
     claimRewards,
-    refetchPlayerRank,
-    isPlayerStatusLoaded,
+    refetchPlayerRank: () => {}, // Not implemented for multiplayer
+    isPlayerStatusLoaded: isPlayerStatusFetched,
   }), [
     address, gameState, boardData, gameStats, playerRank, leaderboard, playerStats, totalSupply, maxSupply, rollFee,
     isLoading, isStartGameConfirming, isRollDiceConfirming, isClaimRewardsConfirming,
     isLoadingStartGame, isStartGamePending,
     isWaitingForVRF, isRollDicePending,
-    isClaimRewardsPending, isClaimRewardsPendingWagmi,
-    claimRewardsError, fetchPlatformData, fetchPlayerData, fetchLeaderboard, startGame, rollDice, claimRewards, refetchPlayerRank, isPlayerStatusLoaded
+    isClaimRewardsPending, isClaimRewardsConfirming, isClaimRewardsPendingWagmi,
+    claimRewardsError, fetchPlatformData, fetchPlayerData, fetchLeaderboard,
+    startGame, rollDice, claimRewards, isPlayerStatusFetched, mode
   ]);
 }; 

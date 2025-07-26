@@ -14,7 +14,7 @@ import GameRulesModal from '@/components/GameRulesModal';
 import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Wallet, RefreshCw, HelpCircle, Trophy } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAccount, useBalance } from 'wagmi';
 import { monadTestnet } from '@/types/monadTestnet';
 import { useWalletBalancesAndWithdraw } from '@/hooks/useWalletBalancesAndWithdraw';
@@ -88,7 +88,10 @@ const NewGameButton = ({ handleNewGameClick, isNewGameDisabled, isStartingGame }
 
 const Index = () => {
   const navigate = useNavigate();
-  const [gameState, gameActions, contractInfo] = useGameReducer();
+  const location = useLocation();
+  // Read mode from location.state (from homepage), default to 'single'
+  const mode = location.state?.mode === 'multi' ? 'multi' : 'single';
+  const [gameState, gameActions, contractInfo] = useGameReducer(mode);
   const { playSound } = useSoundEffects(gameState.isSoundMuted);
   const { splash, hideSplash, triggerGiftSplash, triggerDetourSplash, triggerShortcutSplash } = useSplashAnimations();
   const [showNewGameConfirmation, setShowNewGameConfirmation] = useState(false);
@@ -336,10 +339,14 @@ const Index = () => {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5 }}
             >
-              <h2 className="text-2xl font-heading font-bold text-white mb-4">Start Your Game</h2>
+              <h2 className="text-2xl font-heading font-bold text-white mb-4">
+                {mode === 'multi' ? 'Setting Up Your Game...' : 'Start Your Game'}
+              </h2>
               <p className="text-white/70 mb-6">
-                Ready to begin your journey to tile 100? Your game board will be generated on-chain 
-                with unique gifts and challenges using Chainlink VRF for randomness.
+                {mode === 'multi' 
+                  ? "Joining the global game and preparing your on-chain board. Please wait..."
+                  : "Ready to begin your journey to tile 100? Your game board will be generated on-chain with unique gifts and challenges."
+                }
               </p>
               {hasNoBalance && (
                 <div className="bg-negative/20 border border-negative/40 rounded-lg p-3 mb-4">
@@ -348,20 +355,27 @@ const Index = () => {
                   </p>
                 </div>
               )}
-              <Button
-                onClick={restartGame}
-                className="btn-primary w-full py-3 rounded-lg shadow-lg"
-                disabled={isLoadingStartGame || hasNoBalance}
-              >
-                {isLoadingStartGame ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                    Starting Game...
-                  </>
-                ) : (
-                  'Start New Game'
-                )}
-              </Button>
+              {mode === 'single' && (
+                <Button
+                  onClick={restartGame}
+                  className="btn-primary w-full py-3 rounded-lg shadow-lg"
+                  disabled={isLoadingStartGame || hasNoBalance}
+                >
+                  {isLoadingStartGame ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                      Starting Game...
+                    </>
+                  ) : (
+                    'Start New Game'
+                  )}
+                </Button>
+              )}
+              {mode === 'multi' && (
+                 <div className="flex justify-center items-center">
+                   <RefreshCw className="w-6 h-6 text-accent-main animate-spin" />
+                 </div>
+              )}
             </motion.div>
           </div>
         </div>
