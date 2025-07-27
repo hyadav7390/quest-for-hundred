@@ -95,7 +95,6 @@ const Index = () => {
   const { playSound } = useSoundEffects(gameState.isSoundMuted);
   const { splash, hideSplash, triggerGiftSplash, triggerDetourSplash, triggerShortcutSplash } = useSplashAnimations();
   const [showNewGameConfirmation, setShowNewGameConfirmation] = useState(false);
-  const [showVictoryModal, setShowVictoryModal] = useState(true);
   const [showBoardLoader, setShowBoardLoader] = useState(false);
   const [showGameRules, setShowGameRules] = useState(false);
 
@@ -107,9 +106,10 @@ const Index = () => {
     playerRank, 
     CONTRACT_ADDRESS,
     isPlayerStatusLoaded,
+    isPlayerStatusError,
   } = contractInfo;
 
-  const { rollDice, startGame, claimRewards } = gameActions;
+  const { rollDice, startGame, claimRewards, joinGame, resetGame } = gameActions;
   const { claimRewardsError } = contractInfo;
   const { embeddedWalletObj, setActiveWallet, address: embeddedWalletAddress } = useWalletBalancesAndWithdraw();
   // Get balance for validation
@@ -121,14 +121,14 @@ const Index = () => {
   // Track previous player position for overshoot detection
   const prevPlayerPositionRef = useRef(gameState.playerPosition);
 
-  // Show VictoryModal only when gameStatus transitions from not-won to 'won'
-  const prevGameStatusRef = useRef(gameState.gameStatus);
+  // Show VictoryModal directly based on contract state for reliability.
+  const showVictoryModal = contractInfo.gameState?.hasFinished ?? false;
+  
   useEffect(() => {
-    if (prevGameStatusRef.current !== 'won' && gameState.gameStatus === 'won') {
-      setShowVictoryModal(true);
+    if (showVictoryModal) {
+      console.log('🏆 [Index.tsx] Victory condition met (hasFinished is true). Showing VictoryModal.');
     }
-    prevGameStatusRef.current = gameState.gameStatus;
-  }, [gameState.gameStatus]);
+  }, [showVictoryModal]);
 
   // Play start sound on mount
   useEffect(() => {
@@ -259,21 +259,47 @@ const Index = () => {
   // Restart game
   const restartGame = async () => {
     setShowNewGameConfirmation(false);
-    setShowVictoryModal(false);
     setShowBoardLoader(true);
-    try {
-      await ensureEmbeddedWalletActive();
-      await startGame();
-      playSound('start');
-      toast({
-        title: "New Game Started!",
-        description: "Your game board is being generated on-chain. Please wait...",
-        variant: "default",
-      });
-    } catch (error) {
-      setShowBoardLoader(false);
-      setShowVictoryModal(true);
-      console.error('Error restarting game:', error);
+
+    if (mode === 'single') {
+      try {
+        await ensureEmbeddedWalletActive();
+        await startGame();
+        playSound('start');
+        toast({
+          title: "New Game Started!",
+          description: "Your game board is being generated on-chain. Please wait...",
+          variant: "default",
+        });
+      } catch (error) {
+        console.error('Error restarting single player game:', error);
+      } finally {
+        setShowBoardLoader(false);
+      }
+    } else {
+      // For multi-player, it's a two-step process: Claim Rewards (to exit the old game) and then Join Game.
+      try {
+        playSound('start');
+        toast({
+          title: "Step 1: Claim Rewards",
+          description: "Please confirm the transaction to claim rewards and exit your completed game.",
+          variant: "default",
+        });
+        await claimRewards();
+
+        toast({
+          title: "Step 2: Re-joining Global Game",
+          description: "Please confirm the transaction in your wallet to join a new game.",
+          variant: "default",
+        });
+        await joinGame();
+
+      } catch (error) {
+        console.error('Error during multiplayer restart process:', error);
+        // Error will be shown via the handleContractError toast
+      } finally {
+        setShowBoardLoader(false);
+      }
     }
   };
 
@@ -291,16 +317,12 @@ const Index = () => {
     }
   };
 
-  // Hide loader and show modal when new game is confirmed
+  // Hide loader when new game is confirmed
   useEffect(() => {
     if (isLoadingStartGame === false && showBoardLoader) {
       setShowBoardLoader(false);
-      setShowVictoryModal(true);
     }
-    if (gameState.gameStatus !== 'won' && showVictoryModal) {
-      setShowVictoryModal(false);
-    }
-  }, [isLoadingStartGame, gameState.gameStatus]);
+  }, [isLoadingStartGame]);
 
   // Show wallet connection prompt if not connected
   if (!isConnected) {
@@ -327,8 +349,22 @@ const Index = () => {
     );
   }
 
-  // Show game start prompt if game not started
-  if (contractInfo.gameState && !contractInfo.gameState.boardGenerated) {
+  // Show a loading spinner while we check the player's status for the first time.
+  if (!isPlayerStatusLoaded && !isPlayerStatusError) {
+    return (
+      <div className="min-h-screen bg-bg-primary p-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex justify-center items-center min-h-[60vh]">
+            <RefreshCw className="w-10 h-10 text-accent-main animate-spin" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show game start prompt if player is not in a game.
+  const isNotInGame = isPlayerStatusError && contractInfo.playerStatusError?.message.includes("Player not in a game");
+  if ((!contractInfo.gameState && !showVictoryModal) || isNotInGame) {
     return (
       <div className="min-h-screen bg-bg-primary p-4">
         <div className="max-w-7xl mx-auto">
@@ -340,11 +376,11 @@ const Index = () => {
               transition={{ duration: 0.5 }}
             >
               <h2 className="text-2xl font-heading font-bold text-white mb-4">
-                {mode === 'multi' ? 'Setting Up Your Game...' : 'Start Your Game'}
+                {mode === 'multi' ? 'Join Global Game' : 'Start Your Game'}
               </h2>
               <p className="text-white/70 mb-6">
                 {mode === 'multi' 
-                  ? "Joining the global game and preparing your on-chain board. Please wait..."
+                  ? "Join the global multiplayer game. The board is already running!"
                   : "Ready to begin your journey to tile 100? Your game board will be generated on-chain with unique gifts and challenges."
                 }
               </p>
@@ -357,7 +393,7 @@ const Index = () => {
               )}
               {mode === 'single' && (
                 <Button
-                  onClick={restartGame}
+                  onClick={handleNewGameClick}
                   className="btn-primary w-full py-3 rounded-lg shadow-lg"
                   disabled={isLoadingStartGame || hasNoBalance}
                 >
@@ -372,10 +408,67 @@ const Index = () => {
                 </Button>
               )}
               {mode === 'multi' && (
-                 <div className="flex justify-center items-center">
-                   <RefreshCw className="w-6 h-6 text-accent-main animate-spin" />
-                 </div>
+                <Button
+                  onClick={joinGame}
+                  className="btn-primary w-full py-3 rounded-lg shadow-lg"
+                  disabled={isLoading || hasNoBalance}
+                >
+                  {isLoading ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                      Joining Game...
+                    </>
+                  ) : (
+                    'Join Game'
+                  )}
+                </Button>
               )}
+            </motion.div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  // This screen is intentionally removed for multiplayer as the board is generated on join.
+  if (mode === 'single' && contractInfo.gameState && !contractInfo.gameState.boardGenerated) {
+    return (
+      <div className="min-h-screen bg-bg-primary p-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex justify-center items-center min-h-[60vh]">
+            <motion.div
+              className="panel text-center max-w-md"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5 }}
+            >
+              <h2 className="text-2xl font-heading font-bold text-white mb-4">
+                Start Your Game
+              </h2>
+              <p className="text-white/70 mb-6">
+                Ready to begin your journey to tile 100? Your game board will be generated on-chain with unique gifts and challenges.
+              </p>
+              {hasNoBalance && (
+                <div className="bg-negative/20 border border-negative/40 rounded-lg p-3 mb-4">
+                  <p className="text-negative text-sm">
+                    ⚠️ You need MON tokens to pay for transaction fees. Please add funds to your wallet.
+                  </p>
+                </div>
+              )}
+              <Button
+                onClick={handleNewGameClick}
+                className="btn-primary w-full py-3 rounded-lg shadow-lg"
+                disabled={isLoadingStartGame || hasNoBalance}
+              >
+                {isLoadingStartGame ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Starting Game...
+                  </>
+                ) : (
+                  'Start New Game'
+                )}
+              </Button>
             </motion.div>
           </div>
         </div>
@@ -541,7 +634,7 @@ const Index = () => {
 
         {/* Modals */}
         <VictoryModal
-          isOpen={showVictoryModal && gameState.gameStatus === 'won'}
+          isOpen={showVictoryModal}
           score={gameState.score}
           turnsPlayed={gameState.turnsPlayed}
           giftsCollected={contractInfo.gameState?.giftsCollected ?? 0}
@@ -554,10 +647,10 @@ const Index = () => {
           diceRolls={contractInfo.gameState?.diceRolls}
           shortcuts={contractInfo.gameState?.shortcuts}
           detours={contractInfo.gameState?.detours}
-          isRestarting={showBoardLoader}
+          isRestarting={isLoadingStartGame || showBoardLoader}
           isClaimRewardsPending={contractInfo.isClaimRewardsPending}
           claimRewardsError={contractInfo.claimRewardsError}
-          onClose={() => setShowVictoryModal(false)}
+          onClose={() => { /* Victory modal is now controlled by gameState */ }}
         />
 
         <NewGameConfirmation

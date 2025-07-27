@@ -14,6 +14,7 @@ import { monadTestnet } from '@/types/monadTestnet';
 import { formatEther } from 'viem';
 
 function handleContractError(error: any, fallbackMessage = 'Transaction failed') {
+  console.error('[handleContractError]', { error, message: error?.message });
   const errorMsg = error?.message || '';
   if (
     errorMsg.includes('insufficient balance') ||
@@ -27,6 +28,20 @@ function handleContractError(error: any, fallbackMessage = 'Transaction failed')
     });
     return;
   }
+
+  // Fallback for other common errors.
+  let description = fallbackMessage;
+  if (errorMsg.includes('User rejected the request')) {
+    description = 'You rejected the transaction in your wallet.';
+  } else if (errorMsg.split('Details:').length > 1) {
+    description = errorMsg.split('Details:')[1].split('Version:')[0].trim();
+  }
+
+  toast({
+    title: 'Transaction Failed',
+    description,
+    variant: 'destructive'
+  });
 }
 
 export const useGame = (mode: 'single' | 'multi' = 'single') => {
@@ -96,10 +111,13 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
   // Multiplayer: join game
   const {
     writeContract: writeJoinGame,
+    writeContractAsync: writeJoinGameAsync,
     data: joinGameHash,
     isPending: isJoinGamePending,
     error: joinGameError
   } = useWriteContract();
+
+  const { isSuccess: isJoinGameConfirmed } = useWaitForTransactionReceipt({ hash: joinGameHash });
 
   // Reads with staleTime/refetchInterval
   const { data: gameStatsData, refetch: refetchGameStats } = useReadContract({
@@ -193,7 +211,7 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
   const totalSupply = totalSupplyData ? formatEther(BigInt(totalSupplyData as any)) : null;
   const maxSupply = maxSupplyData ? formatEther(BigInt(maxSupplyData as any)) : null;
 
-  // --- Single Player ---
+  // --- Start Game (Single Player ONLY) ---
   const startGame = useCallback(async () => {
     if (mode !== 'single' || !address || isStartGamePending || isStartGameConfirming) {
       return;
@@ -216,62 +234,41 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
     }
   }, [address, writeStartGame, isStartGamePending, isStartGameConfirming, mode]);
 
-  const { isSuccess: isJoinGameConfirmed } = useWaitForTransactionReceipt({ hash: joinGameHash });
-
-  // --- Multiplayer: Auto-join and start game flow ---
-  useEffect(() => {
-    console.log('[useGame] Multiplayer effect triggered.', {
-      mode,
-      address,
-      isPlayerStatusFetched,
-      isPlayerStatusError,
-      playerStatusData,
-    });
-
-    if (mode === 'multi' && address && isPlayerStatusFetched) {
-      const isNotInGame = isPlayerStatusError && playerStatusError?.message.includes("Player not in a game");
-
-      // Case 1: Player is not in a game yet.
-      if (isNotInGame) {
-        console.log('[useGame] Player not in game. Attempting to join...');
-        writeJoinGame({
-          address: MULTI_PLAYER_CONTRACT_ADDRESS as `0x${string}`,
-          abi: MULTI_PLAYER_GAME_ABI,
-          functionName: 'joinGame',
-          args: [1],
-          value: BigInt('100000000000000000'), // 0.1 ETH
-          chain: monadTestnet,
-          account: address,
-        });
-      }
-      // Case 2: Player is in a game, but the board hasn't been generated.
-      else if (playerStatusData && !playerStatusData[6]) { // CORRECTED INDEX: boardGenerated is at index 6 for multi-player
-        console.log('[useGame] Player in game, but board not generated. Attempting to start game...');
-        writeStartGame({
-          address: MULTI_PLAYER_CONTRACT_ADDRESS as `0x${string}`,
-          abi: MULTI_PLAYER_GAME_ABI,
-          functionName: 'startGame',
-          args: [1],
-          chain: monadTestnet,
-          account: address,
-        });
-      } else if (playerStatusData && playerStatusData[6]) { // CORRECTED INDEX
-        console.log('[useGame] Player in game and board is generated. Ready to play.');
-      } else if (isPlayerStatusError) {
-        console.error('[useGame] getPlayerStatus failed with an unexpected error:', playerStatusError);
-        toast({ title: 'Network Error', description: 'Could not check game status. Please try again later.', variant: 'destructive' });
-      }
+  // --- Join Game (Multiplayer) ---
+  const joinGame = useCallback(async () => {
+    if (mode !== 'multi' || !address) {
+      return;
     }
-  }, [mode, address, isPlayerStatusFetched, playerStatusData, isPlayerStatusError, playerStatusError, writeJoinGame, writeStartGame]);
-  
-  // After a successful join, refetch status to trigger board generation.
+    console.log('[useGame] Attempting to join MULTIPLAYER game...');
+    try {
+      // Use async version to allow awaiting in the UI
+      await writeJoinGameAsync({
+        address: MULTI_PLAYER_CONTRACT_ADDRESS as `0x${string}`,
+        abi: MULTI_PLAYER_GAME_ABI,
+        functionName: 'joinGame',
+        args: [1], // Join gameId 1
+        value: BigInt('100000000000000000'), // 0.1 ETH
+        chain: monadTestnet,
+        account: address,
+      });
+    } catch (error: any) {
+      console.error('[useGame] Failed to join MULTIPLAYER game:', error);
+      throw error; // Re-throw to be caught by the UI handler
+    }
+  }, [address, writeJoinGameAsync, mode]);
+
+  // After a successful join, refetch status to load the board.
   useEffect(() => {
     if (isJoinGameConfirmed) {
-      toast({ title: "Joined Multiplayer Game!", description: "The game board is now being set up." });
-      console.log('[useGame] Join game confirmed. Refetching player status...');
-      refetchPlayerStatus();
+      toast({ title: "Joined Multiplayer Game!", description: "Loading the game board..." });
+      console.log('[useGame] Join game confirmed. Refetching player status and board data...');
+      // Fetch both status and board data to ensure the UI is complete.
+      Promise.all([
+        refetchPlayerStatus(),
+        refetchBoardData(),
+      ]);
     }
-  }, [isJoinGameConfirmed, refetchPlayerStatus]);
+  }, [isJoinGameConfirmed, refetchPlayerStatus, refetchBoardData]);
 
 
   // --- Roll Dice ---
@@ -306,8 +303,8 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
     if (!address || !gameState?.hasFinished) {
       return;
     }
+    console.log(`[useGame] Manually triggering claimRewards for ${mode} mode...`);
     try {
-      setClaimRewardsError(null);
       const txConfig = mode === 'multi'
         ? {
             address: MULTI_PLAYER_CONTRACT_ADDRESS as `0x${string}`,
@@ -327,9 +324,11 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
             account: address,
             gas: 500000n
           };
-      writeClaimRewards(txConfig);
+      // Use async version to allow awaiting in the UI
+      await writeClaimRewards(txConfig);
     } catch (error: any) {
-      //
+      console.error(`[useGame] Failed to claim rewards for ${mode} mode:`, error);
+      throw error; // Re-throw to be caught by the UI handler
     }
   }, [address, gameState?.hasFinished, writeClaimRewards, mode]);
 
@@ -362,7 +361,6 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
       };
       setGameState(data);
     } else {
-      console.log('[useGame] playerStatusData is null/undefined, clearing gameState.');
       setGameState(null);
     }
   }, [playerStatusData, mode]);
@@ -501,6 +499,13 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
     }
   }, [isRollDiceConfirmed, refetchPlayerStatus, refetchPlayerStats]);
 
+  const resetGame = useCallback(() => {
+    console.log('[useGame] Resetting game state for multiplayer.');
+    setGameState(null);
+    // After resetting, we should refetch to get the 'not in game' status to show the join button.
+    refetchPlayerStatus();
+  }, [refetchPlayerStatus]);
+
   useEffect(() => {
     if (isStartGameConfirmed) {
       setIsLoadingStartGame(false);
@@ -528,14 +533,43 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
   }, [rollDiceError, rollDiceReceiptError]);
 
   useEffect(() => {
-    if (gameState?.hasFinished && gameState.nunuEarned > 0 && !claimRewardsError) {
-      const timer = setTimeout(() => {
-        claimRewards();
-      }, 1000);
-      return () => clearTimeout(timer);
+    if (joinGameError) {
+      console.log('[useGame] Join game error detected.');
+      handleContractError(joinGameError, 'Failed to join the game. Please try again.');
     }
-  }, [gameState?.hasFinished, claimRewards]);
+  }, [joinGameError]);
 
+  useEffect(() => {
+    if (claimRewardsWriteError || claimRewardsReceiptError) {
+      const errorMsg = (claimRewardsWriteError || claimRewardsReceiptError)?.message || '';
+      if (errorMsg.includes('insufficient balance') || errorMsg.includes('Signer had insufficient balance') || errorMsg.includes('insufficient funds')) {
+        toast({
+          title: 'Insufficient Funds',
+          description: 'You do not have enough MON to perform this action. Please add funds to your wallet.',
+          variant: 'destructive',
+        });
+      } else if (errorMsg.includes('User rejected the request')) {
+        toast({
+          title: 'Transaction Rejected',
+          description: 'You rejected the transaction in your wallet.',
+          variant: 'destructive',
+        });
+      } else if (errorMsg.split('Details:').length > 1) {
+        toast({
+          title: 'Transaction Failed',
+          description: errorMsg.split('Details:')[1].split('Version:')[0].trim(),
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Transaction Failed',
+          description: 'Failed to claim rewards. Please try again.',
+          variant: 'destructive',
+        });
+      }
+    }
+  }, [claimRewardsWriteError, claimRewardsReceiptError]);
+  
   return useMemo(() => ({
     address,
     isConnected: !!address,
@@ -549,26 +583,30 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
     totalSupply,
     maxSupply,
     rollFee,
-    isLoading: isLoading || isStartGameConfirming || isRollDiceConfirming || isClaimRewardsConfirming,
+    isLoading: isLoading || isStartGameConfirming || isRollDiceConfirming || isClaimRewardsConfirming || isJoinGamePending,
     isLoadingStartGame: isLoadingStartGame || isStartGamePending || isStartGameConfirming,
     isWaitingForVRF: isWaitingForVRF || isRollDicePending || isRollDiceConfirming,
-    isClaimRewardsPending: isClaimRewardsPending || isClaimRewardsConfirming || isClaimRewardsPendingWagmi,
+    isClaimRewardsPending: isClaimRewardsConfirming || isClaimRewardsPendingWagmi,
     claimRewardsError,
     fetchPlatformData,
     fetchPlayerData,
     fetchLeaderboard,
     startGame: mode === 'single' ? startGame : undefined,
+    joinGame: mode === 'multi' ? joinGame : undefined,
     rollDice,
     claimRewards,
+    resetGame,
     refetchPlayerRank: () => {}, // Not implemented for multiplayer
     isPlayerStatusLoaded: isPlayerStatusFetched,
+    isPlayerStatusError,
+    playerStatusError,
   }), [
     address, gameState, boardData, gameStats, playerRank, leaderboard, playerStats, totalSupply, maxSupply, rollFee,
-    isLoading, isStartGameConfirming, isRollDiceConfirming, isClaimRewardsConfirming,
+    isLoading, isStartGameConfirming, isRollDiceConfirming, isClaimRewardsConfirming, isJoinGamePending,
     isLoadingStartGame, isStartGamePending,
     isWaitingForVRF, isRollDicePending,
-    isClaimRewardsPending, isClaimRewardsConfirming, isClaimRewardsPendingWagmi,
+    isClaimRewardsConfirming, isClaimRewardsPendingWagmi,
     claimRewardsError, fetchPlatformData, fetchPlayerData, fetchLeaderboard,
-    startGame, rollDice, claimRewards, isPlayerStatusFetched, mode
+    startGame, joinGame, rollDice, claimRewards, isPlayerStatusFetched, mode, isPlayerStatusError, playerStatusError
   ]);
 }; 

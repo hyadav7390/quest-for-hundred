@@ -239,6 +239,22 @@ export const useGameReducer = (mode: 'single' | 'multi' = 'single') => {
     }
   }, [state.isRolling, gameData]);
 
+  const handleJoinGame = useCallback(async () => {
+    if (gameData.isLoading || state.isRolling) {
+      return;
+    }
+    if (!gameData.isConnected) {
+      toast({ title: 'Error', description: 'Please connect your wallet to join the game', variant: 'destructive' });
+      return;
+    }
+    try {
+      await gameData.joinGame?.();
+    } catch (error) {
+      // The useGame hook will show a more specific error toast.
+      console.error('[useGameReducer] Join game failed:', error);
+    }
+  }, [gameData]);
+
   const handleStartGame = useCallback(async () => {
     if (gameData.isLoadingStartGame || state.isRolling || gameData.isWaitingForVRF) {
       return;
@@ -266,6 +282,8 @@ export const useGameReducer = (mode: 'single' | 'multi' = 'single') => {
       rollDice: handleRollDice,
       startGame: handleStartGame,
       claimRewards: gameData.claimRewards,
+      joinGame: handleJoinGame,
+      resetGame: gameData.resetGame,
     },
     gameData,
   ] as const;
