@@ -34,15 +34,35 @@ export const MULTI_PLAYER_GAME_ABI = [
     "stateMutability": "payable",
     "type": "function"
   },
+  // {
+  //   "inputs": [
+  //     { "internalType": "uint256", "name": "gameId", "type": "uint256" }
+  //   ],
+  //   "name": "claimRewards",
+  //   "outputs": [],
+  //   "stateMutability": "nonpayable",
+  //   "type": "function"
+  // },
   {
-    "inputs": [
-      { "internalType": "uint256", "name": "gameId", "type": "uint256" }
-    ],
-    "name": "claimRewards",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
+		"inputs": [],
+		"name": "claimRewards",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "player",
+				"type": "address"
+			}
+		],
+		"name": "claimRewardV1",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
 
   // --- Read Functions ---
   {

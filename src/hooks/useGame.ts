@@ -309,8 +309,8 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
         ? {
             address: MULTI_PLAYER_CONTRACT_ADDRESS as `0x${string}`,
             abi: MULTI_PLAYER_GAME_ABI,
-            functionName: 'claimRewards' as const,
-            args: [1],
+            functionName: 'claimRewardV1' as const,
+            args: address ? [address] : undefined,
             chain: monadTestnet,
             account: address,
             gas: 500000n
