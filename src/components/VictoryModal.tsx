@@ -20,6 +20,8 @@ interface VictoryModalProps {
   isRestarting?: boolean;
   isClaimRewardsPending?: boolean;
   claimRewardsError?: string | null;
+  claimRewardsSuccess?: boolean;
+  canRestart?: boolean; // New prop to control restart availability
   onClose: () => void;
 }
 
@@ -41,6 +43,8 @@ const VictoryModal = ({
   isRestarting = false,
   isClaimRewardsPending = false,
   claimRewardsError = null,
+  claimRewardsSuccess = false,
+  canRestart = true, // Default to true for backwards compatibility
   onClose,
 }: VictoryModalProps) => {
   if (!isOpen) return null;
@@ -135,21 +139,41 @@ const VictoryModal = ({
             className="w-full py-3 bg-gradient-to-r from-accent-main to-success text-white font-bold rounded-lg shadow-lg hover:from-accent-main/80 hover:to-success/80 transition-all duration-200 disabled:opacity-50"
             whileHover={{ scale: isRestarting ? 1 : 1.02 }}
             whileTap={{ scale: isRestarting ? 1 : 0.98 }}
-            disabled={isRestarting}
+            disabled={isRestarting || !canRestart}
           >
             <div className="flex items-center justify-center space-x-2">
               <RotateCcw className="w-4 h-4" />
-              <span>{isRestarting ? 'Starting...' : 'Play Again'}</span>
+              <span>
+                {isRestarting 
+                  ? 'Starting...' 
+                  : !canRestart 
+                    ? 'Claim Rewards First' 
+                    : 'Play Again'
+                }
+              </span>
             </div>
           </motion.button>
 
-          {isClaimRewardsPending && (
-            <div className="w-full py-3 text-center text-accent-main font-semibold bg-accent-main/10 rounded-lg">
-              Claiming rewards in progress...
+          {/* Claim Rewards Status Display */}
+          {isClaimRewardsPending && !claimRewardsSuccess && (
+            <div className="w-full py-3 text-center text-accent-main font-semibold bg-accent-main/10 rounded-lg border border-accent-main/20">
+              <div className="flex items-center justify-center space-x-2">
+                <div className="w-4 h-4 border-2 border-accent-main border-t-transparent rounded-full animate-spin"></div>
+                <span>Claiming Rewards...</span>
+              </div>
             </div>
           )}
 
-          {claimRewardsError && onClaimRewards && !isClaimRewardsPending && (
+          {claimRewardsSuccess && (
+            <div className="w-full py-3 text-center text-success font-semibold bg-success/10 rounded-lg border border-success/20">
+              <div className="flex items-center justify-center space-x-2">
+                <Coins className="w-4 h-4 text-success" />
+                <span>Claimed Successfully!</span>
+              </div>
+            </div>
+          )}
+
+          {claimRewardsError && !isClaimRewardsPending && !claimRewardsSuccess && (
             <motion.button
               onClick={onClaimRewards}
               className="w-full py-3 bg-gradient-to-r from-success to-accent-main text-white font-bold rounded-lg shadow-lg hover:from-success/80 hover:to-accent-main/80 transition-all duration-200"

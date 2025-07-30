@@ -60,6 +60,8 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
   const [isWaitingForVRF, setIsWaitingForVRF] = useState(false);
   const [isClaimRewardsPending, setIsClaimRewardsPending] = useState(false);
   const [claimRewardsError, setClaimRewardsError] = useState<string | null>(null);
+  const [claimRewardsSuccess, setClaimRewardsSuccess] = useState(false);
+  const [autoClaimTriggered, setAutoClaimTriggered] = useState(false); // Flag to prevent duplicate auto-claims
   
   // Contract selection
   const { contractAddress, contractAbi } = useMemo(() => {
@@ -119,7 +121,7 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
 
   const { isSuccess: isJoinGameConfirmed } = useWaitForTransactionReceipt({ hash: joinGameHash });
 
-  // Reads with staleTime/refetchInterval
+  // Reads with staleTime/refetchInterval - optimized for performance
   const { data: gameStatsData, refetch: refetchGameStats } = useReadContract({
     address: contractAddress as `0x${string}`,
     abi: contractAbi,
@@ -127,7 +129,7 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
     query: {
       enabled: true,
       refetchInterval: false,
-      staleTime: 10000,
+      staleTime: 60000, // 1 minute - game stats don't change frequently
     },
   });
   const { data: totalSupplyData, refetch: refetchTotalSupply } = useReadContract({
@@ -137,7 +139,7 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
     query: {
       enabled: true,
       refetchInterval: false,
-      staleTime: 10000,
+      staleTime: 60000, // 1 minute - total supply changes slowly
     },
   });
   const { data: maxSupplyData, refetch: refetchMaxSupply } = useReadContract({
@@ -147,7 +149,7 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
     query: {
       enabled: true,
       refetchInterval: false,
-      staleTime: 10000,
+      staleTime: 300000, // 5 minutes - max supply rarely changes
     },
   });
   const { 
@@ -171,7 +173,7 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
         return failureCount < 3;
       },
       refetchInterval: false,
-      staleTime: 1000,
+      staleTime: 5000, // 5 seconds - player status changes during gameplay
     },
   });
   const { data: boardDataData, refetch: refetchBoardData } = useReadContract({
@@ -182,7 +184,7 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
     query: {
       enabled: !!address,
       refetchInterval: false,
-      staleTime: 30000,
+      staleTime: 300000, // 5 minutes - board data doesn't change once generated
     },
   });
   const { data: playerStatsData, refetch: refetchPlayerStats } = useReadContract({
@@ -193,7 +195,7 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
     query: {
       enabled: !!address,
       refetchInterval: false,
-      staleTime: 1000,
+      staleTime: 30000, // 30 seconds - player stats change less frequently
     },
   });
   const { data: rollFeeData, refetch: refetchRollFee } = useReadContract({
@@ -203,7 +205,7 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
     query: {
       enabled: true,
       refetchInterval: false,
-      staleTime: 10000,
+      staleTime: 300000, // 5 minutes - roll fee rarely changes
     },
   });
 
@@ -305,12 +307,15 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
     }
     console.log(`[useGame] Manually triggering claimRewards for ${mode} mode...`);
     try {
+      setClaimRewardsError(null);
+      setClaimRewardsSuccess(false);
+      setAutoClaimTriggered(true); // Mark that a claim attempt has been made
       const txConfig = mode === 'multi'
         ? {
             address: MULTI_PLAYER_CONTRACT_ADDRESS as `0x${string}`,
             abi: MULTI_PLAYER_GAME_ABI,
             functionName: 'claimRewardV1' as const,
-            args: address ? [address] : undefined,
+            args: [address as `0x${string}`],
             chain: monadTestnet,
             account: address,
             gas: 500000n
@@ -331,6 +336,17 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
       throw error; // Re-throw to be caught by the UI handler
     }
   }, [address, gameState?.hasFinished, writeClaimRewards, mode]);
+
+  // Auto-claim rewards for both single and multiplayer when game finishes
+  useEffect(() => {
+    if (gameState?.hasFinished && !autoClaimTriggered && !claimRewardsSuccess && !isClaimRewardsConfirming && !isClaimRewardsPendingWagmi && !claimRewardsError) {
+      console.log(`[useGame] Auto-claiming rewards for ${mode} victory...`);
+      claimRewards().catch((error) => {
+        console.error('[useGame] Auto-claim failed:', error);
+        // Error will be handled by the error useEffect below
+      });
+    }
+  }, [gameState?.hasFinished, autoClaimTriggered, claimRewardsSuccess, isClaimRewardsConfirming, isClaimRewardsPendingWagmi, claimRewardsError]);
 
   // Process contract data
   useEffect(() => {
@@ -359,11 +375,20 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
         shortcuts: Number(playerStatusData[8]),
         detours: Number(playerStatusData[9]),
       };
+      
+      // Reset claim states when game is not finished (new game started)
+      if (!data.hasFinished && (autoClaimTriggered || claimRewardsSuccess || claimRewardsError)) {
+        console.log('[useGame] New game detected, resetting all claim states');
+        setAutoClaimTriggered(false);
+        setClaimRewardsSuccess(false);
+        setClaimRewardsError(null);
+      }
+      
       setGameState(data);
     } else {
       setGameState(null);
     }
-  }, [playerStatusData, mode]);
+  }, [playerStatusData, mode, autoClaimTriggered, claimRewardsSuccess, claimRewardsError]);
 
   useEffect(() => {
     if (boardDataData) {
@@ -411,7 +436,7 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
     }
   }, [playerStatsData]);
 
-  // Fetch all game data function with logging
+  // Fetch all game data function with logging - optimized to reduce calls
   const fetchAllGameData = useCallback(async () => {
     if (!address) return;
     setIsLoading(true);
@@ -478,15 +503,22 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
     // TODO: Implement leaderboard fetch for multiplayer if available
   }, []);
 
+  // Optimize initial data fetching - only fetch once on mount
   useEffect(() => {
-    fetchPlatformData();
-  }, [fetchPlatformData]);
+    let mounted = true;
+    if (mounted) {
+      fetchPlatformData();
+    }
+    return () => { mounted = false; };
+  }, []); // Remove fetchPlatformData dependency to prevent re-runs
 
   useEffect(() => {
-    if (address) {
+    let mounted = true;
+    if (address && mounted) {
       fetchPlayerData();
     }
-  }, [address, fetchPlayerData]);
+    return () => { mounted = false; };
+  }, [address]); // Remove fetchPlayerData dependency to prevent re-runs
 
   useEffect(() => {
     if (isRollDiceConfirmed) {
@@ -502,6 +534,9 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
   const resetGame = useCallback(() => {
     console.log('[useGame] Resetting game state for multiplayer.');
     setGameState(null);
+    setClaimRewardsSuccess(false); // Reset claim success state
+    setClaimRewardsError(null); // Reset claim error state
+    setAutoClaimTriggered(false); // Reset auto-claim flag for new game
     // After resetting, we should refetch to get the 'not in game' status to show the join button.
     refetchPlayerStatus();
   }, [refetchPlayerStatus]);
@@ -514,9 +549,14 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
         title: 'Success',
         description: 'Game started successfully!',
       });
-      fetchPlayerData();
+      // Only refetch player data, not all platform data
+      Promise.all([
+        refetchPlayerStatus(),
+        refetchBoardData(),
+        refetchPlayerStats(),
+      ]).finally(() => setIsLoading(false));
     }
-  }, [isStartGameConfirmed, fetchPlayerData]);
+  }, [isStartGameConfirmed, refetchPlayerStatus, refetchBoardData, refetchPlayerStats]);
 
   useEffect(() => {
     if (startGameError || startGameReceiptError) {
@@ -539,74 +579,114 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
     }
   }, [joinGameError]);
 
+  // Handle claim rewards write/receipt errors
   useEffect(() => {
     if (claimRewardsWriteError || claimRewardsReceiptError) {
       const errorMsg = (claimRewardsWriteError || claimRewardsReceiptError)?.message || '';
-      if (errorMsg.includes('insufficient balance') || errorMsg.includes('Signer had insufficient balance') || errorMsg.includes('insufficient funds')) {
+      setClaimRewardsSuccess(false);
+      
+      console.error('[useGame] Claim rewards error:', errorMsg);
+      
+      if (errorMsg.includes('NoRewardsToClaim') || errorMsg.includes('already claimed') || errorMsg.includes('No rewards to claim')) {
+        const errorMessage = 'Rewards have already been claimed for this game.';
+        setClaimRewardsError(errorMessage);
+        setClaimRewardsSuccess(true); // Treat as success since rewards were already claimed
         toast({
-          title: 'Insufficient Funds',
-          description: 'You do not have enough MON to perform this action. Please add funds to your wallet.',
-          variant: 'destructive',
+          title: 'Already Claimed',
+          description: errorMessage,
+          variant: 'default',
         });
       } else if (errorMsg.includes('User rejected the request')) {
+        const errorMessage = 'You rejected the transaction in your wallet.';
+        setClaimRewardsError(errorMessage);
         toast({
           title: 'Transaction Rejected',
-          description: 'You rejected the transaction in your wallet.',
+          description: errorMessage,
           variant: 'destructive',
         });
       } else if (errorMsg.split('Details:').length > 1) {
+        const errorMessage = errorMsg.split('Details:')[1].split('Version:')[0].trim();
+        setClaimRewardsError(errorMessage);
         toast({
           title: 'Transaction Failed',
-          description: errorMsg.split('Details:')[1].split('Version:')[0].trim(),
+          description: errorMessage,
           variant: 'destructive',
         });
       } else {
+        const errorMessage = 'Failed to claim rewards. Please try again.';
+        setClaimRewardsError(errorMessage);
         toast({
           title: 'Transaction Failed',
-          description: 'Failed to claim rewards. Please try again.',
+          description: errorMessage,
           variant: 'destructive',
         });
       }
     }
   }, [claimRewardsWriteError, claimRewardsReceiptError]);
+
+  // Handle successful claim rewards
+  useEffect(() => {
+    if (isClaimRewardsConfirmed) {
+      console.log('[useGame] Claim rewards confirmed successfully');
+      setClaimRewardsSuccess(true);
+      setClaimRewardsError(null);
+      setAutoClaimTriggered(false); // Reset flag for next game
+      toast({
+        title: 'Rewards Claimed!',
+        description: 'Your NUNU tokens have been successfully claimed.',
+        variant: 'default',
+      });
+    }
+  }, [isClaimRewardsConfirmed]);
   
-  return useMemo(() => ({
-    address,
-    isConnected: !!address,
-    CONTRACT_ADDRESS: contractAddress,
-    gameState,
-    boardData,
-    gameStats,
-    playerRank,
-    leaderboard,
-    playerStats,
-    totalSupply,
-    maxSupply,
-    rollFee,
-    isLoading: isLoading || isStartGameConfirming || isRollDiceConfirming || isClaimRewardsConfirming || isJoinGamePending,
-    isLoadingStartGame: isLoadingStartGame || isStartGamePending || isStartGameConfirming,
-    isWaitingForVRF: isWaitingForVRF || isRollDicePending || isRollDiceConfirming,
-    isClaimRewardsPending: isClaimRewardsConfirming || isClaimRewardsPendingWagmi,
-    claimRewardsError,
-    fetchPlatformData,
-    fetchPlayerData,
-    fetchLeaderboard,
-    startGame: mode === 'single' ? startGame : undefined,
-    joinGame: mode === 'multi' ? joinGame : undefined,
-    rollDice,
-    claimRewards,
-    resetGame,
-    refetchPlayerRank: () => {}, // Not implemented for multiplayer
-    isPlayerStatusLoaded: isPlayerStatusFetched,
-    isPlayerStatusError,
-    playerStatusError,
-  }), [
-    address, gameState, boardData, gameStats, playerRank, leaderboard, playerStats, totalSupply, maxSupply, rollFee,
+  return useMemo(() => {
+    // For multiplayer: player can only restart if rewards are claimed (player no longer in game)
+    // For single player: player can restart anytime after finishing
+    const canRestart = mode === 'multi' 
+      ? (gameState?.hasFinished && claimRewardsSuccess) || isPlayerStatusError 
+      : true;
+
+    return {
+      address,
+      isConnected: !!address,
+      CONTRACT_ADDRESS: contractAddress,
+      gameState,
+      boardData,
+      gameStats,
+      playerRank,
+      leaderboard,
+      playerStats,
+      totalSupply,
+      maxSupply,
+      rollFee,
+      isLoading: isLoading || isStartGameConfirming || isRollDiceConfirming || isClaimRewardsConfirming || isJoinGamePending,
+      isLoadingStartGame: isLoadingStartGame || isStartGamePending || isStartGameConfirming,
+      isWaitingForVRF: isWaitingForVRF || isRollDicePending || isRollDiceConfirming,
+      isClaimRewardsPending: isClaimRewardsConfirming || isClaimRewardsPendingWagmi,
+      claimRewardsError,
+      claimRewardsSuccess,
+      canRestart, // New property to control restart availability
+      fetchPlatformData,
+      fetchPlayerData,
+      fetchLeaderboard,
+      startGame: mode === 'single' ? startGame : undefined,
+      joinGame: mode === 'multi' ? joinGame : undefined,
+      rollDice,
+      claimRewards,
+      resetGame,
+      refetchPlayerRank: () => {}, // Not implemented for multiplayer
+      isPlayerStatusLoaded: isPlayerStatusFetched,
+      isPlayerStatusError,
+      playerStatusError,
+    };
+  }, [
+    mode, gameState, claimRewardsSuccess, isPlayerStatusError,
+    address, boardData, gameStats, playerRank, leaderboard, playerStats, totalSupply, maxSupply, rollFee,
     isLoading, isStartGameConfirming, isRollDiceConfirming, isClaimRewardsConfirming, isJoinGamePending,
     isLoadingStartGame, isStartGamePending,
     isWaitingForVRF, isRollDicePending,
     isClaimRewardsConfirming, isClaimRewardsPendingWagmi,
-    claimRewardsError, fetchPlatformData, fetchPlayerData, fetchLeaderboard,
-    startGame, joinGame, rollDice, claimRewards, isPlayerStatusFetched, mode, isPlayerStatusError, playerStatusError
+    claimRewardsError, claimRewardsSuccess, fetchPlatformData, fetchPlayerData, fetchLeaderboard,
+    startGame, joinGame, rollDice, claimRewards, isPlayerStatusFetched, playerStatusError
   ]);
 }; 

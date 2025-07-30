@@ -110,7 +110,7 @@ const Index = () => {
   } = contractInfo;
 
   const { rollDice, startGame, claimRewards, joinGame, resetGame } = gameActions;
-  const { claimRewardsError } = contractInfo;
+  const { claimRewardsError, claimRewardsSuccess, canRestart } = contractInfo;
   const { embeddedWalletObj, setActiveWallet, address: embeddedWalletAddress } = useWalletBalancesAndWithdraw();
   // Get balance for validation
   const { data: balance } = useBalance({
@@ -226,7 +226,7 @@ const Index = () => {
   const isOperationInProgress = gameState.isRolling || isLoading || isWaitingForVRF;
 
   // Disable conditions
-  const isDiceDisabled = gameState.isRolling || isWaitingForVRF || !contractInfo.gameState?.boardGenerated || hasNoBalance;
+  const isDiceDisabled = gameState.isRolling || isWaitingForVRF || !contractInfo.gameState?.boardGenerated || hasNoBalance || contractInfo.gameState?.hasFinished;
   const isNewGameDisabled = gameState.isRolling || isWaitingForVRF || hasNoBalance;
 
   // Handle new game (match old code: use only reducer/UI state)
@@ -277,23 +277,20 @@ const Index = () => {
         setShowBoardLoader(false);
       }
     } else {
-      // For multi-player, it's a two-step process: Claim Rewards (to exit the old game) and then Join Game.
+      // For multi-player, rewards have already been claimed when canRestart is true
       try {
         playSound('start');
+        
         toast({
-          title: "Step 1: Claim Rewards",
-          description: "Please confirm the transaction to claim rewards and exit your completed game.",
+          title: "Joining New Game",
+          description: "Get ready to play!",
           variant: "default",
         });
-        await claimRewards();
-
-        toast({
-          title: "Step 2: Re-joining Global Game",
-          description: "Please confirm the transaction in your wallet to join a new game.",
-          variant: "default",
-        });
+        
+        // Since rewards are already claimed, we can directly join a new game
         await joinGame();
-
+        
+        console.log('[Index.tsx] Successfully joined new multiplayer game');
       } catch (error) {
         console.error('Error during multiplayer restart process:', error);
         // Error will be shown via the handleContractError toast
@@ -650,7 +647,9 @@ const Index = () => {
           isRestarting={isLoadingStartGame || showBoardLoader}
           isClaimRewardsPending={contractInfo.isClaimRewardsPending}
           claimRewardsError={contractInfo.claimRewardsError}
+          claimRewardsSuccess={contractInfo.claimRewardsSuccess}
           onClose={() => { /* Victory modal is now controlled by gameState */ }}
+          canRestart={canRestart}
         />
 
         <NewGameConfirmation
