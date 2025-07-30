@@ -245,7 +245,15 @@ export const useGameReducer = (mode: 'single' | 'multi' = 'single') => {
 
       const fromPosition = state.playerPosition;
       const toPosition = gameData.gameState.position;
-      
+
+      // If huge jump back to tile 1 (e.g., after restarting a game), skip animation
+      const distance = Math.abs(toPosition - fromPosition);
+      if (toPosition === 1 && distance > 6) {
+        dispatch({ type: 'UPDATE_FROM_CONTRACT', payload: gameData.gameState });
+        dispatch({ type: 'UPDATE_ANIMATED_POSITION', payload: toPosition });
+        return;
+      }
+ 
       console.log('🎯 [UI REDUCER] Starting tile animation from', fromPosition, 'to', toPosition);
       
       // Start tile animation

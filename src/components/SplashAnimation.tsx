@@ -114,8 +114,8 @@ const SplashAnimation = ({ isVisible, type, value, onComplete }: SplashAnimation
                       }}
                       animate={{
                         scale: [0, 1, 0.8],
-                        x: [0, Math.cos(i * 45 * Math.PI / 180) * 120, Math.cos(i * 45 * Math.PI / 180) * 260],
-                        y: [0, Math.sin(i * 45 * Math.PI / 180) * 120, Math.sin(i * 45 * Math.PI / 180) * 60],
+                        x: [0, Math.cos(i * 45 * Math.PI / 180) * 120, 180],
+                        y: [0, Math.sin(i * 45 * Math.PI / 180) * 120, 0],
                         opacity: [0, 1, 0], 
                         rotate: [0, 360, 720]
                       }}
@@ -140,13 +140,15 @@ const SplashAnimation = ({ isVisible, type, value, onComplete }: SplashAnimation
                   className="absolute right-1/4"
                   initial={{ scale: 0.8, y: 20 }}
                   animate={{ 
-                    scale: [0.8, 1.2, 1],
-                    y: [20, -10, 0, -5, 0]
+                    // Normal dance then a pop-up when coins reach the character
+                    scale: [0.8, 1.2, 1, 1.35, 1],
+                    y: [20, -10, 0, -8, 0]
                   }}
                   transition={{ 
-                    duration: 2,
+                    duration: 3,
                     delay: 2,
-                    ease: "easeOut"
+                    ease: "easeOut",
+                    times: [0, 0.2, 0.5, 0.8, 1]
                   }}
                 >
                   <CrawlingCharacter isMoving={true} />
@@ -269,7 +271,7 @@ const SplashAnimation = ({ isVisible, type, value, onComplete }: SplashAnimation
                     className="absolute inset-0 flex items-center justify-center"
                     initial={{ scale: 0.1, x: 100, y: 0, opacity: 0 }}
                     animate={{ 
-                      scale: type === 'shortcut' ? [0.1, 0.4, 0.2] : [0.1, 0.4, 0.2],
+                      scale: type === 'shortcut' ? [0.6, 0.8, 0.6] : [0.6, 0.8, 0.6],
                       x: [100, 150, 200],
                       y: type === 'shortcut' ? [0, -300, -600] : [0, 300, 600],
                       opacity: [0, 1, 0],
