@@ -17,6 +17,7 @@ export interface GameState {
   revealedGates: number[];
   diceRolled: boolean;
   finalPosition?: number; // For delayed position updates after door animations
+  animatedPosition: number; // For tile-by-tile movement animation
 }
 
 export type GameAction =
@@ -29,7 +30,10 @@ export type GameAction =
   | { type: 'TOGGLE_SOUND' }
   | { type: 'UPDATE_FROM_CONTRACT'; payload: { position: number; score: number; nunuEarned: number; hasFinished: boolean; diceValue?: number } }
   | { type: 'UPDATE_BOARD_DATA'; payload: { giftTiles: { index: number; points: number }[]; detourTrapTiles: { index: number; moveBack: number }[]; shortcutGateTiles: { index: number; moveForward: number }[] } }
-  | { type: 'COMPLETE_DOOR_ANIMATION' };
+  | { type: 'COMPLETE_DOOR_ANIMATION' }
+  | { type: 'START_TILE_ANIMATION'; payload: { fromPosition: number; toPosition: number } }
+  | { type: 'UPDATE_ANIMATED_POSITION'; payload: number }
+  | { type: 'COMPLETE_TILE_ANIMATION' };
 
 export interface TileType {
   type: 'gift' | 'detour-trap' | 'shortcut-gate' | 'normal';

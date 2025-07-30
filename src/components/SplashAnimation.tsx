@@ -1,6 +1,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { Gift, TrendingUp, TrendingDown } from 'lucide-react';
+import { Gift, TrendingUp, TrendingDown, DoorClosed, DoorOpen } from 'lucide-react';
+import CrawlingCharacter from './CrawlingCharacter';
 
 interface SplashAnimationProps {
   isVisible: boolean;
@@ -10,230 +11,347 @@ interface SplashAnimationProps {
 }
 
 const SplashAnimation = ({ isVisible, type, value, onComplete }: SplashAnimationProps) => {
-  const getIcon = () => {
+  const getBackgroundColor = () => {
     switch (type) {
       case 'gift':
-        return <Gift className="w-16 h-16 text-white drop-shadow-lg" />;
+        return 'bg-gradient-to-br from-amber-400 to-yellow-500';
       case 'shortcut':
-        return <TrendingUp className="w-16 h-16 text-white drop-shadow-lg" />;
+        return 'bg-gradient-to-br from-emerald-400 to-green-500';
       case 'detour':
-        return <TrendingDown className="w-16 h-16 text-white drop-shadow-lg" />;
-    }
-  };
-
-  const getColors = () => {
-    switch (type) {
-      case 'gift':
-        return {
-          gradient: 'from-amber-400 via-yellow-400 to-orange-500',
-          glow: 'shadow-amber-400/50',
-          particles: 'bg-amber-300'
-        };
-      case 'shortcut':
-        return {
-          gradient: 'from-emerald-400 via-green-400 to-teal-500',
-          glow: 'shadow-emerald-400/50',
-          particles: 'bg-emerald-300'
-        };
-      case 'detour':
-        return {
-          gradient: 'from-red-400 via-orange-400 to-red-600',
-          glow: 'shadow-red-400/50',
-          particles: 'bg-red-300'
-        };
+        return 'bg-gradient-to-br from-red-400 to-orange-500';
       default:
-        // Fallback colors to prevent undefined
-        return {};
+        return 'bg-gradient-to-br from-gray-400 to-gray-600';
     }
   };
 
   const getText = () => {
     switch (type) {
       case 'gift':
-        return `${value} NUNU Coins Collected!`;
+        return `+${value} NUNU Coins!`;
       case 'shortcut':
-        return `🚀 SHORTCUT FOUND! +${value} tiles forward!`;
+        return `🚀 SHORTCUT! +${value} tiles!`;
       case 'detour':
-        return `⚠️ DETOUR TRAP! -${value} tiles back!`;
+        return `⚠️ DETOUR! -${value} tiles!`;
     }
   };
-
-  const colors = getColors();
 
   return (
     <AnimatePresence>
       {isVisible && (
-        <>
-          {/* Dark overlay */}
-          <motion.div
-            className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-          />
-
-          <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onAnimationComplete={() => {
-              setTimeout(onComplete, 2500);
-            }}
-          >
-            {/* Expanding ring effects */}
-            {[...Array(3)].map((_, i) => (
+        <motion.div
+          className={`absolute inset-0 z-50 ${getBackgroundColor()} flex items-center justify-center`}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3 }}
+          onAnimationComplete={() => {
+            setTimeout(onComplete, type === 'gift' ? 3500 : 3000);
+          }}
+        >
+          {/* Gift Animation */}
+          {type === 'gift' && (
+            <div className="relative w-full h-full flex items-center justify-center">
+              {/* Gift Box Opening Animation */}
               <motion.div
-                key={i}
-                className={`absolute w-32 h-32 rounded-full bg-gradient-to-r ${colors?.gradient} opacity-20`}
-                style={{
-                  top: '50%',
-                  left: '50%',
-                  transform: 'translate(-50%, -50%)',
+                className="absolute left-1/4"
+                initial={{ scale: 0.5, rotate: 0 }}
+                animate={{ scale: [0.5, 1.2, 1], rotate: [0, 10, -10, 0] }}
+                transition={{ duration: 1, ease: "easeOut" }}
+              >
+                {/* Gift Box */}
+                <motion.div
+                  className="relative w-32 h-32 bg-gradient-to-br from-amber-300 to-yellow-400 rounded-lg border-4 border-yellow-600 shadow-2xl"
+                  initial={{ y: 0 }}
+                  animate={{ y: [0, -10, 0] }}
+                  transition={{ duration: 0.5, delay: 0.5, repeat: 1 }}
+                >
+                  {/* Gift Ribbon */}
+                  <div className="absolute inset-x-0 top-1/2 transform -translate-y-1/2 h-4 bg-red-500 shadow-lg"></div>
+                  <div className="absolute inset-y-0 left-1/2 transform -translate-x-1/2 w-4 bg-red-500 shadow-lg"></div>
+                  
+                  {/* Gift Bow */}
+                  <motion.div
+                    className="absolute -top-2 left-1/2 transform -translate-x-1/2 w-8 h-6 bg-red-600 rounded-full"
+                    initial={{ scale: 1 }}
+                    animate={{ scale: [1, 1.3, 1] }}
+                    transition={{ duration: 0.3, delay: 1, repeat: 2 }}
+                  />
+                  
+                  {/* Opening Effect */}
+                  <motion.div
+                    className="absolute inset-0 bg-gradient-to-t from-transparent to-white opacity-0"
+                    animate={{ opacity: [0, 0.8, 0] }}
+                    transition={{ duration: 0.5, delay: 1.5 }}
+                  />
+                </motion.div>
+
+                {/* Coins Flying Out */}
+                {[...Array(8)].map((_, i) => (
+                  <motion.div
+                    key={i}
+                    className="absolute w-6 h-6 bg-gradient-to-br from-yellow-300 to-amber-400 rounded-full border-2 border-yellow-600 shadow-lg"
+                    style={{
+                      top: '50%',
+                      left: '50%',
+                    }}
+                    initial={{ 
+                      scale: 0, 
+                      x: 0, 
+                      y: 0, 
+                      opacity: 0,
+                      rotate: 0
+                    }}
+                    animate={{
+                      scale: [0, 1, 0.8],
+                      x: [0, Math.cos(i * 45 * Math.PI / 180) * 100, Math.cos(i * 45 * Math.PI / 180) * 200],
+                      y: [0, Math.sin(i * 45 * Math.PI / 180) * 100, Math.sin(i * 45 * Math.PI / 180) * 200],
+                      opacity: [0, 1, 0],
+                      rotate: [0, 360, 720]
+                    }}
+                    transition={{
+                      duration: 1.5,
+                      delay: 1.5 + i * 0.1,
+                      ease: "easeOut"
+                    }}
+                  >
+                    {/* Coin Shine Effect */}
+                    <motion.div
+                      className="absolute inset-1 bg-gradient-to-br from-white to-transparent rounded-full opacity-60"
+                      animate={{ rotate: [0, 180] }}
+                      transition={{ duration: 0.5, repeat: Infinity }}
+                    />
+                  </motion.div>
+                ))}
+              </motion.div>
+
+              {/* Character Dancing */}
+              <motion.div
+                className="absolute right-1/4"
+                initial={{ scale: 0.8, y: 20 }}
+                animate={{ 
+                  scale: [0.8, 1.2, 1],
+                  y: [20, -10, 0, -5, 0]
                 }}
-                initial={{ scale: 0, opacity: 0.6 }}
-                animate={{
-                  scale: [0, 3, 6],
-                  opacity: [0.6, 0.3, 0]
-                }}
-                transition={{
+                transition={{ 
                   duration: 2,
-                  delay: i * 0.2,
+                  delay: 2,
                   ease: "easeOut"
                 }}
-              />
-            ))}
+              >
+                <CrawlingCharacter isMoving={true} />
+                
+                {/* Happy particles around character */}
+                {[...Array(6)].map((_, i) => (
+                  <motion.div
+                    key={i}
+                    className="absolute text-2xl"
+                    style={{
+                      top: `${20 + Math.random() * 60}%`,
+                      left: `${20 + Math.random() * 60}%`,
+                    }}
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{
+                      scale: [0, 1, 0],
+                      opacity: [0, 1, 0],
+                      y: [0, -20, -40]
+                    }}
+                    transition={{
+                      duration: 1.5,
+                      delay: 2.5 + i * 0.2,
+                      ease: "easeOut"
+                    }}
+                  >
+                    {['✨', '💫', '⭐', '🎉'][i % 4]}
+                  </motion.div>
+                ))}
+              </motion.div>
 
-            {/* Central burst effect */}
-            <motion.div
-              className="absolute"
-              initial={{ scale: 0, rotate: 0 }}
-              animate={{ scale: [0, 1.2, 1], rotate: 360 }}
-              transition={{ duration: 0.8, times: [0, 0.6, 1] }}
-            >
-              {/* Star burst rays */}
-              {[...Array(8)].map((_, i) => (
-                <motion.div
-                  key={i}
-                  className={`absolute w-1 bg-gradient-to-r ${colors.gradient} rounded-full ${colors.glow} shadow-lg`}
-                  style={{
-                    height: '60px',
-                    top: '50%',
-                    left: '50%',
-                    transformOrigin: 'bottom center',
-                    transform: `translate(-50%, -100%) rotate(${i * 45}deg)`,
-                  }}
-                  initial={{ scaleY: 0, opacity: 0 }}
-                  animate={{
-                    scaleY: [0, 1.5, 0.8],
-                    opacity: [0, 1, 0.7]
-                  }}
-                  transition={{
-                    duration: 1.2,
-                    delay: 0.3 + i * 0.05,
-                    ease: "easeOut"
-                  }}
-                />
-              ))}
-            </motion.div>
+              {/* Text */}
+              <motion.div
+                className="absolute bottom-1/4 text-center"
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 2.5, duration: 0.5 }}
+              >
+                <h2 className="text-4xl font-bold text-white drop-shadow-2xl">
+                  {getText()}
+                </h2>
+              </motion.div>
+            </div>
+          )}
 
-            {/* Main content card */}
-            <motion.div
-              className={`relative z-10 bg-gradient-to-br ${colors.gradient} p-8 rounded-3xl ${colors.glow} shadow-2xl border-2 border-white/20 backdrop-blur-sm`}
-              initial={{ scale: 0, y: 50, rotateY: 180 }}
-              animate={{ scale: 1, y: 0, rotateY: 0 }}
-              exit={{ scale: 0, y: -50, rotateY: 180 }}
-              transition={{
-                type: "spring",
-                stiffness: 200,
-                damping: 15,
-                delay: 0.2
-              }}
-            >
-              <div className="text-center">
+          {/* Door Animation (Shortcut/Detour) */}
+          {(type === 'shortcut' || type === 'detour') && (
+            <div className="relative w-full h-full flex items-center justify-center">
+              {/* Door */}
+              <motion.div
+                className="relative"
+                initial={{ scale: 1.5 }}
+                animate={{ scale: [1.5, 1] }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+              >
+                {/* Door Opening Animation */}
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key="door-sequence"
+                    className="relative"
+                  >
+                    {/* Closed Door */}
+                    <motion.div
+                      initial={{ opacity: 1, rotateY: 0 }}
+                      animate={{ 
+                        opacity: [1, 1, 0],
+                        rotateY: [0, 0, -90]
+                      }}
+                      transition={{ 
+                        duration: 1.5,
+                        times: [0, 0.6, 1],
+                        ease: "easeInOut"
+                      }}
+                    >
+                      <DoorClosed 
+                        className={`w-48 h-48 ${type === 'detour' ? 'text-red-100' : 'text-green-100'} drop-shadow-2xl`} 
+                      />
+                    </motion.div>
+                    
+                    {/* Open Door */}
+                    <motion.div
+                      className="absolute inset-0"
+                      initial={{ opacity: 0, rotateY: -90 }}
+                      animate={{ 
+                        opacity: [0, 0, 1],
+                        rotateY: [-90, -90, 0]
+                      }}
+                      transition={{ 
+                        duration: 1.5,
+                        times: [0, 0.6, 1],
+                        ease: "easeInOut"
+                      }}
+                    >
+                      <DoorOpen 
+                        className={`w-48 h-48 ${type === 'detour' ? 'text-red-100' : 'text-green-100'} drop-shadow-2xl`} 
+                      />
+                    </motion.div>
+                  </motion.div>
+                </AnimatePresence>
+
+                {/* Character Movement Sequence */}
                 <motion.div
-                  className="mb-6"
-                  animate={{
-                    rotateY: [0, 360],
-                    scale: [1, 1.3, 1]
+                  className="absolute inset-0 flex items-center justify-center"
+                  initial={{ scale: 1, x: -200, opacity: 1 }}
+                  animate={{ 
+                    scale: [1, 0.8, 0.4, 0.2, 0.1],
+                    x: [-200, -100, 0, 50, 100],
+                    opacity: [1, 1, 1, 0.5, 0]
                   }}
-                  transition={{
-                    duration: 1.5,
-                    repeat: 1,
+                  transition={{ 
+                    duration: 2,
+                    delay: 0.5,
                     ease: "easeInOut"
                   }}
                 >
-                  {getIcon()}
+                  <CrawlingCharacter isMoving={true} />
                 </motion.div>
 
-                <motion.h2
-                  className="text-2xl sm:text-3xl font-bold text-white drop-shadow-lg leading-tight"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5 }}
+                {/* Character Falling/Rocketing Effect */}
+                <motion.div
+                  className="absolute inset-0 flex items-center justify-center"
+                  initial={{ scale: 0.1, x: 100, y: 0, opacity: 0 }}
+                  animate={{ 
+                    scale: type === 'shortcut' ? [0.1, 0.3, 0.1] : [0.1, 0.2, 0.05],
+                    x: [100, 150, 200],
+                    y: type === 'shortcut' ? [0, -300, -600] : [0, 300, 600],
+                    opacity: [0, 1, 0],
+                    rotate: type === 'shortcut' ? [0, -45, -90] : [0, 180, 360]
+                  }}
+                  transition={{ 
+                    duration: 1.5,
+                    delay: 2.5,
+                    ease: type === 'shortcut' ? "easeOut" : "easeIn"
+                  }}
                 >
-                  {getText()}
-                </motion.h2>
-              </div>
-            </motion.div>
+                  <CrawlingCharacter isMoving={true} />
+                  
+                  {/* Trail Effect */}
+                  {type === 'shortcut' && (
+                    <motion.div
+                      className="absolute inset-0 -z-10"
+                      animate={{
+                        background: [
+                          'radial-gradient(circle, rgba(34, 197, 94, 0.8) 0%, transparent 70%)',
+                          'radial-gradient(circle, rgba(34, 197, 94, 0.4) 0%, transparent 50%)',
+                          'radial-gradient(circle, rgba(34, 197, 94, 0.1) 0%, transparent 30%)'
+                        ]
+                      }}
+                      transition={{ duration: 1.5, delay: 2.5 }}
+                    />
+                  )}
+                  
+                  {type === 'detour' && (
+                    <motion.div
+                      className="absolute inset-0 -z-10"
+                      animate={{
+                        background: [
+                          'radial-gradient(circle, rgba(239, 68, 68, 0.8) 0%, transparent 70%)',
+                          'radial-gradient(circle, rgba(239, 68, 68, 0.4) 0%, transparent 50%)',
+                          'radial-gradient(circle, rgba(239, 68, 68, 0.1) 0%, transparent 30%)'
+                        ]
+                      }}
+                      transition={{ duration: 1.5, delay: 2.5 }}
+                    />
+                  )}
+                </motion.div>
 
-            {/* Floating particles */}
-            {[...Array(20)].map((_, i) => (
-              <motion.div
-                key={i}
-                className={`absolute w-3 h-3 rounded-full ${colors.particles} shadow-lg`}
-                style={{
-                  top: '50%',
-                  left: '50%',
-                }}
-                initial={{
-                  scale: 0,
-                  x: 0,
-                  y: 0,
-                  opacity: 1
-                }}
-                animate={{
-                  scale: [0, 1, 0.5, 0],
-                  x: (Math.cos(i * 18 * Math.PI / 180) * (150 + Math.random() * 100)),
-                  y: (Math.sin(i * 18 * Math.PI / 180) * (150 + Math.random() * 100)),
-                  opacity: [1, 0.8, 0.3, 0],
-                  rotate: 360
-                }}
-                transition={{
-                  duration: 2,
-                  delay: 0.6 + i * 0.03,
-                  ease: "easeOut"
-                }}
-              />
-            ))}
+                {/* Impact Effect */}
+                {type === 'shortcut' && (
+                  <motion.div
+                    className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-20"
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ 
+                      scale: [0, 2, 0],
+                      opacity: [0, 1, 0]
+                    }}
+                    transition={{ 
+                      duration: 0.6,
+                      delay: 3.5
+                    }}
+                  >
+                    <div className="text-6xl">💥</div>
+                  </motion.div>
+                )}
 
-            {/* Sparkle effects */}
-            {[...Array(12)].map((_, i) => (
-              <motion.div
-                key={`sparkle-${i}`}
-                className="absolute text-white text-xl"
-                style={{
-                  top: `${40 + Math.random() * 20}%`,
-                  left: `${30 + Math.random() * 40}%`,
-                }}
-                initial={{ scale: 0, opacity: 0, rotate: 0 }}
-                animate={{
-                  scale: [0, 1, 0],
-                  opacity: [0, 1, 0],
-                  rotate: 180
-                }}
-                transition={{
-                  duration: 1.5,
-                  delay: 0.8 + Math.random() * 0.5,
-                  ease: "easeInOut"
-                }}
-              >
-                ✨
+                {type === 'detour' && (
+                  <motion.div
+                    className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-20"
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ 
+                      scale: [0, 2, 0],
+                      opacity: [0, 1, 0]
+                    }}
+                    transition={{ 
+                      duration: 0.6,
+                      delay: 3.5
+                    }}
+                  >
+                    <div className="text-6xl">💥</div>
+                  </motion.div>
+                )}
               </motion.div>
-            ))}
-          </motion.div>
-        </>
+
+              {/* Text */}
+              <motion.div
+                className="absolute bottom-1/4 text-center"
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1.5, duration: 0.5 }}
+              >
+                <h2 className="text-4xl font-bold text-white drop-shadow-2xl">
+                  {getText()}
+                </h2>
+              </motion.div>
+            </div>
+          )}
+        </motion.div>
       )}
     </AnimatePresence>
   );

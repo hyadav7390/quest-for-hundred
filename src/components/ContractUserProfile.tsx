@@ -5,8 +5,12 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { useGame } from '@/hooks/useGame';
 import CrawlingCharacter from './CrawlingCharacter';
 
-const ContractUserProfile = () => {
-  const { gameState, playerStats } = useGame();
+interface ContractUserProfileProps {
+  mode?: 'single' | 'multi';
+}
+
+const ContractUserProfile = ({ mode = 'single' }: ContractUserProfileProps) => {
+  const { gameState, playerStats } = useGame(mode);
   const hasFinished = gameState?.hasFinished;
 
   return (

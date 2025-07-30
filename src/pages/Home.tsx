@@ -4,11 +4,22 @@ import { Play, Target, Gift, Zap, Trophy, X, MessageCircle, Send, FileText } fro
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import CommunityProgress from '@/components/CommunityProgress';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const Home = () => {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<'single' | 'multi'>('single');
+  const [mode, setMode] = useState<'single' | 'multi'>(() => {
+    // Initialize from localStorage or default to 'single'
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('selectedGameMode') as 'single' | 'multi') || 'single';
+    }
+    return 'single';
+  });
+
+  // Persist mode selection to localStorage
+  useEffect(() => {
+    localStorage.setItem('selectedGameMode', mode);
+  }, [mode]);
 
   const features = [
     {
@@ -111,7 +122,7 @@ const Home = () => {
 
       {/* Community Progress */}
       <div className="relative overflow-hidden">
-        <CommunityProgress />
+        <CommunityProgress mode={mode} />
         <AnimatedBackground />
       </div>
 

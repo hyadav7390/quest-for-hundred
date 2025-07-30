@@ -6,9 +6,13 @@ import { useNavigate } from 'react-router-dom';
 import { useGame } from '@/hooks/useGame';
 import { useEffect } from 'react';
 
-const CommunityProgress = () => {
+interface CommunityProgressProps {
+  mode?: 'single' | 'multi';
+}
+
+const CommunityProgress = ({ mode = 'single' }: CommunityProgressProps) => {
   const navigate = useNavigate();
-  const { gameStats, totalSupply, maxSupply, fetchPlatformData } = useGame();
+  const { gameStats, totalSupply, maxSupply, fetchPlatformData } = useGame(mode);
   useEffect(() => {
     fetchPlatformData();
   }, [fetchPlatformData]);

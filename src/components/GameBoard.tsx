@@ -12,6 +12,7 @@ interface GameBoardProps {
   revealedTraps: number[];
   revealedGates: number[];
   isMoving: boolean;
+  animatedPosition?: number; // For tile-by-tile movement animation
 }
 
 const GameBoard = ({ 
@@ -21,8 +22,12 @@ const GameBoard = ({
   shortcutGateTiles,
   revealedTraps,
   revealedGates,
-  isMoving 
+  isMoving,
+  animatedPosition
 }: GameBoardProps) => {
+  // Use animatedPosition for rendering if available, otherwise use playerPosition
+  const displayPosition = animatedPosition ?? playerPosition;
+
   const getTileNumber = (row: number, col: number): number => {
     const isEvenRow = row % 2 === 0;
     if (isEvenRow) {
@@ -86,7 +91,8 @@ const GameBoard = ({
           const col = index % 10;
           const tileNumber = getTileNumber(9 - row, col);
           const tileType = getTileType(tileNumber);
-          const isPlayerTile = tileNumber === playerPosition;
+          const isPlayerTile = tileNumber === displayPosition; // Use displayPosition for character rendering
+          const isPlayerOnTile = tileNumber === playerPosition; // Use playerPosition for door logic
           
           return (
             <motion.div
@@ -152,15 +158,16 @@ const GameBoard = ({
               
               {/* Detour Trap Door */}
               {tileType.type === 'detour-trap' && (
-                <div className="flex flex-col items-center">
+                <div className="flex flex-col items-center relative">
                   <AnimatePresence mode="wait">
-                    {isPlayerTile ? (
+                    {isPlayerOnTile ? (
                       <motion.div
                         key="open-door"
                         initial={{ scale: 0.8, rotateY: 0 }}
                         animate={{ scale: 1, rotateY: 180 }}
                         exit={{ scale: 0.8, rotateY: 0 }}
                         transition={{ duration: 0.3 }}
+                        className="relative"
                       >
                         <DoorOpen className="w-6 h-6 sm:w-8 sm:h-8 text-white drop-shadow-lg" />
                       </motion.div>
@@ -187,15 +194,16 @@ const GameBoard = ({
               
               {/* Shortcut Gate Door */}
               {tileType.type === 'shortcut-gate' && (
-                <div className="flex flex-col items-center">
+                <div className="flex flex-col items-center relative">
                   <AnimatePresence mode="wait">
-                    {isPlayerTile ? (
+                    {isPlayerOnTile ? (
                       <motion.div
                         key="open-door"
                         initial={{ scale: 0.8, rotateY: 0 }}
                         animate={{ scale: 1, rotateY: 180 }}
                         exit={{ scale: 0.8, rotateY: 0 }}
                         transition={{ duration: 0.3 }}
+                        className="relative"
                       >
                         <DoorOpen className="w-6 h-6 sm:w-8 sm:h-8 text-white drop-shadow-lg" />
                       </motion.div>

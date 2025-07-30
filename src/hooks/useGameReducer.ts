@@ -1,4 +1,4 @@
-import { useReducer, useEffect, useCallback } from 'react';
+import { useReducer, useEffect, useCallback, useState } from 'react';
 import { GameState, GameAction } from '@/types/game';
 import { useGame } from './useGame';
 import { toast } from '@/hooks/use-toast';
@@ -22,6 +22,7 @@ const initialState: GameState = {
   revealedTraps: [],
   revealedGates: [],
   diceRolled: false,
+  animatedPosition: 1, // Track animated position for tile-by-tile movement
 };
 
 const blockchainGameReducer = (state: GameState, action: GameAction): GameState => {
@@ -163,6 +164,27 @@ const blockchainGameReducer = (state: GameState, action: GameAction): GameState 
         isMoving: false,
       };
 
+    case 'START_TILE_ANIMATION':
+      console.log('🎯 [UI REDUCER] Starting tile-by-tile animation from', action.payload.fromPosition, 'to', action.payload.toPosition);
+      return {
+        ...state,
+        animatedPosition: action.payload.fromPosition,
+        isMoving: true,
+      };
+
+    case 'UPDATE_ANIMATED_POSITION':
+      return {
+        ...state,
+        animatedPosition: action.payload,
+      };
+
+    case 'COMPLETE_TILE_ANIMATION':
+      console.log('🎯 [UI REDUCER] Completing tile-by-tile animation');
+      return {
+        ...state,
+        isMoving: false,
+      };
+
     default:
       return state;
   }
@@ -171,6 +193,9 @@ const blockchainGameReducer = (state: GameState, action: GameAction): GameState 
 export const useGameReducer = (mode: 'single' | 'multi' = 'single') => {
   const [state, dispatch] = useReducer(blockchainGameReducer, initialState);
   const gameData = useGame(mode);
+  
+  // Track if this is the initial load to prevent unnecessary animation
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   // Sync contract state with UI state (from old code)
   useEffect(() => {
@@ -197,6 +222,61 @@ export const useGameReducer = (mode: 'single' | 'multi' = 'single') => {
       }
     }
   }, [gameData.gameState, state.isRolling, state.gameStatus, state.isMoving]);
+
+  // Handle tile-by-tile movement animation
+  useEffect(() => {
+    if (gameData.gameState && state.playerPosition !== gameData.gameState.position) {
+      // Skip animation on initial load - just set positions directly
+      if (isInitialLoad) {
+        console.log('🎯 [UI REDUCER] Initial load - setting position directly without animation');
+        dispatch({
+          type: 'UPDATE_FROM_CONTRACT',
+          payload: gameData.gameState,
+        });
+        dispatch({ type: 'UPDATE_ANIMATED_POSITION', payload: gameData.gameState.position });
+        setIsInitialLoad(false);
+        return;
+      }
+
+      const fromPosition = state.playerPosition;
+      const toPosition = gameData.gameState.position;
+      
+      console.log('🎯 [UI REDUCER] Starting tile animation from', fromPosition, 'to', toPosition);
+      
+      // Start tile animation
+      dispatch({ 
+        type: 'START_TILE_ANIMATION', 
+        payload: { fromPosition, toPosition } 
+      });
+
+      // Animate through tiles
+      const animateTiles = () => {
+        const distance = Math.abs(toPosition - fromPosition);
+        const direction = toPosition > fromPosition ? 1 : -1;
+        let currentTile = fromPosition;
+        let step = 0;
+
+        const animateStep = () => {
+          if (step < distance) {
+            currentTile += direction;
+            step++;
+            dispatch({ type: 'UPDATE_ANIMATED_POSITION', payload: currentTile });
+            setTimeout(animateStep, 150); // 150ms per tile
+          } else {
+            // Animation complete - ensure we end at the correct contract position
+            setTimeout(() => {
+              dispatch({ type: 'UPDATE_ANIMATED_POSITION', payload: toPosition });
+              dispatch({ type: 'COMPLETE_TILE_ANIMATION' });
+            }, 300); // Brief pause at final position
+          }
+        };
+
+        setTimeout(animateStep, 200); // Initial delay
+      };
+
+      animateTiles();
+    }
+  }, [gameData.gameState?.position, state.playerPosition, isInitialLoad]);
 
   // Sync board data from contract
   useEffect(() => {

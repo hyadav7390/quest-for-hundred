@@ -359,9 +359,24 @@ const Index = () => {
     );
   }
 
-  // Show game start prompt if player is not in a game.
+  // Check if player is not in a game
   const isNotInGame = isPlayerStatusError && contractInfo.playerStatusError?.message.includes("Player not in a game");
-  if ((!contractInfo.gameState && !showVictoryModal) || isNotInGame) {
+
+  // Show loading while gameState is being fetched (prevents flash of Join/Start banner)
+  if (!contractInfo.gameState && !showVictoryModal && !isNotInGame) {
+    return (
+      <div className="min-h-screen bg-bg-primary p-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex justify-center items-center min-h-[60vh]">
+            <RefreshCw className="w-10 h-10 text-accent-main animate-spin" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show game start prompt if player is not in a game.
+  if (isNotInGame) {
     return (
       <div className="min-h-screen bg-bg-primary p-4">
         <div className="max-w-7xl mx-auto">
@@ -540,15 +555,21 @@ const Index = () => {
             detours={contractInfo.gameState?.detours}
           />
 
-          <GameBoard
-            playerPosition={gameState.playerPosition}
-            giftTiles={gameState.giftTiles}
-            detourTrapTiles={gameState.detourTrapTiles}
-            shortcutGateTiles={gameState.shortcutGateTiles}
-            revealedTraps={gameState.revealedTraps}
-            revealedGates={gameState.revealedGates}
-            isMoving={gameState.isMoving}
-          />
+          <div className="relative">
+            <GameBoard
+              playerPosition={gameState.playerPosition}
+              giftTiles={gameState.giftTiles}
+              detourTrapTiles={gameState.detourTrapTiles}
+              shortcutGateTiles={gameState.shortcutGateTiles}
+              revealedTraps={gameState.revealedTraps}
+              revealedGates={gameState.revealedGates}
+              isMoving={gameState.isMoving}
+              animatedPosition={gameState.animatedPosition}
+            />
+
+            {/* Board-scoped Splash Animation */}
+            <SplashAnimation {...splash} onComplete={hideSplash} />
+          </div>
 
           <div className="space-y-4">
             <DiceSection 
@@ -570,7 +591,7 @@ const Index = () => {
 
         {/* Desktop Layout */}
         <div className="hidden lg:grid lg:grid-cols-4 gap-6">
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-3 relative">
             <GameBoard
               playerPosition={gameState.playerPosition}
               giftTiles={gameState.giftTiles}
@@ -579,7 +600,11 @@ const Index = () => {
               revealedTraps={gameState.revealedTraps}
               revealedGates={gameState.revealedGates}
               isMoving={gameState.isMoving}
+              animatedPosition={gameState.animatedPosition}
             />
+
+            {/* Board-scoped Splash Animation */}
+            <SplashAnimation {...splash} onComplete={hideSplash} />
           </div>
 
           <div className="lg:col-span-1 space-y-5">
@@ -615,10 +640,10 @@ const Index = () => {
         </div>
 
         {/* Splash Animation */}
-        <SplashAnimation
+        {/* <SplashAnimation
           {...splash}
           onComplete={hideSplash}
-        />
+        /> */}
 
         {showBoardLoader && (
           <div className="fixed inset-0 flex items-center justify-center z-50 bg-bg-primary/80 backdrop-blur-sm">

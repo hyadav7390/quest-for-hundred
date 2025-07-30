@@ -49,6 +49,19 @@ const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Detect game mode from location state (for game page) or localStorage (for other pages)
+  const gameMode = (() => {
+    if (location.pathname === '/game' && location.state?.mode === 'multi') {
+      return 'multi';
+    }
+    // Check localStorage for persisted mode selection
+    if (typeof window !== 'undefined') {
+      const savedMode = localStorage.getItem('selectedGameMode');
+      if (savedMode === 'multi') return 'multi';
+    }
+    return 'single';
+  })();
+
   // Format balance for display (for MobileMenu)
   const formatBalance = () => {
     if (!currentBalance) return '0 MON';
@@ -110,7 +123,7 @@ const Header = () => {
             )}
             {/* Contract Profile (desktop and mobile) */}
             <div className="ml-2">
-              <ContractUserProfile />
+              <ContractUserProfile mode={gameMode} />
             </div>
           </div>
         </div>
