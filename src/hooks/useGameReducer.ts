@@ -225,7 +225,12 @@ export const useGameReducer = (mode: 'single' | 'multi' = 'single') => {
 
   // Handle tile-by-tile movement animation
   useEffect(() => {
-    if (gameData.gameState && state.playerPosition !== gameData.gameState.position) {
+    if (
+      gameData.gameState &&
+      state.playerPosition !== gameData.gameState.position &&
+      !gameData.isLoadingStartGame &&
+      !gameData.isLoading // skip while start/join game pending
+    ) {
       // Skip animation on initial load - just set positions directly
       if (isInitialLoad) {
         console.log('🎯 [UI REDUCER] Initial load - setting position directly without animation');
