@@ -353,7 +353,7 @@ const SplashAnimation = ({ isVisible, type, value, onComplete }: SplashAnimation
 
                 {/* Text */}
                 <motion.div
-                  className="absolute bottom-1/4 text-center"
+                  className="absolute bottom-8 text-center w-full"
                   initial={{ opacity: 0, y: 50 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.5, duration: 1.5 }}

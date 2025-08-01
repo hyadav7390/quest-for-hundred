@@ -405,20 +405,26 @@ const Index = () => {
                 </Button>
               )}
               {mode === 'multi' && (
-                <Button
-                  onClick={joinGame}
-                  className="btn-primary w-full py-3 rounded-lg shadow-lg"
-                  disabled={isLoading || hasNoBalance}
-                >
-                  {isLoading ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                      Joining Game...
-                    </>
-                  ) : (
-                    'Join Game'
-                  )}
-                </Button>
+                <>
+                  <div className="text-center mb-4">
+                    <p className="text-white/70 text-sm mb-2">Entry Fee</p>
+                    <p className="text-accent-main font-bold text-lg">1 MON</p>
+                  </div>
+                  <Button
+                    onClick={joinGame}
+                    className="btn-primary w-full py-3 rounded-lg shadow-lg"
+                    disabled={isLoading || hasNoBalance}
+                  >
+                    {isLoading ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                        Joining Game...
+                      </>
+                    ) : (
+                      'Join Game'
+                    )}
+                  </Button>
+                </>
               )}
             </motion.div>
           </div>
