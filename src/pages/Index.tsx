@@ -84,7 +84,6 @@ const Index = () => {
   const [showGameRules, setShowGameRules] = useState(false);
 
   const { 
-    isConnected, 
     isLoading, 
     isLoadingStartGame, 
     isWaitingForVRF, 
@@ -96,7 +95,11 @@ const Index = () => {
 
   const { rollDice, startGame, claimRewards, joinGame, resetGame } = gameActions;
   const { claimRewardsError, claimRewardsSuccess, canRestart } = contractInfo;
-  const { embeddedWalletObj, setActiveWallet, address: embeddedWalletAddress } = useWalletBalancesAndWithdraw();
+  const { embeddedWalletObj, setActiveWallet, address: embeddedWalletAddress, ready, authenticated } = useWalletBalancesAndWithdraw();
+  
+  // Check if wallet is connected
+  const isConnected = ready && authenticated;
+  
   // Get balance for validation
   const { data: balance } = useBalance({
     address: embeddedWalletAddress as `0x${string}` | undefined,

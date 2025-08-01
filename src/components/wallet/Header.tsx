@@ -121,10 +121,12 @@ const Header = () => {
                 Connect Wallet
               </button>
             )}
-            {/* Contract Profile (desktop and mobile) */}
-            <div className="ml-2">
-              <ContractUserProfile mode={gameMode} />
-            </div>
+            {/* Contract Profile (desktop and mobile) - only show when wallet is connected */}
+            {ready && authenticated && (
+              <div className="ml-2">
+                <ContractUserProfile mode={gameMode} />
+              </div>
+            )}
           </div>
         </div>
         {/* Withdraw Modal (reuse SendMonadModal) */}
