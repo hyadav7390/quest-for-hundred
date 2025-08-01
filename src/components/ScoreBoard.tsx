@@ -16,6 +16,7 @@ interface ScoreBoardProps {
   shortcuts?: number;
   detours?: number;
   peers?: number;
+  mode?: 'single' | 'multi';
 }
 
 const ScoreBoard = ({ 
@@ -30,7 +31,8 @@ const ScoreBoard = ({
   diceRolls,
   shortcuts,
   detours,
-  peers
+  peers,
+  mode = 'single',
 }: ScoreBoardProps) => {
   // Use contract values if available, otherwise fall back to UI state
   const displayDiceRolls = diceRolls ?? turnsPlayed;
@@ -99,11 +101,13 @@ const ScoreBoard = ({
           <p className="text-xl font-bold text-white">{displayShortcuts}</p>
         </div>
       </div>
-      {/* Peers on same dice rolls */}
-      <div className="mt-3 p-2 border border-accent-main/10 rounded bg-surface text-sm flex items-center space-x-2">
-        <TrendingUp className="w-4 h-4 text-accent-main" />
-        <span>Same Dice Peers: {displayPeers}</span>
-      </div>
+      {/* Peers on same dice rolls - only for multiplayer */}
+      {mode === 'multi' && (
+        <div className="mt-3 p-2 border border-accent-main/10 rounded bg-surface text-sm flex items-center space-x-2">
+          <TrendingUp className="w-4 h-4 text-accent-main" />
+          <span>Same Dice Peers: {displayPeers}</span>
+        </div>
+      )}
     </motion.div>
   );
 };

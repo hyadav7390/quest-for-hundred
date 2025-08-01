@@ -539,6 +539,7 @@ const Index = () => {
             shortcuts={contractInfo.gameState?.shortcuts}
             detours={contractInfo.gameState?.detours}
             peers={contractInfo.gameState?.sameDicePeers}
+            mode={mode}
           />
 
           <div className="relative">
@@ -607,6 +608,7 @@ const Index = () => {
               shortcuts={contractInfo.gameState?.shortcuts}
               detours={contractInfo.gameState?.detours}
               peers={contractInfo.gameState?.sameDicePeers}
+              mode={mode}
             />
 
             <DiceSection 

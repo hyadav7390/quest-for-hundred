@@ -29,9 +29,9 @@ const SplashAnimation = ({ isVisible, type, value, onComplete }: SplashAnimation
       case 'gift':
         return `+${value} NUNU Coins!`;
       case 'shortcut':
-        return `🚀 SHORTCUT! +${value} tiles!`;
+        return `🚀 Yay, Found a SHORTCUT of +${value} tiles!`;
       case 'detour':
-        return `⚠️ DETOUR! -${value} tiles!`;
+        return `⚠️ Oh, I got a DETOUR of -${value} tiles!`;
     }
   };
 
@@ -356,7 +356,7 @@ const SplashAnimation = ({ isVisible, type, value, onComplete }: SplashAnimation
                   className="absolute bottom-1/4 text-center"
                   initial={{ opacity: 0, y: 50 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 1.5, duration: 0.5 }}
+                  transition={{ delay: 0.5, duration: 1.5 }}
                 >
                   <h2 className="text-4xl font-bold text-white drop-shadow-2xl">
                     {getText()}
