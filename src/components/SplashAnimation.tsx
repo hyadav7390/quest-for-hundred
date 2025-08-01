@@ -141,12 +141,12 @@ const SplashAnimation = ({ isVisible, type, value, onComplete }: SplashAnimation
                   initial={{ scale: 0.8, y: 20 }}
                   animate={{ 
                     // Normal dance then a pop-up when coins reach the character
-                    scale: [0.8, 1.2, 1, 1.35, 1],
+                    scale: [0.8, 1.2, 1, 3.5, 1.8],
                     y: [20, -10, 0, -8, 0]
                   }}
                   transition={{ 
                     duration: 3,
-                    delay: 2,
+                    delay: 1,
                     ease: "easeOut",
                     times: [0, 0.2, 0.5, 0.8, 1]
                   }}
