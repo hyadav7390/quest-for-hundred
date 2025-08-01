@@ -353,16 +353,18 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
     if (playerStatusData) {
       console.log('[useGame] Received playerStatusData:', playerStatusData);
       const data = mode === 'multi' ? {
-        position: Number(playerStatusData[1]),
-        diceValue: Number(playerStatusData[2]),
-        nunuEarned: Number(playerStatusData[3]),
-        gameScore: Number(playerStatusData[4]),
-        hasFinished: playerStatusData[5],
-        boardGenerated: playerStatusData[6],
-        diceRolls: Number(playerStatusData[7]),
-        giftsCollected: Number(playerStatusData[8]),
-        shortcuts: Number(playerStatusData[9]),
-        detours: Number(playerStatusData[10]),
+        position: Number(playerStatusData[0]),
+        diceValue: Number(playerStatusData[1]),
+        nunuEarned: Number(playerStatusData[2]),
+        gameScore: Number(playerStatusData[3]),
+        hasFinished: playerStatusData[4],
+        boardGenerated: playerStatusData[5],
+        diceRolls: Number(playerStatusData[6]),
+        giftsCollected: Number(playerStatusData[7]),
+        shortcuts: Number(playerStatusData[8]),
+        detours: Number(playerStatusData[9]),
+        isRugged: playerStatusData[10],
+        sameDicePeers: Number(playerStatusData[11]),
       } : {
         position: Number(playerStatusData[0]),
         diceValue: Number(playerStatusData[1]),
@@ -432,6 +434,8 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
         totalNunuEarned: Number(playerStatsData[0]),
         highestScore: Number(playerStatsData[1]),
         gamesCompleted: Number(playerStatsData[2]),
+        ruggedCount: Number(playerStatsData[3] ?? 0),
+        totalRewardWon: Number(playerStatsData[4] ?? 0),
       });
     }
   }, [playerStatsData]);

@@ -90,7 +90,6 @@ export const MULTI_PLAYER_GAME_ABI = [
     ],
     "name": "getPlayerStatus",
     "outputs": [
-      { "internalType": "uint256", "name": "_gameId", "type": "uint256" },
       { "internalType": "uint8", "name": "position", "type": "uint8" },
       { "internalType": "uint8", "name": "diceValue", "type": "uint8" },
       { "internalType": "uint16", "name": "nunuEarned", "type": "uint16" },
@@ -100,7 +99,9 @@ export const MULTI_PLAYER_GAME_ABI = [
       { "internalType": "uint8", "name": "diceRolls", "type": "uint8" },
       { "internalType": "uint8", "name": "giftsCollected", "type": "uint8" },
       { "internalType": "uint8", "name": "shortcuts", "type": "uint8" },
-      { "internalType": "uint8", "name": "detours", "type": "uint8" }
+      { "internalType": "uint8", "name": "detours", "type": "uint8" },
+      { "internalType": "bool", "name": "isRugged", "type": "bool" },
+      { "internalType": "uint256", "name": "sameDicePeers", "type": "uint256" }
     ],
     "stateMutability": "view",
     "type": "function"
@@ -113,7 +114,9 @@ export const MULTI_PLAYER_GAME_ABI = [
     "outputs": [
       { "internalType": "uint256", "name": "_totalNunuEarned", "type": "uint256" },
       { "internalType": "uint16", "name": "highestScore", "type": "uint16" },
-      { "internalType": "uint32", "name": "_gamesCompleted", "type": "uint32" }
+      { "internalType": "uint32", "name": "_gamesCompleted", "type": "uint32" },
+      { "internalType": "uint32", "name": "_ruggedCount", "type": "uint32" },
+      { "internalType": "uint256", "name": "_totalRewardWon", "type": "uint256" }
     ],
     "stateMutability": "view",
     "type": "function"

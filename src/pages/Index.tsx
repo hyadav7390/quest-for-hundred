@@ -538,6 +538,7 @@ const Index = () => {
             diceRolls={contractInfo.gameState?.diceRolls}
             shortcuts={contractInfo.gameState?.shortcuts}
             detours={contractInfo.gameState?.detours}
+            peers={contractInfo.gameState?.sameDicePeers}
           />
 
           <div className="relative">
@@ -605,6 +606,7 @@ const Index = () => {
               diceRolls={contractInfo.gameState?.diceRolls}
               shortcuts={contractInfo.gameState?.shortcuts}
               detours={contractInfo.gameState?.detours}
+              peers={contractInfo.gameState?.sameDicePeers}
             />
 
             <DiceSection 
@@ -649,6 +651,8 @@ const Index = () => {
           shortcutGatesTriggered={gameState.shortcutGatesTriggered}
           gameScore={contractInfo.gameState?.gameScore ?? 0}
           nunuCoins={contractInfo.gameState?.nunuEarned || 0}
+          ruggedCount={contractInfo.playerStats?.ruggedCount}
+          totalRewardWon={contractInfo.playerStats?.totalRewardWon}
           onRestart={restartGame}
           onClaimRewards={handleClaimRewards}
           diceRolls={contractInfo.gameState?.diceRolls}

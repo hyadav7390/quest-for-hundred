@@ -1,6 +1,6 @@
 
 import { motion } from 'framer-motion';
-import { Trophy, Target, Gift, Dices, Volume2, VolumeX, DoorClosed } from 'lucide-react';
+import { Trophy, Target, Gift, Dices, Volume2, VolumeX, DoorClosed, TrendingUp } from 'lucide-react';
 
 interface ScoreBoardProps {
   score: number;
@@ -15,6 +15,7 @@ interface ScoreBoardProps {
   diceRolls?: number;
   shortcuts?: number;
   detours?: number;
+  peers?: number;
 }
 
 const ScoreBoard = ({ 
@@ -28,13 +29,15 @@ const ScoreBoard = ({
   onToggleSound,
   diceRolls,
   shortcuts,
-  detours
+  detours,
+  peers
 }: ScoreBoardProps) => {
   // Use contract values if available, otherwise fall back to UI state
   const displayDiceRolls = diceRolls ?? turnsPlayed;
   const displayGifts = giftsCollected;
   const displayShortcuts = shortcuts ?? shortcutGatesTriggered;
   const displayDetours = detours ?? detourTrapsTriggered;
+  const displayPeers = peers ?? 0;
 
   return (
     <motion.div
@@ -95,6 +98,11 @@ const ScoreBoard = ({
           <p className="text-xs text-white/60">Shortcuts</p>
           <p className="text-xl font-bold text-white">{displayShortcuts}</p>
         </div>
+      </div>
+      {/* Peers on same dice rolls */}
+      <div className="mt-3 p-2 border border-accent-main/10 rounded bg-surface text-sm flex items-center space-x-2">
+        <TrendingUp className="w-4 h-4 text-accent-main" />
+        <span>Same Dice Peers: {displayPeers}</span>
       </div>
     </motion.div>
   );

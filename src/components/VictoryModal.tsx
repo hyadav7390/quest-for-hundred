@@ -17,6 +17,8 @@ interface VictoryModalProps {
   diceRolls?: number;
   shortcuts?: number;
   detours?: number;
+  ruggedCount?: number;
+  totalRewardWon?: number;
   isRestarting?: boolean;
   isClaimRewardsPending?: boolean;
   claimRewardsError?: string | null;
@@ -40,6 +42,8 @@ const VictoryModal = ({
   diceRolls,
   shortcuts,
   detours,
+  ruggedCount,
+  totalRewardWon,
   isRestarting = false,
   isClaimRewardsPending = false,
   claimRewardsError = null,
@@ -54,6 +58,8 @@ const VictoryModal = ({
   const displayGifts = giftsCollected;
   const displayShortcuts = shortcuts ?? shortcutGatesTriggered;
   const displayDetours = detours ?? detourTrapsTriggered;
+  const displayRuggedCount = ruggedCount ?? 0;
+  const displayRewardWon = totalRewardWon ?? 0;
 
   return (
     <motion.div
@@ -129,6 +135,20 @@ const VictoryModal = ({
                 <DoorClosed className="w-4 h-4 text-green-500" />
                 <span className="text-text-low">Shortcuts: {displayShortcuts}</span>
               </div>
+
+              {displayRuggedCount > 0 && (
+                <div className="flex items-center space-x-2 col-span-2 mt-2">
+                  <TrendingDown className="w-4 h-4 text-warning" />
+                  <span className="text-text-low">Players Rugged: {displayRuggedCount}</span>
+                </div>
+              )}
+
+              {displayRewardWon > 0 && (
+                <div className="flex items-center space-x-2 col-span-2">
+                  <Coins className="w-4 h-4 text-success" />
+                  <span className="text-text-low">Reward Won: {displayRewardWon} NUNU</span>
+                </div>
+              )}
             </div>
           </div>
         </div>

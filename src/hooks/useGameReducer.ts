@@ -23,6 +23,8 @@ const initialState: GameState = {
   revealedGates: [],
   diceRolled: false,
   animatedPosition: 1, // Track animated position for tile-by-tile movement
+  isRugged: false,
+  sameDicePeers: 0,
 };
 
 const blockchainGameReducer = (state: GameState, action: GameAction): GameState => {
@@ -109,6 +111,8 @@ const blockchainGameReducer = (state: GameState, action: GameAction): GameState 
         diceRolled: diceValue > 0,
         giftsCollected: triggeredGift ? state.giftsCollected + 1 : state.giftsCollected,
         detourTrapsTriggered: triggeredDetour ? state.detourTrapsTriggered + 1 : state.detourTrapsTriggered,
+        isRugged: action.payload.isRugged ?? state.isRugged,
+        sameDicePeers: action.payload.sameDicePeers ?? state.sameDicePeers,
         shortcutGatesTriggered: triggeredShortcut ? state.shortcutGatesTriggered + 1 : state.shortcutGatesTriggered,
         // Store the final position for delayed update
         finalPosition: shouldDelayPositionUpdate ? newPosition : undefined,
@@ -310,6 +314,18 @@ export const useGameReducer = (mode: 'single' | 'multi' = 'single') => {
       return () => clearTimeout(timer);
     }
   }, [state.finalPosition]);
+
+  // Notify when player is rugged
+  useEffect(() => {
+    if (gameData.gameState?.isRugged && !state.isRugged) {
+      toast({
+        title: 'You have been rugged!',
+        description: 'Another player reached tile 100 with fewer dice rolls. You can still finish the board, but prize pool rewards are gone.',
+        variant: 'destructive'
+      });
+      dispatch({ type: 'UPDATE_FROM_CONTRACT', payload: { ...gameData.gameState, isRugged: true } });
+    }
+  }, [gameData.gameState?.isRugged, state.isRugged]);
 
   const handleRollDice = useCallback(async () => {
     if (state.isRolling || gameData.isWaitingForVRF || gameData.isLoadingStartGame) {
