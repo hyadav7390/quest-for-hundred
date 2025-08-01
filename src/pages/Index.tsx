@@ -62,7 +62,7 @@ const DiceSection = ({ gameState, isWaitingForVRF, rollDice, isDiceDisabled, con
 const NewGameButton = ({ handleNewGameClick, isNewGameDisabled, isStartingGame }) => (
   <motion.button
     onClick={handleNewGameClick}
-    className="w-full py-3 bg-gradient-to-r from-negative to-accent-main text-white font-bold rounded-lg shadow-lg hover:from-negative/90 hover:to-accent-main/90 transition-all duration-200 disabled:opacity-50"
+    className="w-full py-3 bg-gradient-to-r from-accent-main to-blue-600 text-white font-bold rounded-lg shadow-lg hover:from-accent-main/90 hover:to-blue-600/90 transition-all duration-200 disabled:opacity-50"
     whileHover={{ scale: isNewGameDisabled ? 1 : 1.02 }}
     whileTap={{ scale: isNewGameDisabled ? 1 : 0.98 }}
     disabled={isNewGameDisabled}

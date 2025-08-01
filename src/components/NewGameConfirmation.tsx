@@ -36,7 +36,7 @@ const NewGameConfirmation = ({ isOpen, onConfirm, onCancel }: NewGameConfirmatio
           </Button>
           <Button 
             onClick={onConfirm}
-            className="bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700"
+            className="bg-gradient-to-r from-accent-main to-blue-600 hover:from-accent-main/90 hover:to-blue-600/90"
           >
             Start New Game
           </Button>

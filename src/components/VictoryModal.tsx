@@ -146,7 +146,7 @@ const VictoryModal = ({
               {displayRewardWon > 0 && (
                 <div className="flex items-center space-x-2 col-span-2">
                   <Coins className="w-4 h-4 text-success" />
-                  <span className="text-text-low">Reward Won: {displayRewardWon} NUNU</span>
+                  <span className="text-text-low">Reward Won: {displayRewardWon} MON</span>
                 </div>
               )}
             </div>

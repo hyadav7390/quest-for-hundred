@@ -157,10 +157,10 @@ const Dice = ({ value, isRolling, onRoll, disabled, contractValue, isWaitingForV
         <motion.button
           onClick={onRoll}
           disabled={disabled}
-          className="relative px-8 py-3 mt-8 bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600 text-white font-bold rounded-xl shadow-xl hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 overflow-hidden"
+          className="relative px-8 py-3 mt-8 bg-gradient-to-r from-accent-main via-blue-600 to-accent-main text-white font-bold rounded-xl shadow-xl hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 overflow-hidden"
           whileHover={{ 
             scale: disabled ? 1 : 1.05,
-            boxShadow: disabled ? undefined : "0 20px 40px rgba(168, 85, 247, 0.4)"
+            boxShadow: disabled ? undefined : "0 20px 40px rgba(0, 170, 255, 0.4)"
           }}
           whileTap={{ scale: disabled ? 1 : 0.95 }}
           animate={{

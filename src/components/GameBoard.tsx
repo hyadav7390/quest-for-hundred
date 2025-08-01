@@ -77,7 +77,7 @@ const GameBoard = ({
     } else if (tileType.type === 'shortcut-gate') {
       return baseStyles + " bg-gradient-to-br from-green-400 to-emerald-500 border-green-600 shadow-lg";
     } else if (tileNumber === 100) {
-      return baseStyles + " bg-gradient-to-br from-purple-400 to-blue-500 border-purple-600 shadow-lg";
+      return baseStyles + " bg-gradient-to-br from-yellow-400 to-amber-500 border-yellow-600 shadow-lg";
     } else {
       return baseStyles + " bg-gradient-to-br from-gray-700 to-gray-800 border-gray-600 hover:border-gray-500";
     }
