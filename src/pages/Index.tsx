@@ -76,9 +76,9 @@ const Index = () => {
   const location = useLocation();
   // Read mode from location.state (from homepage), default to 'single'
   const mode = location.state?.mode === 'multi' ? 'multi' : 'single';
-  const [gameState, gameActions, contractInfo] = useGameReducer(mode);
+  const { splash, hideSplash, triggerGiftSplash, triggerDetourSplash, triggerShortcutSplash, triggerRugSplash } = useSplashAnimations();
+  const [gameState, gameActions, contractInfo] = useGameReducer(mode, triggerRugSplash);
   const { playSound } = useSoundEffects(gameState.isSoundMuted);
-  const { splash, hideSplash, triggerGiftSplash, triggerDetourSplash, triggerShortcutSplash } = useSplashAnimations();
   const [showNewGameConfirmation, setShowNewGameConfirmation] = useState(false);
   const [showBoardLoader, setShowBoardLoader] = useState(false);
   const [showGameRules, setShowGameRules] = useState(false);

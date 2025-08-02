@@ -194,7 +194,7 @@ const blockchainGameReducer = (state: GameState, action: GameAction): GameState 
   }
 };
 
-export const useGameReducer = (mode: 'single' | 'multi' = 'single') => {
+export const useGameReducer = (mode: 'single' | 'multi' = 'single', triggerRugSplash?: () => void) => {
   const [state, dispatch] = useReducer(blockchainGameReducer, initialState);
   const gameData = useGame(mode);
   
@@ -318,14 +318,18 @@ export const useGameReducer = (mode: 'single' | 'multi' = 'single') => {
   // Notify when player is rugged
   useEffect(() => {
     if (gameData.gameState?.isRugged && !state.isRugged) {
-      toast({
-        title: 'You have been rugged!',
-        description: 'Another player reached tile 100 with fewer dice rolls. You can still finish the board, but prize pool rewards are gone.',
-        variant: 'destructive'
-      });
+      if (triggerRugSplash) {
+        triggerRugSplash();
+      } else {
+        toast({
+          title: 'You have been rugged!',
+          description: 'Another player reached tile 100 with fewer dice rolls. You can still finish the board, but prize pool rewards are gone.',
+          variant: 'destructive'
+        });
+      }
       dispatch({ type: 'UPDATE_FROM_CONTRACT', payload: { ...gameData.gameState, isRugged: true } });
     }
-  }, [gameData.gameState?.isRugged, state.isRugged]);
+  }, [gameData.gameState?.isRugged, state.isRugged, triggerRugSplash]);
 
   const handleRollDice = useCallback(async () => {
     if (state.isRolling || gameData.isWaitingForVRF || gameData.isLoadingStartGame) {
