@@ -81,10 +81,10 @@ const Dice = ({ value, isRolling, onRoll, disabled, contractValue, isWaitingForV
 
   const faceRotation: Record<number, { rotateX: number; rotateY: number }> = {
     1: { rotateX: 0, rotateY: 0 },
-    2: { rotateX: -90, rotateY: 0 },
+    2: { rotateX: 90, rotateY: 0 },
     3: { rotateX: 0, rotateY: 90 },
     4: { rotateX: 0, rotateY: -90 },
-    5: { rotateX: 90, rotateY: 0 },
+    5: { rotateX: -90, rotateY: 0 },
     6: { rotateX: 0, rotateY: 180 },
   };
 
