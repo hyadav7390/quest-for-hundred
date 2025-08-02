@@ -742,13 +742,20 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
       console.log('[useGame] Claim rewards confirmed successfully');
       setClaimRewardsSuccess(true);
       setClaimRewardsError(null);
+      
+      // Refetch player stats to get updated ruggedCount and totalRewardWon
+      if (memoizedMode === 'multi') {
+        console.log('[useGame] Refetching player stats after successful claim');
+        refetchPlayerStats();
+      }
+      
       toast({
         title: 'Rewards Claimed!',
         description: 'Your NUNU tokens have been successfully claimed.',
         variant: 'default',
       });
     }
-  }, [isClaimRewardsConfirmed]);
+  }, [isClaimRewardsConfirmed, memoizedMode, refetchPlayerStats]);
   
   return useMemo(() => {
     // For multiplayer: player can only restart if rewards are claimed (player no longer in game)
