@@ -136,10 +136,10 @@ const Dice = ({ value, isRolling, onRoll, disabled, contractValue, isWaitingForV
                    const dist = 40; // half of cube size (5rem=80px, adjust)
                    switch (num) {
                      case 1: return `rotateY(0deg) translateZ(${dist}px)`;
-                     case 2: return `rotateX(90deg) translateZ(${dist}px)`;
-                     case 3: return `rotateY(90deg) translateZ(${dist}px)`;
-                     case 4: return `rotateY(-90deg) translateZ(${dist}px)`;
-                     case 5: return `rotateX(-90deg) translateZ(${dist}px)`;
+                     case 2: return `rotateX(-90deg) translateZ(${dist}px)`;
+                     case 3: return `rotateY(-90deg) translateZ(${dist}px)`;
+                     case 4: return `rotateY(90deg) translateZ(${dist}px)`;
+                     case 5: return `rotateX(90deg) translateZ(${dist}px)`;
                      case 6: return `rotateY(180deg) translateZ(${dist}px)`;
                    }
                   })(),

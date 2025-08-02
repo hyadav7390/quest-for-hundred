@@ -577,11 +577,15 @@ const Index = () => {
               hasNoBalance={hasNoBalance}
               rollFee={contractInfo.rollFee}
             />
-            <NewGameButton 
-              handleNewGameClick={handleNewGameClick}
-              isNewGameDisabled={isNewGameDisabled}
-              isStartingGame={isLoadingStartGame}
-            />
+            
+            {/* Only show New Game button for single player mode */}
+            {mode === 'single' && (
+              <NewGameButton 
+                handleNewGameClick={handleNewGameClick}
+                isNewGameDisabled={isNewGameDisabled}
+                isStartingGame={isLoadingStartGame}
+              />
+            )}
           </div>
         </div>
 
@@ -629,11 +633,13 @@ const Index = () => {
               hasNoBalance={hasNoBalance}
               rollFee={contractInfo.rollFee}
             />
-            <NewGameButton 
-              handleNewGameClick={handleNewGameClick}
-              isNewGameDisabled={isNewGameDisabled}
-              isStartingGame={isLoadingStartGame}
-            />
+            {mode === 'single' && (
+              <NewGameButton 
+                handleNewGameClick={handleNewGameClick}
+                isNewGameDisabled={isNewGameDisabled}
+                isStartingGame={isLoadingStartGame}
+              />
+            )}
           </div>
         </div>
 
