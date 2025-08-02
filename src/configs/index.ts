@@ -25,12 +25,12 @@ export const REWARD_TOKEN = {
   name: 'Nunu Game Token',
   symbol: 'NUNU',
   decimals: 18,
-  address: '0x9a80c12a72991e74e652fd52ec325ae07dffa950',
+  address: '0xdae511d02ae7c9017edd634142f7a0e8e24c8fcd',
 };
 
-export const SINGLE_PLAYER_CONTRACT_ADDRESS = '0x22ea5b45f8209c2fd7e9baba1ee2559194f48e12';
+export const SINGLE_PLAYER_CONTRACT_ADDRESS = '0xb912e50ebc241200108e92de3e8a1bf5baf50a0a';
 
 // TODO: Replace with actual deployed multiplayer contract address
-export const MULTI_PLAYER_CONTRACT_ADDRESS = '0x3cf2582391aa34cbeab9fa2e7eaa79349b3fc01a';
+export const MULTI_PLAYER_CONTRACT_ADDRESS = '0xab5546422318bdecc1b485181f051ab5b3820944';
 
 export type TokenSymbol = typeof NATIVE_TOKEN.symbol | typeof REWARD_TOKEN.symbol;
