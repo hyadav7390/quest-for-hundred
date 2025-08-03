@@ -13,6 +13,7 @@ interface GameBoardProps {
   revealedGates: number[];
   isMoving: boolean;
   animatedPosition?: number; // For tile-by-tile movement animation
+  peerPositions?: { positions: number[]; counts: number[] }; // Other players' positions
 }
 
 const GameBoard = ({ 
@@ -23,7 +24,8 @@ const GameBoard = ({
   revealedTraps,
   revealedGates,
   isMoving,
-  animatedPosition
+  animatedPosition,
+  peerPositions
 }: GameBoardProps) => {
   // Use animatedPosition for rendering if available, otherwise use playerPosition
   const displayPosition = animatedPosition ?? playerPosition;
@@ -94,6 +96,11 @@ const GameBoard = ({
           const isPlayerTile = tileNumber === displayPosition; // Use displayPosition for character rendering
           const isPlayerOnTile = tileNumber === playerPosition; // Use playerPosition for door logic
           
+          // Check if other players are on this tile
+          const peerIndex = peerPositions?.positions.indexOf(tileNumber) ?? -1;
+          const peerCount = peerIndex >= 0 ? peerPositions?.counts[peerIndex] ?? 0 : 0;
+          const hasOtherPlayers = peerCount > 0 && !isPlayerTile;
+          
           return (
             <motion.div
               key={tileNumber}
@@ -134,6 +141,41 @@ const GameBoard = ({
                   className="z-30 relative"
                 >
                   <CrawlingCharacter isMoving={isMoving} />
+                </motion.div>
+              )}
+
+              {/* Other Players */}
+              {hasOtherPlayers && (
+                <motion.div
+                  initial={{ scale: 0, y: 0 }}
+                  animate={{ 
+                    scale: 1,
+                    y: [-5, 0, -3, 0]
+                  }}
+                  transition={{ 
+                    scale: { type: "spring", stiffness: 500, damping: 25 },
+                    y: { 
+                      duration: 1.2,
+                      repeat: Infinity,
+                      ease: "easeInOut"
+                    }
+                  }}
+                  className="z-20 relative"
+                >
+                  <div className="relative">
+                    <CrawlingCharacter isMoving={true} isOtherPlayer={true} />
+                    {/* Player count indicator */}
+                    {peerCount > 1 && (
+                      <motion.div
+                        className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center border-2 border-white shadow-lg"
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ delay: 0.2 }}
+                      >
+                        {peerCount}
+                      </motion.div>
+                    )}
+                  </div>
                 </motion.div>
               )}
               

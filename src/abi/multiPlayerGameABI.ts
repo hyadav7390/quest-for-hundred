@@ -133,6 +133,42 @@ export const MULTI_PLAYER_GAME_ABI = [
     "type": "function"
   },
   {
+    "inputs": [
+      { "internalType": "address", "name": "player", "type": "address" }
+    ],
+    "name": "getPeerPositionsWithCounts",
+    "outputs": [
+      { "internalType": "uint8[]", "name": "positions", "type": "uint8[]" },
+      { "internalType": "uint8[]", "name": "counts", "type": "uint8[]" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "gameId", "type": "uint256" },
+      { "internalType": "uint256", "name": "start", "type": "uint256" },
+      { "internalType": "uint256", "name": "count", "type": "uint256" }
+    ],
+    "name": "getGameActivities",
+    "outputs": [
+      {
+        "components": [
+          { "internalType": "address", "name": "actor", "type": "address" },
+          { "internalType": "uint8", "name": "actionType", "type": "uint8" },
+          { "internalType": "uint256", "name": "count", "type": "uint256" },
+          { "internalType": "uint256", "name": "amount", "type": "uint256" },
+          { "internalType": "uint256", "name": "timestamp", "type": "uint256" }
+        ],
+        "internalType": "struct VSModeGame.GameActivity[]",
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "getRollFee",
     "outputs": [

@@ -398,6 +398,10 @@ export const useGameReducer = (mode: 'single' | 'multi' = 'single', triggerRugSp
       joinGame: handleJoinGame,
       resetGame: gameData.resetGame,
     },
-    gameData,
+    {
+      ...gameData,
+      peerPositions: gameData.peerPositions,
+      gameActivities: gameData.gameActivities,
+    },
   ] as const;
 };

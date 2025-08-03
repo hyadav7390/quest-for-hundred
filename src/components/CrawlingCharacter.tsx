@@ -3,9 +3,32 @@ import { motion } from 'framer-motion';
 
 interface CrawlingCharacterProps {
   isMoving: boolean;
+  isOtherPlayer?: boolean; // New prop to distinguish other players
 }
 
-const CrawlingCharacter = ({ isMoving }: CrawlingCharacterProps) => {
+const CrawlingCharacter = ({ isMoving, isOtherPlayer = false }: CrawlingCharacterProps) => {
+  // Different color scheme for other players
+  const bodyColor = isOtherPlayer ? "from-blue-100 to-blue-300" : "from-amber-100 to-amber-300";
+  const borderColor = isOtherPlayer ? "border-blue-400" : "border-amber-400";
+  const headColor = isOtherPlayer ? "from-blue-50 to-blue-200" : "from-amber-50 to-amber-200";
+  const headBorderColor = isOtherPlayer ? "border-blue-300" : "border-amber-300";
+  const earColor = isOtherPlayer ? "from-blue-200 to-blue-100" : "from-amber-200 to-amber-100";
+  const earBorderColor = isOtherPlayer ? "border-blue-300" : "border-amber-300";
+  const pawColor = isOtherPlayer ? "bg-blue-300" : "bg-amber-300";
+  const pawBorderColor = isOtherPlayer ? "border-blue-400" : "border-amber-400";
+  const backPawColor = isOtherPlayer ? "bg-blue-400" : "bg-amber-400";
+  const backPawBorderColor = isOtherPlayer ? "border-blue-500" : "border-amber-500";
+  const tailColor = isOtherPlayer ? "from-white to-blue-100" : "from-white to-amber-100";
+  const tailBorderColor = isOtherPlayer ? "border-blue-300" : "border-amber-300";
+  
+  // Smaller size for other players
+  const sizeClass = isOtherPlayer ? "w-6 h-6" : "w-8 h-7";
+  const headSizeClass = isOtherPlayer ? "w-4 h-4" : "w-6 h-6";
+  const earSizeClass = isOtherPlayer ? "w-1.5 h-3" : "w-2 h-4";
+  const pawSizeClass = isOtherPlayer ? "w-1.5 h-1.5" : "w-2 h-2";
+  const backPawSizeClass = isOtherPlayer ? "w-2 h-1.5" : "w-2.5 h-2";
+  const tailSizeClass = isOtherPlayer ? "w-2 h-2" : "w-3 h-3";
+
   return (
     <motion.div
       className="relative flex items-center justify-center"
@@ -31,11 +54,11 @@ const CrawlingCharacter = ({ isMoving }: CrawlingCharacterProps) => {
         }}
       >
         {/* Main Body */}
-        <div className="w-8 h-7 bg-gradient-to-b from-amber-100 to-amber-300 rounded-full border-2 border-amber-400 shadow-lg relative">
+        <div className={`${sizeClass} bg-gradient-to-b ${bodyColor} rounded-full border-2 ${borderColor} shadow-lg relative`}>
           
           {/* Head */}
           <motion.div
-            className="absolute -top-2 left-1/2 transform -translate-x-1/2 w-6 h-6 bg-gradient-to-b from-amber-50 to-amber-200 rounded-full border border-amber-300"
+            className={`absolute -top-2 left-1/2 transform -translate-x-1/2 ${headSizeClass} bg-gradient-to-b ${headColor} rounded-full border ${headBorderColor}`}
             animate={{
               rotate: isMoving ? [0, 3, -3, 0] : 0,
             }}
@@ -60,7 +83,7 @@ const CrawlingCharacter = ({ isMoving }: CrawlingCharacterProps) => {
 
           {/* Ears */}
           <motion.div
-            className="absolute -top-4 left-1/2 transform -translate-x-1/2 -translate-x-1 w-2 h-4 bg-gradient-to-t from-amber-200 to-amber-100 rounded-full border border-amber-300"
+            className={`absolute -top-4 left-1/2 transform -translate-x-1/2 -translate-x-1 ${earSizeClass} bg-gradient-to-t ${earColor} rounded-full border ${earBorderColor}`}
             animate={{
               rotate: isMoving ? [0, -5, 5, 0] : 0,
             }}
@@ -72,7 +95,7 @@ const CrawlingCharacter = ({ isMoving }: CrawlingCharacterProps) => {
             <div className="w-1 h-2 bg-pink-200 rounded-full absolute top-1 left-1/2 transform -translate-x-1/2"></div>
           </motion.div>
           <motion.div
-            className="absolute -top-4 left-1/2 transform -translate-x-1/2 translate-x-1 w-2 h-4 bg-gradient-to-t from-amber-200 to-amber-100 rounded-full border border-amber-300"
+            className={`absolute -top-4 left-1/2 transform -translate-x-1/2 translate-x-1 ${earSizeClass} bg-gradient-to-t ${earColor} rounded-full border ${earBorderColor}`}
             animate={{
               rotate: isMoving ? [0, 5, -5, 0] : 0,
             }}
@@ -87,7 +110,7 @@ const CrawlingCharacter = ({ isMoving }: CrawlingCharacterProps) => {
 
           {/* Front Paws */}
           <motion.div
-            className="absolute top-2 -left-1.5 w-2 h-2 bg-amber-300 rounded-full border border-amber-400"
+            className={`absolute top-2 -left-1.5 ${pawSizeClass} ${pawColor} rounded-full border ${pawBorderColor}`}
             animate={{
               x: isMoving ? [0, -2, 2, 0] : 0,
               rotate: isMoving ? [0, 15, -15, 0] : 0,
@@ -98,7 +121,7 @@ const CrawlingCharacter = ({ isMoving }: CrawlingCharacterProps) => {
             }}
           />
           <motion.div
-            className="absolute top-2 -right-1.5 w-2 h-2 bg-amber-300 rounded-full border border-amber-400"
+            className={`absolute top-2 -right-1.5 ${pawSizeClass} ${pawColor} rounded-full border ${pawBorderColor}`}
             animate={{
               x: isMoving ? [0, 2, -2, 0] : 0,
               rotate: isMoving ? [0, -15, 15, 0] : 0,
@@ -112,7 +135,7 @@ const CrawlingCharacter = ({ isMoving }: CrawlingCharacterProps) => {
 
           {/* Back Paws */}
           <motion.div
-            className="absolute bottom-1 -left-1 w-2.5 h-2 bg-amber-400 rounded-full border border-amber-500"
+            className={`absolute bottom-1 -left-1 ${backPawSizeClass} ${backPawColor} rounded-full border ${backPawBorderColor}`}
             animate={{
               scaleX: isMoving ? [1, 1.2, 0.8, 1] : 1,
               x: isMoving ? [0, -1, 1, 0] : 0,
@@ -123,7 +146,7 @@ const CrawlingCharacter = ({ isMoving }: CrawlingCharacterProps) => {
             }}
           />
           <motion.div
-            className="absolute bottom-1 -right-1 w-2.5 h-2 bg-amber-400 rounded-full border border-amber-500"
+            className={`absolute bottom-1 -right-1 ${backPawSizeClass} ${backPawColor} rounded-full border ${backPawBorderColor}`}
             animate={{
               scaleX: isMoving ? [1, 0.8, 1.2, 1] : 1,
               x: isMoving ? [0, 1, -1, 0] : 0,
@@ -137,7 +160,7 @@ const CrawlingCharacter = ({ isMoving }: CrawlingCharacterProps) => {
 
           {/* Tail */}
           <motion.div
-            className="absolute -bottom-1 -right-2 w-3 h-3 bg-gradient-to-br from-white to-amber-100 rounded-full border border-amber-300"
+            className={`absolute -bottom-1 -right-2 ${tailSizeClass} bg-gradient-to-br ${tailColor} rounded-full border ${tailBorderColor}`}
             animate={{
               rotate: isMoving ? [0, 20, -10, 0] : 0,
               scale: isMoving ? [1, 1.1, 0.9, 1] : 1,

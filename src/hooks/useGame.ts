@@ -66,6 +66,8 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
   const [playerRank, setPlayerRank] = useState<number>(0);
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [playerStats, setPlayerStats] = useState<any>(null);
+  const [peerPositions, setPeerPositions] = useState<{ positions: number[]; counts: number[] }>({ positions: [], counts: [] });
+  const [gameActivities, setGameActivities] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingStartGame, setIsLoadingStartGame] = useState(false);
   const [isWaitingForVRF, setIsWaitingForVRF] = useState(false);
@@ -220,6 +222,31 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
       enabled: true,
       refetchInterval: false,
       staleTime: 300000, // 5 minutes - roll fee rarely changes
+    },
+  });
+
+  // Multiplayer-specific reads
+  const { data: peerPositionsData, refetch: refetchPeerPositions } = useReadContract({
+    address: contractAddress as `0x${string}`,
+    abi: contractAbi,
+    functionName: 'getPeerPositionsWithCounts',
+    args: address ? [address] : undefined,
+    query: {
+      enabled: !!address && memoizedMode === 'multi',
+      refetchInterval: 10000, // 10 seconds - refresh peer positions frequently
+      staleTime: 5000, // 5 seconds - keep data fresh
+    },
+  });
+
+  const { data: gameActivitiesData, refetch: refetchGameActivities } = useReadContract({
+    address: contractAddress as `0x${string}`,
+    abi: contractAbi,
+    functionName: 'getGameActivities',
+    args: [0, 0, 10], // gameId: 0, start: 0, count: 10 (latest 10 activities)
+    query: {
+      enabled: memoizedMode === 'multi',
+      refetchInterval: 15000, // 15 seconds - refresh activities
+      staleTime: 10000, // 10 seconds - keep data fresh
     },
   });
 
@@ -535,6 +562,31 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
     }
   }, [playerStatsData]);
 
+  // Process peer positions data
+  useEffect(() => {
+    if (peerPositionsData && memoizedMode === 'multi') {
+      const [positions, counts] = peerPositionsData as [number[], number[]];
+      setPeerPositions({
+        positions: positions.map(p => Number(p)),
+        counts: counts.map(c => Number(c))
+      });
+    }
+  }, [peerPositionsData, memoizedMode]);
+
+  // Process game activities data
+  useEffect(() => {
+    if (gameActivitiesData && memoizedMode === 'multi') {
+      const activities = (gameActivitiesData as any[]).map(activity => ({
+        actor: activity.actor,
+        actionType: Number(activity.actionType),
+        count: Number(activity.count),
+        amount: Number(activity.amount),
+        timestamp: Number(activity.timestamp)
+      }));
+      setGameActivities(activities);
+    }
+  }, [gameActivitiesData, memoizedMode]);
+
   // Fetch all game data function with logging - optimized to reduce calls
   const fetchAllGameData = useCallback(async () => {
     if (!address) return;
@@ -774,6 +826,8 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
       playerRank,
       leaderboard,
       playerStats,
+      peerPositions,
+      gameActivities,
       totalSupply,
       maxSupply,
       rollFee,
@@ -805,6 +859,6 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
     isWaitingForVRF, isRollDicePending,
     isClaimRewardsConfirming, isClaimRewardsPendingWagmi,
     claimRewardsError, claimRewardsSuccess, fetchPlatformData, fetchPlayerData, fetchLeaderboard,
-    startGame, joinGame, rollDice, claimRewards, isPlayerStatusFetched, playerStatusError
+    startGame, joinGame, rollDice, claimRewards, isPlayerStatusFetched, playerStatusError, peerPositions, gameActivities
   ]);
 }; 

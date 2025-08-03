@@ -11,6 +11,7 @@ import ContractUserProfile from '@/components/ContractUserProfile';
 import NewGameConfirmation from '@/components/NewGameConfirmation';
 import SplashAnimation from '@/components/SplashAnimation';
 import GameRulesModal from '@/components/GameRulesModal';
+import GameActivities from '@/components/GameActivities';
 import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Wallet, RefreshCw, HelpCircle, Trophy } from 'lucide-react';
@@ -561,6 +562,7 @@ const Index = () => {
               revealedGates={gameState.revealedGates}
               isMoving={gameState.isMoving}
               animatedPosition={gameState.animatedPosition}
+              peerPositions={contractInfo.peerPositions}
             />
 
             {/* Board-scoped Splash Animation */}
@@ -577,6 +579,11 @@ const Index = () => {
               hasNoBalance={hasNoBalance}
               rollFee={contractInfo.rollFee}
             />
+            
+            {/* Game Activities - Only for multiplayer */}
+            {mode === 'multi' && (
+              <GameActivities activities={contractInfo.gameActivities || []} compact={true} />
+            )}
             
             {/* Only show New Game button for single player mode */}
             {mode === 'single' && (
@@ -601,6 +608,7 @@ const Index = () => {
               revealedGates={gameState.revealedGates}
               isMoving={gameState.isMoving}
               animatedPosition={gameState.animatedPosition}
+              peerPositions={contractInfo.peerPositions}
             />
 
             {/* Board-scoped Splash Animation */}
@@ -623,6 +631,11 @@ const Index = () => {
               peers={contractInfo.gameState?.sameDicePeers}
               mode={mode}
             />
+
+            {/* Game Activities - Only for multiplayer */}
+            {mode === 'multi' && (
+              <GameActivities activities={contractInfo.gameActivities || []} />
+            )}
 
             <DiceSection 
               gameState={gameState}
