@@ -242,12 +242,22 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
     address: contractAddress as `0x${string}`,
     abi: contractAbi,
     functionName: 'getGameActivities',
-    args: [0, 0, 10], // gameId: 0, start: 0, count: 10 (latest 10 activities)
+    args: [1, 0, 10], // gameId: 0, start: 0, count: 10 (latest 10 activities)
     query: {
       enabled: memoizedMode === 'multi',
       refetchInterval: 15000, // 15 seconds - refresh activities
       staleTime: 10000, // 10 seconds - keep data fresh
     },
+  });
+
+  console.log('[useGame] Game Activities Contract Call:', {
+    mode: memoizedMode,
+    enabled: memoizedMode === 'multi',
+    contractAddress,
+    gameActivitiesData,
+    dataType: typeof gameActivitiesData,
+    isArray: Array.isArray(gameActivitiesData),
+    length: Array.isArray(gameActivitiesData) ? gameActivitiesData.length : 'N/A'
   });
 
   const rollFee = rollFeeData ? BigInt(rollFeeData as any).toString() : null;
@@ -309,9 +319,11 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
       Promise.all([
         refetchPlayerStatus(),
         refetchBoardData(),
+        refetchGameActivities(),
+        refetchPeerPositions(),
       ]);
     }
-  }, [isJoinGameConfirmed, refetchPlayerStatus, refetchBoardData]);
+  }, [isJoinGameConfirmed, refetchPlayerStatus, refetchBoardData, refetchGameActivities, refetchPeerPositions]);
 
 
   // --- Roll Dice ---
@@ -358,7 +370,7 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
             args: [address as `0x${string}`],
             chain: monadTestnet,
             account: address,
-            gas: 500000n
+            gas: 700000n
           }
         : {
             address: SINGLE_PLAYER_CONTRACT_ADDRESS as `0x${string}`,
@@ -575,6 +587,15 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
 
   // Process game activities data
   useEffect(() => {
+    console.log('[useGame] Processing game activities data:', {
+      gameActivitiesData,
+      mode: memoizedMode,
+      isMulti: memoizedMode === 'multi',
+      dataExists: !!gameActivitiesData,
+      dataType: typeof gameActivitiesData,
+      isArray: Array.isArray(gameActivitiesData)
+    });
+
     if (gameActivitiesData && memoizedMode === 'multi') {
       const activities = (gameActivitiesData as any[]).map(activity => ({
         actor: activity.actor,
@@ -583,7 +604,16 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
         amount: Number(activity.amount),
         timestamp: Number(activity.timestamp)
       }));
+      console.log('[useGame] Processed activities:', activities);
       setGameActivities(activities);
+    } else {
+      console.log('[useGame] Not processing activities - conditions not met');
+      if (memoizedMode !== 'multi') {
+        console.log('[useGame] Reason: Not in multiplayer mode');
+      }
+      if (!gameActivitiesData) {
+        console.log('[useGame] Reason: No game activities data');
+      }
     }
   }, [gameActivitiesData, memoizedMode]);
 
@@ -600,8 +630,11 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
         refetchPlayerStats(),
         refetchTotalSupply(),
         refetchMaxSupply(),
+        ...(memoizedMode === 'multi' ? [refetchGameActivities(), refetchPeerPositions()] : []),
       ]);
+      console.log('[useGame] fetchAllGameData completed successfully');
     } catch (error) {
+      console.error('[useGame] fetchAllGameData failed:', error);
       toast({
         title: 'Failed to fetch game data',
         description: error as string,
@@ -610,7 +643,7 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
     } finally {
       setIsLoading(false);
     }
-  }, [address, refetchPlayerStatus, refetchBoardData, refetchGameStats, refetchPlayerStats, refetchTotalSupply, refetchMaxSupply]);
+  }, [address, refetchPlayerStatus, refetchBoardData, refetchGameStats, refetchPlayerStats, refetchTotalSupply, refetchMaxSupply, refetchGameActivities, refetchPeerPositions, memoizedMode]);
 
   const fetchPlatformData = useCallback(async () => {
     console.log('[useGame] fetchPlatformData called');
@@ -620,8 +653,11 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
         refetchGameStats(),
         refetchTotalSupply(),
         refetchMaxSupply(),
+        ...(memoizedMode === 'multi' ? [refetchGameActivities()] : []),
       ]);
+      console.log('[useGame] fetchPlatformData completed successfully');
     } catch (error) {
+      console.error('[useGame] fetchPlatformData failed:', error);
       toast({
         title: 'Failed to fetch platform data',
         description: error as string,
@@ -630,7 +666,7 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
     } finally {
       setIsLoading(false);
     }
-  }, [refetchGameStats, refetchTotalSupply, refetchMaxSupply]);
+  }, [refetchGameStats, refetchTotalSupply, refetchMaxSupply, refetchGameActivities, memoizedMode]);
 
   const fetchPlayerData = useCallback(async () => {
     if (!address) return;
@@ -641,8 +677,11 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
         refetchPlayerStatus(),
         refetchBoardData(),
         refetchPlayerStats(),
+        ...(memoizedMode === 'multi' ? [refetchGameActivities(), refetchPeerPositions()] : []),
       ]);
+      console.log('[useGame] fetchPlayerData completed successfully');
     } catch (error) {
+      console.error('[useGame] fetchPlayerData failed:', error);
       toast({
         title: 'Failed to fetch player data',
         description: error as string,
@@ -651,7 +690,7 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
     } finally {
       setIsLoading(false);
     }
-  }, [address, refetchPlayerStatus, refetchBoardData, refetchPlayerStats]);
+  }, [address, refetchPlayerStatus, refetchBoardData, refetchPlayerStats, refetchGameActivities, refetchPeerPositions, memoizedMode]);
 
   const fetchLeaderboard = useCallback(async () => {
     // TODO: Implement leaderboard fetch for multiplayer if available
@@ -682,9 +721,10 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
       Promise.all([
         refetchPlayerStatus(),
         refetchPlayerStats(),
+        ...(memoizedMode === 'multi' ? [refetchGameActivities(), refetchPeerPositions()] : []),
       ]).finally(() => setIsLoading(false));
     }
-  }, [isRollDiceConfirmed, refetchPlayerStatus, refetchPlayerStats]);
+  }, [isRollDiceConfirmed, refetchPlayerStatus, refetchPlayerStats, refetchGameActivities, refetchPeerPositions, memoizedMode]);
 
   const resetGame = useCallback(() => {
     console.log('[useGame] Resetting game state for multiplayer.');
@@ -710,9 +750,10 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
         refetchPlayerStatus(),
         refetchBoardData(),
         refetchPlayerStats(),
+        ...(memoizedMode === 'multi' ? [refetchGameActivities(), refetchPeerPositions()] : []),
       ]).finally(() => setIsLoading(false));
     }
-  }, [isStartGameConfirmed, refetchPlayerStatus, refetchBoardData, refetchPlayerStats]);
+  }, [isStartGameConfirmed, refetchPlayerStatus, refetchBoardData, refetchPlayerStats, refetchGameActivities, refetchPeerPositions, memoizedMode]);
 
   useEffect(() => {
     if (startGameError || startGameReceiptError) {
@@ -816,6 +857,14 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
       ? (gameState?.hasFinished && claimRewardsSuccess) || isPlayerStatusError 
       : true;
 
+    console.log('[useGame] Return object state:', {
+      mode: memoizedMode,
+      gameActivities: gameActivities,
+      peerPositions: peerPositions,
+      gameActivitiesLength: gameActivities?.length || 0,
+      peerPositionsLength: peerPositions?.positions?.length || 0
+    });
+
     return {
       address,
       isConnected: !!address,
@@ -850,6 +899,9 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
       isPlayerStatusLoaded: isPlayerStatusFetched,
       isPlayerStatusError,
       playerStatusError,
+      // Add refetch functions for debugging
+      refetchGameActivities,
+      refetchPeerPositions,
     };
   }, [
     memoizedMode, gameState, claimRewardsSuccess, isPlayerStatusError,
@@ -859,6 +911,6 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
     isWaitingForVRF, isRollDicePending,
     isClaimRewardsConfirming, isClaimRewardsPendingWagmi,
     claimRewardsError, claimRewardsSuccess, fetchPlatformData, fetchPlayerData, fetchLeaderboard,
-    startGame, joinGame, rollDice, claimRewards, isPlayerStatusFetched, playerStatusError, peerPositions, gameActivities
+    startGame, joinGame, rollDice, claimRewards, isPlayerStatusFetched, playerStatusError, peerPositions, gameActivities, refetchGameActivities, refetchPeerPositions
   ]);
 }; 
