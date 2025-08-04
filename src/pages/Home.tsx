@@ -4,22 +4,21 @@ import { Play, Target, Gift, Zap, Trophy, X, MessageCircle, Send, FileText } fro
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import CommunityProgress from '@/components/CommunityProgress';
+import GameModeModal from '@/components/GameModeModal';
 import { useState, useEffect } from 'react';
 
 const Home = () => {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<'single' | 'multi'>(() => {
-    // Initialize from localStorage or default to 'single'
-    if (typeof window !== 'undefined') {
-      return (localStorage.getItem('selectedGameMode') as 'single' | 'multi') || 'single';
-    }
-    return 'single';
-  });
+  const [showGameModeModal, setShowGameModeModal] = useState(false);
 
-  // Persist mode selection to localStorage
-  useEffect(() => {
-    localStorage.setItem('selectedGameMode', mode);
-  }, [mode]);
+  const handlePlayNow = () => {
+    setShowGameModeModal(true);
+  };
+
+  const handleSelectMode = (mode: 'single' | 'multi') => {
+    setShowGameModeModal(false);
+    navigate('/game', { state: { mode } });
+  };
 
   const features = [
     {
@@ -93,23 +92,9 @@ const Home = () => {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, delay: 0.3 }}
             >
-              <div className="flex justify-center gap-4 mb-4">
-                <Button
-                  variant={mode === 'single' ? 'default' : 'outline'}
-                  onClick={() => setMode('single')}
-                >
-                  Single Player
-                </Button>
-                <Button
-                  variant={mode === 'multi' ? 'default' : 'outline'}
-                  onClick={() => setMode('multi')}
-                >
-                  Multiplayer
-                </Button>
-              </div>
               <Button
                 size="lg"
-                onClick={() => navigate('/game', { state: { mode } })}
+                onClick={handlePlayNow}
                 className="px-12 py-6 text-xl font-bold rounded-2xl hover:shadow-glow hover:scale-105 transition-all duration-300"
               >
                 🎲 Play Now
@@ -121,13 +106,13 @@ const Home = () => {
       </div>
 
       {/* Community Progress */}
-      <div className="relative overflow-hidden">
-        <CommunityProgress mode={mode} />
+      <div className="relative overflow-hidden mb-20">
+        <CommunityProgress />
         <AnimatedBackground />
       </div>
 
       {/* Game Features Section */}
-      <div className="relative overflow-hidden">
+      {/* <div className="relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 py-20">
           <motion.h2
             className="text-heading-2 font-heading font-bold text-white text-center mb-16"
@@ -157,10 +142,10 @@ const Home = () => {
         </div>
 
         <AnimatedBackground />
-      </div>
+      </div> */}
 
       {/* RUGGROLL Ecosystem Section */}
-      <div className="bg-surface py-20">
+      <div className="bg-gradient-to-br from-surface via-surface to-accent-main/5 py-20">
         <div className="max-w-7xl mx-auto px-4">
           <motion.div
             className="text-center"
@@ -168,32 +153,102 @@ const Home = () => {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <h2 className="text-heading-2 font-heading font-bold text-white mb-8">The RUGGROLL Ecosystem</h2>
-            <p className="text-xl text-white/80 max-w-4xl mx-auto mb-12">
-              RUGGROLL is building the future of blockchain gaming where players are rewarded for their time and skill. 
-              Our ecosystem revolves around $ROLL coins - earn them by collecting gifts, reaching tile 100, and 
-              competing on the leaderboard in this thrilling board game adventure.
+            <h2 className="text-heading-2 font-heading font-bold text-white mb-4">The RUGGROLL Ecosystem</h2>
+            <p className="text-xl text-white/80 max-w-4xl mx-auto mb-16">
+              We're not like those other projects... because we actually care about the community! 
+              No funny business, just pure gaming and earning. 🎮💰
             </p>
             
-            <div className="grid sm:grid-cols-3 gap-8">
-              <div className="bg-surface border border-positive/30 rounded-xl p-6">
-                <Gift className="w-12 h-12 text-positive mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-white mb-2">Earn $ROLL Coins</h3>
-                <p className="text-white/70">Collect gifts and complete games to earn coins</p>
+            {/* Main Tokenomics Card */}
+            <motion.div
+              className="bg-gradient-to-r from-accent-main/10 to-blue-500/10 border-2 border-accent-main/30 rounded-2xl p-8 mb-12"
+              initial={{ opacity: 0, scale: 0.95 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+            >
+              <div className="text-center mb-6">
+                <div className="text-6xl mb-4">🔥</div>
+                <h3 className="text-3xl font-heading font-bold text-white mb-4">Why RUGGROLL is Different</h3>
+                <p className="text-lg text-white/80 mb-6">
+                  We're doing what others only promise to do
+                </p>
               </div>
-              
-              <div className="bg-surface border border-accent-main/30 rounded-xl p-6">
-                <div className="text-4xl mb-4">🎲</div>
-                <h3 className="text-lg font-semibold text-white mb-2">Blockchain Gaming</h3>
-                <p className="text-white/70">Provably fair dice rolls using on-chain randomness</p>
+
+              {/* Tokenomics Grid */}
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <motion.div
+                  className="bg-surface/50 border border-accent-main/20 rounded-xl p-4 text-center hover:border-accent-main/40 transition-all duration-300"
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.3 }}
+                  whileHover={{ scale: 1.02 }}
+                >
+                  <div className="text-2xl mb-2">🚫</div>
+                  <h4 className="font-semibold text-white mb-1">No Presale BS</h4>
+                  <p className="text-sm text-white/70">We don't need your money upfront</p>
+                </motion.div>
+
+                <motion.div
+                  className="bg-surface/50 border border-accent-main/20 rounded-xl p-4 text-center hover:border-accent-main/40 transition-all duration-300"
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.4 }}
+                  whileHover={{ scale: 1.02 }}
+                >
+                  <div className="text-2xl mb-2">👥</div>
+                  <h4 className="font-semibold text-white mb-1">No Team Dumps</h4>
+                  <p className="text-sm text-white/70">We can't dump what we don't have</p>
+                </motion.div>
+
+                <motion.div
+                  className="bg-surface/50 border border-accent-main/20 rounded-xl p-4 text-center hover:border-accent-main/40 transition-all duration-300"
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.5 }}
+                  whileHover={{ scale: 1.02 }}
+                >
+                  <div className="text-2xl mb-2">🔒</div>
+                  <h4 className="font-semibold text-white mb-1">No Insider Trading</h4>
+                  <p className="text-sm text-white/70">Everyone starts at the same time</p>
+                </motion.div>
+
+                <motion.div
+                  className="bg-surface/50 border border-accent-main/20 rounded-xl p-4 text-center hover:border-accent-main/40 transition-all duration-300"
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.6 }}
+                  whileHover={{ scale: 1.02 }}
+                >
+                  <div className="text-2xl mb-2">🤖</div>
+                  <h4 className="font-semibold text-white mb-1">No Bot Farms</h4>
+                  <p className="text-sm text-white/70">Real humans only, sorry bots</p>
+                </motion.div>
+
+                <motion.div
+                  className="bg-surface/50 border border-accent-main/20 rounded-xl p-4 text-center hover:border-accent-main/40 transition-all duration-300"
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.7 }}
+                  whileHover={{ scale: 1.02 }}
+                >
+                  <div className="text-2xl mb-2">🎯</div>
+                  <h4 className="font-semibold text-white mb-1">100% Community</h4>
+                  <p className="text-sm text-white/70">By degens, for degens</p>
+                </motion.div>
+
+                <motion.div
+                  className="bg-surface/50 border border-accent-main/20 rounded-xl p-4 text-center hover:border-accent-main/40 transition-all duration-300"
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.8 }}
+                  whileHover={{ scale: 1.02 }}
+                >
+                  <div className="text-2xl mb-2">💧</div>
+                  <h4 className="font-semibold text-white mb-1">Auto Liquidity</h4>
+                  <p className="text-sm text-white/70">Every roll = 0.001 MON to LP</p>
+                </motion.div>
               </div>
-              
-              <div className="bg-surface border border-accent-main/30 rounded-xl p-6">
-                <div className="text-4xl mb-4">🏆</div>
-                <h3 className="text-lg font-semibold text-white mb-2">Community Rewards</h3>
-                <p className="text-white/70">Participate in global challenges and earn rare NFTs</p>
-              </div>
-            </div>
+            </motion.div>
           </motion.div>
         </div>
       </div>
@@ -205,15 +260,15 @@ const Home = () => {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <h2 className="text-heading-2 font-heading font-bold text-white mb-8">Ready to Start Gaming?</h2>
-          <p className="text-xl text-white/80 mb-12">
-            Join thousands of players earning $ROLL coins and racing to tile 100!
-          </p>
+          <h2 className="text-heading-2 font-heading font-bold text-white mb-8">Ready to RUGG? 🚀</h2>
+          {/* <p className="text-xl text-white/80 mb-12">
+            Join the revolution. Play the game. Earn the tokens.
+          </p> */}
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
             <Button
               size="lg"
-              onClick={() => navigate('/game')}
+              onClick={handlePlayNow}
               className="px-12 py-6 text-xl font-bold rounded-2xl"
             >
               <Play className="w-6 h-6 mr-3" />
@@ -248,6 +303,14 @@ const Home = () => {
           </div>
         </motion.div>
       </div>
+
+      {showGameModeModal && (
+        <GameModeModal
+          isOpen={showGameModeModal}
+          onClose={() => setShowGameModeModal(false)}
+          onSelectMode={handleSelectMode}
+        />
+      )}
     </div>
   );
 };
