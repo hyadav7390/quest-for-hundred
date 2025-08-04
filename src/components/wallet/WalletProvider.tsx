@@ -32,10 +32,10 @@ const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         defaultChain: monadTestnet,
         appearance: {
           // landingHeader: 'Connect',
-          loginMessage: 'NUNU GAMES',
+          loginMessage: 'RUGGROLL',
           theme: 'dark',
           accentColor: '#8B5CF6',
-          logo: 'https://nunugames.xyz/logo.png'
+          logo: 'https://ruggroll.com/logo.png'
         },
         embeddedWallets: {
           createOnLogin: 'all-users', // Create for all users, not just those without wallets

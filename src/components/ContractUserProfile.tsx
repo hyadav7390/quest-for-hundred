@@ -50,7 +50,7 @@ const ContractUserProfile = ({ mode = 'single' }: ContractUserProfileProps) => {
                 transition={{ delay: 0.1 }}
               >
                 <Coins className="w-5 h-5 text-accent-main mb-1 animate-pulse" />
-                <span className="text-xs text-text-low">Total NUNU Earned</span>
+                <span className="text-xs text-text-low">Total $ROLL Earned</span>
                 <span className="text-lg font-bold text-accent-main font-heading">{playerStats ? playerStats.totalNunuEarned.toLocaleString() : '-'}</span>
               </motion.div>
               <motion.div

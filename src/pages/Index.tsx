@@ -325,8 +325,8 @@ const Index = () => {
               <Wallet className="w-16 h-16 text-accent-main mx-auto mb-4" />
               <h2 className="text-2xl font-heading font-bold text-white mb-4">Connect Your Wallet</h2>
               <p className="text-white/70 mb-6">
-                To play NUNU Games on-chain, you need to connect your wallet. 
-                Your progress will be stored on the blockchain and you'll earn real NUNU tokens!
+                To play RUGGROLL on-chain, you need to connect your wallet. 
+                Your progress will be stored on the blockchain and you'll earn real $ROLL tokens!
               </p>
             </motion.div>
           </div>
@@ -494,9 +494,9 @@ const Index = () => {
           transition={{ duration: 0.6 }}
         >
           <div className="text-center flex-1">
-            <h1 className="text-3xl sm:text-4xl font-heading font-bold text-white mb-2">🎲 NUNU Games</h1>
+            <h1 className="text-3xl sm:text-4xl font-heading font-bold text-white mb-2">🎲 RUGGROLL</h1>
             <p className="text-lg sm:text-xl text-white/70">
-              Roll the dice, collect NUNU tokens, and reach tile 100 on-chain!
+              Roll the dice, collect $ROLL tokens, and reach tile 100 on-chain!
             </p>
             <div className="flex justify-center gap-4 mt-4">
               <Button

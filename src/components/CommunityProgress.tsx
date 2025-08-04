@@ -22,7 +22,7 @@ const CommunityProgress = ({ mode = 'single' }: CommunityProgressProps) => {
   // Community stats from contract
   const stats = [
     { icon: <Gamepad2 className="w-6 h-6" />, label: "Games Played", value: gamesPlayed !== null ? gamesPlayed.toLocaleString() : '-' },
-    { icon: <Coins className="w-6 h-6" />, label: "NUNU Minted", value: nunuMinted ? nunuMinted.toLocaleString() : '-' },
+    { icon: <Coins className="w-6 h-6" />, label: "$ROLL Minted", value: nunuMinted ? nunuMinted.toLocaleString() : '-' },
     { icon: <Users className="w-6 h-6" />, label: "Total Players", value: totalPlayers !== null ? totalPlayers.toLocaleString() : '-' }
   ];
 
@@ -45,7 +45,7 @@ const CommunityProgress = ({ mode = 'single' }: CommunityProgressProps) => {
           <div className="group relative">
             <Info className="w-5 h-5 text-white/60 hover:text-accent-main transition-colors cursor-help" />
             <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-surface border border-accent-main/30 rounded-lg p-3 text-sm text-white/90 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
-              Community progress tracks total NUNU tokens minted
+              Community progress tracks total $ROLL tokens minted
             </div>
           </div>
         </div>
@@ -74,7 +74,7 @@ const CommunityProgress = ({ mode = 'single' }: CommunityProgressProps) => {
         {/* Progress Bar */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-sm text-white/70 font-medium">NUNU Minted</span>
+            <span className="text-sm text-white/70 font-medium">$ROLL Minted</span>
             <span className="text-xs text-white/50">{progressPercentage.toFixed(2)}%</span>
           </div>
           <div className="w-full h-4 bg-surface border border-accent-main/20 rounded-full overflow-hidden">
@@ -91,7 +91,7 @@ const CommunityProgress = ({ mode = 'single' }: CommunityProgressProps) => {
 
         {/* CTA Footer */}
         <div className="text-center">
-          <p className="text-white/80 mb-4">Every roll adds MONAD liquidity. Every gift mints NUNU.</p>
+          <p className="text-white/80 mb-4">Every roll adds MONAD liquidity. Every gift mints $ROLL.</p>
           <Button 
             onClick={() => navigate('/game')}
             className="btn-primary px-8 py-3"

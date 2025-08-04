@@ -844,7 +844,7 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
       
       toast({
         title: 'Rewards Claimed!',
-        description: 'Your NUNU tokens have been successfully claimed.',
+        description: 'Your $ROLL tokens have been successfully claimed.',
         variant: 'default',
       });
     }

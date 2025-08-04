@@ -29,8 +29,8 @@ const Home = () => {
     },
     {
       icon: <Gift className="w-8 h-8 text-positive"/>,
-      title: "Earn NUNU Coins",
-      description: "Collect gifts to earn NUNU coins (50-300 coins each)"
+      title: "Earn $ROLL Coins",
+      description: "Collect gifts to earn $ROLL coins (50-300 coins each)"
     },
     {
       icon: <Zap className="w-8 h-8 text-accent-main"/>,
@@ -159,7 +159,7 @@ const Home = () => {
         <AnimatedBackground />
       </div>
 
-      {/* NUNU Ecosystem Section */}
+      {/* RUGGROLL Ecosystem Section */}
       <div className="bg-surface py-20">
         <div className="max-w-7xl mx-auto px-4">
           <motion.div
@@ -168,17 +168,17 @@ const Home = () => {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <h2 className="text-heading-2 font-heading font-bold text-white mb-8">The NUNU Ecosystem</h2>
+            <h2 className="text-heading-2 font-heading font-bold text-white mb-8">The RUGGROLL Ecosystem</h2>
             <p className="text-xl text-white/80 max-w-4xl mx-auto mb-12">
-              NUNU Games is building the future of blockchain gaming where players are rewarded for their time and skill. 
-              Our ecosystem revolves around NUNU coins - earn them by collecting gifts, reaching tile 100, and 
+              RUGGROLL is building the future of blockchain gaming where players are rewarded for their time and skill. 
+              Our ecosystem revolves around $ROLL coins - earn them by collecting gifts, reaching tile 100, and 
               competing on the leaderboard in this thrilling board game adventure.
             </p>
             
             <div className="grid sm:grid-cols-3 gap-8">
               <div className="bg-surface border border-positive/30 rounded-xl p-6">
                 <Gift className="w-12 h-12 text-positive mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-white mb-2">Earn NUNU Coins</h3>
+                <h3 className="text-lg font-semibold text-white mb-2">Earn $ROLL Coins</h3>
                 <p className="text-white/70">Collect gifts and complete games to earn coins</p>
               </div>
               
@@ -207,7 +207,7 @@ const Home = () => {
         >
           <h2 className="text-heading-2 font-heading font-bold text-white mb-8">Ready to Start Gaming?</h2>
           <p className="text-xl text-white/80 mb-12">
-            Join thousands of players earning NUNU coins and racing to tile 100!
+            Join thousands of players earning $ROLL coins and racing to tile 100!
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">

@@ -29,7 +29,7 @@ const SplashAnimation = ({ isVisible, type, value, onComplete }: SplashAnimation
   const getText = () => {
     switch (type) {
       case 'gift':
-        return `+${value} NUNU Coins!`;
+        return `+${value} $ROLL Coins!`;
       case 'shortcut':
         return `🚀 Yay, Found a SHORTCUT of +${value} tiles!`;
       case 'detour':

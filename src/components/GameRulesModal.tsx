@@ -12,10 +12,10 @@ interface GameRulesModalProps {
 const GameRulesModal = ({ isOpen, onClose }: GameRulesModalProps) => {
   const gameRules = [
     "Roll the dice to move forward on the board",
-    "Collect gifts to earn NUNU coins (50-300 coins each)",
+    "Collect gifts to earn $ROLL coins (50-300 coins each)",
     "Avoid detour traps that move you backward (5-40 tiles)",
     "Find shortcut gates that jump you forward (5-20 tiles)",
-    "Reach tile 100 to win and earn 1000 bonus NUNU coins",
+    "Reach tile 100 to win and earn 1000 bonus $ROLL coins",
     "Your total score includes movement points + gift coins + completion bonus"
   ];
 

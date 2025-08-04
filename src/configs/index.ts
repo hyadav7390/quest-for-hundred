@@ -22,8 +22,8 @@ export const NATIVE_TOKEN = {
 };
 
 export const REWARD_TOKEN = {
-  name: 'Nunu Game Token',
-  symbol: 'NUNU',
+  name: 'Rugg Roll Token',
+  symbol: 'ROLL',
   decimals: 18,
   address: '0xdae511d02ae7c9017edd634142f7a0e8e24c8fcd',
 };

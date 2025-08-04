@@ -93,7 +93,7 @@ const VictoryModal = ({
 
           <h2 className="text-3xl font-bold text-text-high mb-2">Congratulations!</h2>
           <p className="text-text-low">You've reached tile 100!</p>
-          <p className="text-accent-main font-bold">+ 1000 NUNU Coins Bonus!</p>
+          <p className="text-accent-main font-bold">+ 1000 $ROLL Coins Bonus!</p>
         </div>
 
         <div className="space-y-4 mb-6">
@@ -110,7 +110,7 @@ const VictoryModal = ({
               </div>
 
               <div className="bg-surface border border-accent-main/10 rounded p-2">
-                <div className="text-xs text-text-low">NUNU Coins</div>
+                <div className="text-xs text-text-low">$ROLL Coins</div>
                 <div className="text-accent-main font-bold">{nunuCoins}</div>
               </div>
             </div>
