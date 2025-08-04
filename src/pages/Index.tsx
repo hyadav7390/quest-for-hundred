@@ -705,6 +705,7 @@ const Index = () => {
         <GameRulesModal
           isOpen={showGameRules}
           onClose={() => setShowGameRules(false)}
+          mode={mode}
         />
       </div>
     </div>
