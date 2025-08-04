@@ -39,9 +39,9 @@ const Home = () => {
   ];
 
   const socialLinks = [
-    { icon: <X className="w-5 h-5" />, label: "Twitter", href: "https://twitter.com" },
-    { icon: <MessageCircle className="w-5 h-5" />, label: "Discord", href: "https://discord.com" },
-    { icon: <Send className="w-5 h-5" />, label: "Telegram", href: "https://telegram.org" }
+    { icon: <img src="/x.png" alt="X" className="w-8 h-8" />, label: "X", href: "https://x.com/RuggRoll" },
+    { icon: <img src="/discord.png" alt="Discord" className="w-8 h-8" />, label: "Discord", href: "https://discord.gg/eJjh8WNz" },
+    // { icon: <img src="/telegram.png" alt="Telegram" className="w-8 h-8" />, label: "Telegram", href: "https://t.me/" }
   ];
 
   // Animated background elements component
@@ -153,15 +153,15 @@ const Home = () => {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <h2 className="text-heading-2 font-heading font-bold text-white mb-4">The RUGGROLL Ecosystem</h2>
+            {/* <h2 className="text-heading-2 font-heading font-bold text-white mb-4">The RUGGROLL Ecosystem</h2>
             <p className="text-xl text-white/80 max-w-4xl mx-auto mb-16">
               We're not like those other projects... because we actually care about the community! 
               No funny business, just pure gaming and earning. 🎮💰
-            </p>
+            </p> */}
             
             {/* Main Tokenomics Card */}
             <motion.div
-              className="bg-gradient-to-r from-accent-main/10 to-blue-500/10 border-2 border-accent-main/30 rounded-2xl p-8 mb-12"
+              className="bg-gradient-to-r from-accent-main/10 to-blue-500/10 border-2 border-accent-main/30 rounded-2xl p-8 mb-2"
               initial={{ opacity: 0, scale: 0.95 }}
               whileInView={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, delay: 0.2 }}
@@ -285,19 +285,25 @@ const Home = () => {
             </Button>
           </div>
 
-          <div className="flex justify-center space-x-6">
+          <div className="flex justify-center space-x-4">
             {socialLinks.map((link, index) => (
               <motion.a
                 key={index}
                 href={link.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center space-x-2 text-white/70 hover:text-accent-main transition-colors"
-                whileHover={{ scale: 1.1 }}
+                className="group flex flex-col items-center rounded-xl bg-surface/20 border border-accent-main/10 hover:border-accent-main/30 hover:bg-surface/30 transition-all duration-300 min-w-[60px] p-2"
+                whileHover={{ scale: 1.05, y: -2 }}
                 whileTap={{ scale: 0.95 }}
               >
-                {link.icon}
-                <span>{link.label}</span>
+                {/* <div className="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-accent-main/20 to-blue-500/20 border border-accent-main/30 group-hover:border-accent-main/50 transition-colors"> */}
+                  {/* <div className="text-accent-main group-hover:text-white transition-colors"> */}
+                    {link.icon}
+                  {/* </div> */}
+                {/* </div> */}
+                {/* <span className="text-sm font-medium text-white/80 group-hover:text-white transition-colors">
+                  {link.label}
+                </span> */}
               </motion.a>
             ))}
           </div>

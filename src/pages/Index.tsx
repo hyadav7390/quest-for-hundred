@@ -496,7 +496,7 @@ const Index = () => {
           <div className="text-center flex-1">
             <h1 className="text-3xl sm:text-4xl font-heading font-bold text-white mb-2">🎲 RUGGROLL</h1>
             <p className="text-lg sm:text-xl text-white/70">
-              Roll the dice, collect $ROLL tokens, and reach tile 100 on-chain!
+              Roll the dice to collect $ROLL tokens and race to 100 to RUGG other players!
             </p>
             <div className="flex justify-center gap-4 mt-4">
               <Button
