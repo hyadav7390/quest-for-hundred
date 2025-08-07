@@ -357,7 +357,7 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
         value: BigInt(rollFee || 0),
         chain: monadTestnet,
         account: address,
-        gas: 300000n,
+        gas: 500000n,
       });
     } catch (error: any) {
       setIsWaitingForVRF(false);

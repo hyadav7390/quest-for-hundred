@@ -44,9 +44,9 @@ const GameActivities = ({ activities, compact = false }: GameActivitiesProps) =>
       case 3:
         return <Gift className="w-4 h-4 text-yellow-500" />;
       case 4:
-        return <DoorClosed className="w-4 h-4 text-red-500" />;
-      case 5:
         return <DoorOpen className="w-4 h-4 text-green-500" />;
+      case 5:
+        return <DoorClosed className="w-4 h-4 text-red-500" />;
       default:
         return <Coins className="w-4 h-4 text-yellow-500" />;
     }
