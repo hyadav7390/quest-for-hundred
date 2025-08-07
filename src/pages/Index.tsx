@@ -538,7 +538,7 @@ const Index = () => {
           {/* Game Board */}
           <div className="lg:col-span-3 relative">
             <GameBoard
-              playerPosition={gameState.playerPosition}
+              playerPosition={contractInfo.gameState?.position ?? gameState.playerPosition}
               giftTiles={gameState.giftTiles}
               detourTrapTiles={gameState.detourTrapTiles}
               shortcutGateTiles={gameState.shortcutGateTiles}
@@ -566,7 +566,7 @@ const Index = () => {
 
               <ScoreBoard
                 score={contractInfo.gameState?.gameScore ?? gameState.score}
-                position={gameState.playerPosition}
+                position={contractInfo.gameState?.position ?? gameState.playerPosition}
                 turnsPlayed={gameState.turnsPlayed}
                 giftsCollected={contractInfo.gameState?.giftsCollected ?? 0}
                 detourTrapsTriggered={gameState.detourTrapsTriggered}

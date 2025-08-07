@@ -274,7 +274,7 @@ const Home = () => {
               <Play className="w-6 h-6 mr-3" />
               Play Now
             </Button>
-            <Button
+            {/* <Button
               variant="secondary"
               size="lg"
               onClick={() => navigate('/game/leaderboard')}
@@ -282,7 +282,7 @@ const Home = () => {
             >
               <Trophy className="w-6 h-6 mr-3" />
               Leaderboard
-            </Button>
+            </Button> */}
           </div>
 
           <div className="flex justify-center space-x-4">

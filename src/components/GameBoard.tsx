@@ -67,7 +67,7 @@ const GameBoard = ({
   const getTileStyles = (tileNumber: number, tileType: TileType) => {
     let baseStyles = "w-full min-h-12 sm:min-h-16 flex items-center justify-center rounded-lg relative border-2 transition-all duration-300 pt-2 overflow-visible";
     
-    if (tileNumber === playerPosition) {
+    if (tileNumber === displayPosition) {
       // Enhanced tile highlighting for player position
       baseStyles += " ring-4 ring-yellow-400 ring-opacity-75 scale-110 z-10 shadow-2xl shadow-yellow-400/50";
     }
@@ -94,7 +94,7 @@ const GameBoard = ({
           const tileNumber = getTileNumber(9 - row, col);
           const tileType = getTileType(tileNumber);
           const isPlayerTile = tileNumber === displayPosition; // Use displayPosition for character rendering
-          const isPlayerOnTile = tileNumber === playerPosition; // Use playerPosition for door logic
+          const isPlayerOnTile = tileNumber === displayPosition; // Use displayPosition for door logic
           
           // Check if other players are on this tile
           const peerIndex = peerPositions?.positions.indexOf(tileNumber) ?? -1;
