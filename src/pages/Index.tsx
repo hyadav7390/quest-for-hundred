@@ -619,6 +619,7 @@ const Index = () => {
           nunuCoins={contractInfo.gameState?.nunuEarned || 0}
           ruggedCount={contractInfo.playerStats?.ruggedCount}
           totalRewardWon={contractInfo.playerStats?.totalRewardWon}
+          gameFinishBonus={contractInfo.gameFinishBonus}
           onRestart={restartGame}
           onClaimRewards={handleClaimRewards}
           diceRolls={contractInfo.gameState?.diceRolls}
@@ -642,6 +643,7 @@ const Index = () => {
           isOpen={showGameRules}
           onClose={() => setShowGameRules(false)}
           mode={mode}
+          gameFinishBonus={contractInfo.gameFinishBonus}
         />
       </div>
     </div>

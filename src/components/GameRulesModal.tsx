@@ -8,9 +8,10 @@ interface GameRulesModalProps {
   isOpen: boolean;
   onClose: () => void;
   mode?: 'single' | 'multi';
+  gameFinishBonus?: number;
 }
 
-const GameRulesModal = ({ isOpen, onClose, mode = 'single' }: GameRulesModalProps) => {
+const GameRulesModal = ({ isOpen, onClose, mode = 'single', gameFinishBonus }: GameRulesModalProps) => {
   const singlePlayerRules = [
     "Roll the dice to move forward on the board",
     "Collect gifts to earn $ROLL coins (50-300 coins each)",
@@ -72,7 +73,7 @@ const GameRulesModal = ({ isOpen, onClose, mode = 'single' }: GameRulesModalProp
               <>
                 <div className="bg-surface rounded-xl p-4 text-center border border-positive/30">
                   <Trophy className="w-6 h-6 text-positive mx-auto mb-2" />
-                  <div className="text-lg font-bold text-white">1,000</div>
+                  <div className="text-lg font-bold text-white">{gameFinishBonus ?? 1000}</div>
                   <div className="text-white/60 text-sm">Completion Bonus</div>
                 </div>
                 <div className="bg-surface rounded-xl p-4 text-center border border-accent-main/30">

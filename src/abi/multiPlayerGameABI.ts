@@ -202,5 +202,18 @@ export const MULTI_PLAYER_GAME_ABI = [
     "stateMutability": "view",
     "type": "function"
   },
+  {
+    "inputs": [],
+    "name": "getGameFinishBonus",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "_gameFinishBonus",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
   // Add more functions as needed (e.g., for leaderboard, etc.)
 ]; 

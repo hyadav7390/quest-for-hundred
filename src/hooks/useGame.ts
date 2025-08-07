@@ -68,6 +68,7 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
   const [playerStats, setPlayerStats] = useState<any>(null);
   const [peerPositions, setPeerPositions] = useState<{ positions: number[]; counts: number[] }>({ positions: [], counts: [] });
   const [gameActivities, setGameActivities] = useState<any[]>([]);
+  const [gameFinishBonus, setGameFinishBonus] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingStartGame, setIsLoadingStartGame] = useState(false);
   const [isWaitingForVRF, setIsWaitingForVRF] = useState(false);
@@ -230,6 +231,17 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
       enabled: true,
       refetchInterval: false,
       staleTime: 300000, // 5 minutes - roll fee rarely changes
+    },
+  });
+
+  const { data: gameFinishBonusData, refetch: refetchGameFinishBonus } = useReadContract({
+    address: contractAddress as `0x${string}`,
+    abi: contractAbi,
+    functionName: 'getGameFinishBonus',
+    query: {
+      enabled: true,
+      refetchInterval: false,
+      staleTime: 300000, // 5 minutes - game finish bonus rarely changes
     },
   });
 
@@ -570,6 +582,14 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
     }
   }, [gameStatsData, memoizedMode]);
 
+  // Process game finish bonus data
+  useEffect(() => {
+    if (gameFinishBonusData) {
+      console.log('gameFinishBonusData', gameFinishBonusData);
+      setGameFinishBonus(Number(gameFinishBonusData));
+    }
+  }, [gameFinishBonusData]);
+
   useEffect(() => {
     if (playerStatsData) {
       console.log('playerStatsData', playerStatsData);
@@ -886,6 +906,7 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
       playerStats,
       peerPositions,
       gameActivities,
+      gameFinishBonus,
       totalSupply,
       maxSupply,
       rollFee,
@@ -921,6 +942,6 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
     isWaitingForVRF, isRollDicePending,
     isClaimRewardsConfirming, isClaimRewardsPendingWagmi,
     claimRewardsError, claimRewardsSuccess, fetchPlatformData, fetchPlayerData, fetchLeaderboard,
-    startGame, joinGame, rollDice, claimRewards, isPlayerStatusFetched, playerStatusError, peerPositions, gameActivities, refetchGameActivities, refetchPeerPositions
+    startGame, joinGame, rollDice, claimRewards, isPlayerStatusFetched, playerStatusError, peerPositions, gameActivities, refetchGameActivities, refetchPeerPositions, gameFinishBonus
   ]);
 }; 

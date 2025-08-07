@@ -19,6 +19,7 @@ interface VictoryModalProps {
   detours?: number;
   ruggedCount?: number;
   totalRewardWon?: number;
+  gameFinishBonus?: number;
   isRestarting?: boolean;
   isClaimRewardsPending?: boolean;
   claimRewardsError?: string | null;
@@ -44,6 +45,7 @@ const VictoryModal = ({
   detours,
   ruggedCount,
   totalRewardWon,
+  gameFinishBonus,
   isRestarting = false,
   isClaimRewardsPending = false,
   claimRewardsError = null,
@@ -93,7 +95,7 @@ const VictoryModal = ({
 
           <h2 className="text-3xl font-bold text-text-high mb-2">Congratulations!</h2>
           <p className="text-text-low">You've reached tile 100!</p>
-          <p className="text-accent-main font-bold">+ 1000 $ROLL Coins Bonus!</p>
+          <p className="text-accent-main font-bold">+ {gameFinishBonus ?? 0} $ROLL Coins Bonus!</p>
         </div>
 
         <div className="space-y-4 mb-6">
@@ -146,7 +148,7 @@ const VictoryModal = ({
               {displayRewardWon > 0 && (
                 <div className="flex items-center space-x-2 col-span-2">
                   <Coins className="w-4 h-4 text-success" />
-                  <span className="text-text-low">Reward Won: {displayRewardWon} MON</span>
+                  <span className="text-text-low">Reward Won: {displayRewardWon ? (displayRewardWon / 1e18).toFixed(2) : 0} MON</span>
                 </div>
               )}
             </div>

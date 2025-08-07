@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { TrendingDown, Coins, Clock, TrendingUp, Trophy, Users } from 'lucide-react';
+import { TrendingDown, Coins, Clock, TrendingUp, Trophy, Users, DoorClosed, DoorOpen, Gift } from 'lucide-react';
 
 interface GameActivity {
   actor: string;
@@ -41,6 +41,12 @@ const GameActivities = ({ activities, compact = false }: GameActivitiesProps) =>
         return <Trophy className="w-4 h-4 text-yellow-500" />;
       case 2:
         return <Users className="w-4 h-4 text-sky-500" />;
+      case 3:
+        return <Gift className="w-4 h-4 text-yellow-500" />;
+      case 4:
+        return <DoorClosed className="w-4 h-4 text-red-500" />;
+      case 5:
+        return <DoorOpen className="w-4 h-4 text-green-500" />;
       default:
         return <Coins className="w-4 h-4 text-yellow-500" />;
     }
@@ -54,6 +60,12 @@ const GameActivities = ({ activities, compact = false }: GameActivitiesProps) =>
         return `reached 100`;
       case 2: // Join
         return `joined the game.`;
+      case 3: // Gift
+        return `collected a gift and got ${formatAmount(activity.amount)} $ROLL`;
+      case 4: // Detour
+        return `took a detour of -${formatAmount(activity.amount)} tiles`;
+      case 5: // Shortcut
+        return `took a shortcut of +${formatAmount(activity.amount)} tiles`;
       default:
         return `Won ${formatAmount(activity.amount)} MON`;
     }

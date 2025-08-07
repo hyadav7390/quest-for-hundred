@@ -250,5 +250,18 @@ export const SINGLE_PLAYER_GAME_ABI = [
         ],
         "stateMutability": "view",
         "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "getGameFinishBonus",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "_gameFinishBonus",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
     }
 ]; 
