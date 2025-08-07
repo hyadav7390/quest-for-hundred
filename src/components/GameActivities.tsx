@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { TrendingDown, Coins, Clock, TrendingUp, Trophy, Users, DoorClosed, DoorOpen, Gift } from 'lucide-react';
+import { REWARD_TOKEN, NATIVE_TOKEN } from '@/configs';
 
 interface GameActivity {
   actor: string;
@@ -55,19 +56,19 @@ const GameActivities = ({ activities, compact = false }: GameActivitiesProps) =>
   const getActivityText = (activity: GameActivity) => {
     switch (activity.actionType) {
       case 0: // Won
-        return `Rugged ${activity.count} players and Won ${formatAmount(activity.amount)} MON`;
+        return `Rugged ${activity.count} players and Won ${formatAmount(activity.amount)} ${NATIVE_TOKEN.symbol}`;
       case 1: // Game Finish
-        return `reached 100`;
+        return `reached 100 and claimed ${formatAmount(activity.amount)} ${REWARD_TOKEN.symbol}`;
       case 2: // Join
         return `joined the game.`;
       case 3: // Gift
-        return `collected a gift and got ${activity.amount} $ROLL`;
+        return `collected a gift and got ${activity.amount} $${REWARD_TOKEN.symbol}`;
       case 4: // Shortcut
         return `took a shortcut of +${activity.amount} tiles`;
       case 5: // Detour
         return `took a detour of -${activity.amount} tiles`;
       default:
-        return `Won ${formatAmount(activity.amount)} MON`;
+        return `Won ${formatAmount(activity.amount)} ${NATIVE_TOKEN.symbol}`;
     }
   };
 

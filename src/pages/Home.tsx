@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import CommunityProgress from '@/components/CommunityProgress';
 import GameModeModal from '@/components/GameModeModal';
 import { useState, useEffect } from 'react';
+import { REWARD_TOKEN } from '@/configs';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -28,8 +29,8 @@ const Home = () => {
     },
     {
       icon: <Gift className="w-8 h-8 text-positive"/>,
-      title: "Earn $ROLL Coins",
-      description: "Collect gifts to earn $ROLL coins (50-300 coins each)"
+      title: `Earn $${REWARD_TOKEN.symbol} Coins`,
+      description: `Collect gifts to earn $${REWARD_TOKEN.symbol} coins (50-300 coins each)`
     },
     {
       icon: <Zap className="w-8 h-8 text-accent-main"/>,

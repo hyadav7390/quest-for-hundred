@@ -18,6 +18,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAccount, useBalance } from 'wagmi';
 import { monadTestnet } from '@/types/monadTestnet';
 import { useWalletBalancesAndWithdraw } from '@/hooks/useWalletBalancesAndWithdraw';
+import { REWARD_TOKEN } from '@/configs';
 
 // Helper components defined outside Index to prevent re-mounting on every render
 const BalanceWarning = () => (
@@ -327,7 +328,7 @@ const Index = () => {
               <h2 className="text-2xl font-heading font-bold text-white mb-4">Connect Your Wallet</h2>
               <p className="text-white/70 mb-6">
                 To play RUGGROLL on-chain, you need to connect your wallet. 
-                Your progress will be stored on the blockchain and you'll earn real $ROLL tokens!
+                Your progress will be stored on the blockchain and you'll earn real ${REWARD_TOKEN.symbol} tokens!
               </p>
             </motion.div>
           </div>
@@ -499,7 +500,7 @@ const Index = () => {
           <div className="text-center sm:text-left mb-3 sm:mb-0">
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-heading font-bold text-white mb-1">🎲 RUGGROLL</h1>
             <p className="text-sm sm:text-base text-white/70">
-              Roll the dice to collect $ROLL tokens and race to 100!
+              Roll the dice to collect ${REWARD_TOKEN.symbol} tokens and race to 100!
             </p>
           </div>
           

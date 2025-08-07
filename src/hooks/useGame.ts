@@ -873,7 +873,7 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
       
       toast({
         title: 'Rewards Claimed!',
-        description: 'Your $ROLL tokens have been successfully claimed.',
+        description: `Your ${REWARD_TOKEN.symbol} tokens have been successfully claimed.`,
         variant: 'default',
       });
     }

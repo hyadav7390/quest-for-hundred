@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useGame } from '@/hooks/useGame';
 import { useEffect, useMemo, useState } from 'react';
 import GameModeModal from '@/components/GameModeModal';
+import { NATIVE_TOKEN } from '@/configs';
 
 interface CommunityProgressProps {
   mode?: 'single' | 'multi';
