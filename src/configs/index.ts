@@ -31,6 +31,6 @@ export const REWARD_TOKEN = {
 export const SINGLE_PLAYER_CONTRACT_ADDRESS = '0x0b41d5d0c5a198aa4bf58fa6497d0c019eb7d8be';
 
 // TODO: Replace with actual deployed multiplayer contract address
-export const MULTI_PLAYER_CONTRACT_ADDRESS = '0x3375604f9f2ba1d086ed36d9b3019621bb8e48d5';
+export const MULTI_PLAYER_CONTRACT_ADDRESS = '0x990978e6dd20b066629b90cbd65bf69b11b0323b';
 
 export type TokenSymbol = typeof NATIVE_TOKEN.symbol | typeof REWARD_TOKEN.symbol;
