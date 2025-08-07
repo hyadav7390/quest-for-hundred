@@ -534,7 +534,7 @@ const Index = () => {
         {hasNoBalance && <BalanceWarning />}
 
         {/* Main Game Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-6">
           {/* Game Board */}
           <div className="lg:col-span-3 relative">
             <GameBoard
@@ -554,6 +554,16 @@ const Index = () => {
           {/* Controls Section */}
           <div className="lg:col-span-1 flex flex-col gap-4">
             <div className="flex-1 flex flex-col gap-4">
+              <DiceSection 
+                gameState={gameState}
+                isWaitingForVRF={isWaitingForVRF}
+                rollDice={rollDice}
+                isDiceDisabled={isDiceDisabled}
+                contractValue={contractInfo.gameState?.diceValue}
+                hasNoBalance={hasNoBalance}
+                rollFee={contractInfo.rollFee}
+              />
+
               <ScoreBoard
                 score={contractInfo.gameState?.gameScore ?? gameState.score}
                 position={gameState.playerPosition}
@@ -572,15 +582,10 @@ const Index = () => {
                 joinGameFee={contractInfo.joinGameFee}
               />
 
-              <DiceSection 
-                gameState={gameState}
-                isWaitingForVRF={isWaitingForVRF}
-                rollDice={rollDice}
-                isDiceDisabled={isDiceDisabled}
-                contractValue={contractInfo.gameState?.diceValue}
-                hasNoBalance={hasNoBalance}
-                rollFee={contractInfo.rollFee}
-              />
+              {/* Game Activities - Only for multiplayer */}
+              {mode === 'multi' && (
+                <GameActivities activities={contractInfo.gameActivities || []} compact={true} />
+              )}
 
               {mode === 'single' && (
                 <NewGameButton 
@@ -592,13 +597,6 @@ const Index = () => {
             </div>
           </div>
         </div>
-
-        {/* Game Activities - Full Width */}
-        {mode === 'multi' && (
-          <div className="mt-4 lg:mt-6">
-            <GameActivities activities={contractInfo.gameActivities || []} />
-          </div>
-        )}
 
         {showBoardLoader && (
           <div className="fixed inset-0 flex items-center justify-center z-50 bg-bg-primary/80 backdrop-blur-sm">

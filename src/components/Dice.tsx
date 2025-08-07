@@ -90,7 +90,7 @@ const Dice = ({ value, isRolling, onRoll, disabled, contractValue, isWaitingForV
 
   const getRollButtonText = () => {
     if (disabled && (isRolling || isWaitingForVRF)) return 'Rolling...';
-    return 'Roll Dice';
+    return 'Roll';
   };
 
   const isCurrentlyAnimating = isRolling || isWaitingForVRF || isAnimationRunningRef.current;

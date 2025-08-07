@@ -1,6 +1,6 @@
 
 import { motion } from 'framer-motion';
-import { Trophy, Target, Gift, Dices, Volume2, VolumeX, DoorClosed, TrendingUp, Info } from 'lucide-react';
+import { Trophy, Target, Gift, Dices, Volume2, VolumeX, DoorClosed, TrendingUp, Info, Users } from 'lucide-react';
 
 interface ScoreBoardProps {
   score: number;
@@ -94,90 +94,113 @@ const ScoreBoard = ({
 
   return (
     <motion.div
-      className="panel h-full"
+      className="panel h-full p-3"
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <div className="flex justify-between items-center mb-1">
-        <h2 className="text-lg font-heading font-bold text-white">Game Stats</h2>
+      <div className="flex justify-between items-center mb-2">
+        <h2 className="text-base font-heading font-bold text-white">Game Stats</h2>
         <motion.button
           onClick={onToggleSound}
-          className="p-2 rounded-lg bg-surface hover:bg-surface/80 transition-colors"
+          className="p-1.5 rounded-lg bg-surface hover:bg-surface/80 transition-colors"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
           {isSoundMuted ? (
-            <VolumeX className="w-4 h-4 text-white/60" />
+            <VolumeX className="w-3 h-3 text-white/60" />
           ) : (
-            <Volume2 className="w-4 h-4 text-accent-main" />
+            <Volume2 className="w-3 h-3 text-accent-main" />
           )}
         </motion.button>
-      </div>
-
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 sm:gap-3">
-        <StatCard 
-          icon={<Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-positive" />} 
-          label="Score" 
-          value={score} 
-          tooltip={tooltips.score} 
-        />
-        <StatCard 
-          icon={<Dices className="w-5 h-5 sm:w-6 sm:h-6 text-accent-main" />} 
-          label="Dice Rolled" 
-          value={displayDiceRolls} 
-          tooltip={tooltips.diceRolled} 
-        />
-        <StatCard 
-          icon={<Target className="w-5 h-5 sm:w-6 sm:h-6 text-accent-main" />} 
-          label="Position" 
-          value={`${position}/100`} 
-          tooltip={tooltips.position} 
-        />
-        <StatCard 
-          icon={<Gift className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-400" />} 
-          label="Gifts" 
-          value={displayGifts} 
-          tooltip={tooltips.gifts} 
-        />
-        <StatCard 
-          icon={<DoorClosed className="w-5 h-5 sm:w-6 sm:h-6 text-red-500" />} 
-          label="Detours" 
-          value={displayDetours} 
-          tooltip={tooltips.detours} 
-        />
-        <StatCard 
-          icon={<DoorClosed className="w-5 h-5 sm:w-6 sm:h-6 text-green-500" />} 
-          label="Shortcuts" 
-          value={displayShortcuts} 
-          tooltip={tooltips.shortcuts} 
-        />
       </div>
 
       {/* Multiplayer stats */}
       {mode === 'multi' && (
         <>
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 mt-3">
+            <StatCard 
+              icon={<img src='./Monad_Logo.webp' className="w-5 h-5 sm:w-6 sm:h-6 text-accent-main" />} 
+              label="Potential Win" 
+              value={`${potentialReward} MON`} 
+              tooltip={tooltips.potentialWin} 
+            />
+            <StatCard 
+              icon={<Users className="w-5 h-5 sm:w-6 sm:h-6 text-positive" />} 
+              label="Active Players" 
+              value={displayActivePlayers} 
+              tooltip={tooltips.activePlayers} 
+            />
+          </div>
           <div className="mt-3 p-3 bg-gradient-to-r from-accent-main/10 to-blue-500/10 border border-accent-main/20 rounded-lg">
             <p className="text-sm text-white/90 text-center font-medium">
               {getPeerMessage(displayPeers)}
             </p>
           </div>
-
-          <div className="grid grid-cols-2 gap-2 sm:gap-3 mt-3">
-            <StatCard 
-              icon={<TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-accent-main" />} 
-              label="Potential Win" 
-              value={`${potentialReward.toFixed(3)} MON`} 
-              tooltip={tooltips.potentialWin} 
-            />
-            <StatCard 
-              icon={<Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-positive" />} 
-              label="Prize Pool" 
-              value={`${totalPrizePool.toFixed(3)} MON`} 
-              tooltip={tooltips.prizePool} 
-            />
-          </div>
         </>
+      )}
+
+      {/* Stats Grid - Different layouts for single vs multiplayer */}
+      {mode === 'single' ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 sm:gap-3 mt-3">
+          <StatCard 
+            icon={<Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-positive" />} 
+            label="Score" 
+            value={score} 
+            tooltip={tooltips.score} 
+          />
+          <StatCard 
+            icon={<Dices className="w-5 h-5 sm:w-6 sm:h-6 text-accent-main" />} 
+            label="Dice Rolled" 
+            value={displayDiceRolls} 
+            tooltip={tooltips.diceRolled} 
+          />
+          <StatCard 
+            icon={<Target className="w-5 h-5 sm:w-6 sm:h-6 text-accent-main" />} 
+            label="Position" 
+            value={`${position}/100`} 
+            tooltip={tooltips.position} 
+          />
+          <StatCard 
+            icon={<Gift className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-400" />} 
+            label="Gifts" 
+            value={displayGifts} 
+            tooltip={tooltips.gifts} 
+          />
+          <StatCard 
+            icon={<DoorClosed className="w-5 h-5 sm:w-6 sm:h-6 text-red-500" />} 
+            label="Detours" 
+            value={displayDetours} 
+            tooltip={tooltips.detours} 
+          />
+          <StatCard 
+            icon={<DoorClosed className="w-5 h-5 sm:w-6 sm:h-6 text-green-500" />} 
+            label="Shortcuts" 
+            value={displayShortcuts} 
+            tooltip={tooltips.shortcuts} 
+          />
+        </div>
+      ) : (
+        <div className="grid grid-cols-3 gap-1 sm:gap-3 mt-3">
+          <StatCard 
+            icon={<Dices className="w-5 h-5 sm:w-6 sm:h-6 text-accent-main" />} 
+            label="Rolled" 
+            value={displayDiceRolls} 
+            tooltip={tooltips.diceRolled} 
+          />
+          <StatCard 
+            icon={<DoorClosed className="w-5 h-5 sm:w-6 sm:h-6 text-red-500" />} 
+            label="Detours" 
+            value={displayDetours} 
+            tooltip={tooltips.detours} 
+          />
+          <StatCard 
+            icon={<DoorClosed className="w-5 h-5 sm:w-6 sm:h-6 text-green-500" />} 
+            label="Shortcuts" 
+            value={displayShortcuts} 
+            tooltip={tooltips.shortcuts} 
+          />
+        </div>
       )}
     </motion.div>
   );

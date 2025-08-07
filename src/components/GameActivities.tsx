@@ -61,26 +61,26 @@ const GameActivities = ({ activities, compact = false }: GameActivitiesProps) =>
 
   return (
     <motion.div
-      className={`bg-surface border border-accent-main/10 rounded-lg ${compact ? 'p-3' : 'p-4'}`}
+      className={`bg-surface border border-accent-main/10 rounded-lg ${compact ? 'p-2' : 'p-4'}`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <h3 className={`${compact ? 'text-base' : 'text-lg'} font-semibold text-text-high mb-3 flex items-center`}>
-        <TrendingDown className={`${compact ? 'w-4 h-4' : 'w-5 h-5'} text-red-500 mr-2`} />
+      <h3 className={`${compact ? 'text-sm' : 'text-lg'} font-semibold text-text-high mb-2 flex items-center`}>
+        <TrendingDown className={`${compact ? 'w-3 h-3' : 'w-5 h-5'} text-red-500 mr-1`} />
         Live Game Activities
       </h3>
       
-      <div className={`space-y-3 ${compact ? 'max-h-48' : 'max-h-64'} overflow-y-auto`}>
+      <div className={`space-y-2 ${compact ? 'max-h-24' : 'max-h-64'} overflow-y-auto`}>
         <AnimatePresence>
           {activities.length === 0 ? (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-center text-text-low py-4"
+              className="text-center text-text-low py-2"
             >
-              <Clock className="w-8 h-8 mx-auto mb-2 text-accent-main/50" />
-              <p>No recent activities</p>
+              <Clock className={`${compact ? 'w-6 h-6' : 'w-8 h-8'} mx-auto mb-1 text-accent-main/50`} />
+              <p className={`${compact ? 'text-xs' : 'text-sm'}`}>No recent activities</p>
             </motion.div>
           ) : (
             activities.map((activity, index) => (
@@ -90,26 +90,26 @@ const GameActivities = ({ activities, compact = false }: GameActivitiesProps) =>
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.3, delay: index * 0.1 }}
-                className={`bg-surface border border-accent-main/5 rounded-lg ${compact ? 'p-2' : 'p-3'} hover:border-accent-main/20 transition-colors`}
+                className={`bg-surface border border-accent-main/5 rounded-lg ${compact ? 'p-1.5' : 'p-3'} hover:border-accent-main/20 transition-colors`}
               >
                 <div className="flex items-start justify-between">
                   <div className="flex items-center space-x-2">
                     {getActivityIcon(activity.actionType)}
                     <div>
-                      <p className="text-sm font-medium text-text-high">
+                      <p className={`${compact ? 'text-xs' : 'text-sm'} font-medium text-text-high`}>
                         {formatAddress(activity.actor)}
                       </p>
-                      <p className="text-xs text-text-low">
+                      <p className={`${compact ? 'text-xs' : 'text-xs'} text-text-low`}>
                         {getActivityText(activity)}
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-xs text-text-low">
+                    <p className={`${compact ? 'text-xs' : 'text-xs'} text-text-low`}>
                       {formatTimestamp(activity.timestamp)}
                     </p>
                     {activity.amount > 0 && (
-                      <p className="text-xs font-medium text-success">
+                      <p className={`${compact ? 'text-xs' : 'text-xs'} font-medium text-success`}>
                         +{formatAmount(activity.amount)} MON
                       </p>
                     )}
