@@ -179,11 +179,25 @@ export const MULTI_PLAYER_GAME_ABI = [
   },
   {
     "inputs": [],
+    "name": "getJoinGameFee",
+    "outputs": [
+      { "internalType": "uint256", "name": "_joinGameFee", "type": "uint256" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "gameId", "type": "uint256" }
+    ],
     "name": "getGameStats",
     "outputs": [
       { "internalType": "uint256", "name": "_gamesCompleted", "type": "uint256" },
       { "internalType": "uint256", "name": "_totalNunuEarned", "type": "uint256" },
-      { "internalType": "uint256", "name": "_totalPlayers", "type": "uint256" }
+      { "internalType": "uint256", "name": "_totalPlayers", "type": "uint256" },
+      { "internalType": "uint256", "name": "_totalRewardsWon", "type": "uint256" },
+      { "internalType": "uint256", "name": "_gameActivePlayers", "type": "uint256" },
+      { "internalType": "uint256", "name": "_totalLiquidityAdded", "type": "uint256" }
     ],
     "stateMutability": "view",
     "type": "function"

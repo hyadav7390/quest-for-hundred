@@ -7,7 +7,6 @@ import GameBoard from '@/components/GameBoard';
 import Dice from '@/components/Dice';
 import ScoreBoard from '@/components/ScoreBoard';
 import VictoryModal from '@/components/VictoryModal';
-import ContractUserProfile from '@/components/ContractUserProfile';
 import NewGameConfirmation from '@/components/NewGameConfirmation';
 import SplashAnimation from '@/components/SplashAnimation';
 import GameRulesModal from '@/components/GameRulesModal';
@@ -412,7 +411,9 @@ const Index = () => {
                 <>
                   <div className="text-center mb-4">
                     <p className="text-white/70 text-sm mb-2">Entry Fee</p>
-                    <p className="text-accent-main font-bold text-lg">1 MON</p>
+                    <p className="text-accent-main font-bold text-lg">
+                      {contractInfo.joinGameFee ? `${(parseFloat(contractInfo.joinGameFee) / 1e18).toFixed(3)} MON` : 'Loading...'}
+                    </p>
                   </div>
                   <Button
                     onClick={joinGame}
@@ -550,6 +551,8 @@ const Index = () => {
             detours={contractInfo.gameState?.detours}
             peers={contractInfo.gameState?.sameDicePeers}
             mode={mode}
+            activePlayers={contractInfo.gameStats?.gameActivePlayers}
+            joinGameFee={contractInfo.joinGameFee}
           />
 
           <div className="relative">
@@ -630,6 +633,8 @@ const Index = () => {
               detours={contractInfo.gameState?.detours}
               peers={contractInfo.gameState?.sameDicePeers}
               mode={mode}
+              activePlayers={contractInfo.gameStats?.gameActivePlayers}
+              joinGameFee={contractInfo.joinGameFee}
             />
 
             {/* Game Activities - Only for multiplayer */}

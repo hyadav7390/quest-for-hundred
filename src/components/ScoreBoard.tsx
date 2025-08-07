@@ -17,6 +17,9 @@ interface ScoreBoardProps {
   detours?: number;
   peers?: number;
   mode?: 'single' | 'multi';
+  // New multiplayer stats
+  activePlayers?: number;
+  joinGameFee?: string;
 }
 
 const ScoreBoard = ({ 
@@ -33,6 +36,8 @@ const ScoreBoard = ({
   detours,
   peers,
   mode = 'single',
+  activePlayers,
+  joinGameFee,
 }: ScoreBoardProps) => {
   // Use contract values if available, otherwise fall back to UI state
   const displayDiceRolls = diceRolls ?? turnsPlayed;
@@ -40,6 +45,12 @@ const ScoreBoard = ({
   const displayShortcuts = shortcuts ?? shortcutGatesTriggered;
   const displayDetours = detours ?? detourTrapsTriggered;
   const displayPeers = peers ?? 0;
+  const displayActivePlayers = activePlayers ?? 0;
+  const displayJoinGameFee = joinGameFee ? parseFloat(joinGameFee) / 1e18 : 0;
+
+  // Calculate potential rewards and prize pool
+  const potentialReward = displayPeers * displayJoinGameFee;
+  const totalPrizePool = displayActivePlayers * displayJoinGameFee;
 
   return (
     <motion.div
@@ -101,11 +112,30 @@ const ScoreBoard = ({
           <p className="text-xl font-bold text-white">{displayShortcuts}</p>
         </div>
       </div>
-      {/* Peers on same dice rolls - only for multiplayer */}
+      {/* Multiplayer stats - only for multiplayer */}
       {mode === 'multi' && (
-        <div className="mt-3 p-2 border border-accent-main/10 rounded bg-surface text-sm flex items-center space-x-2">
-          <TrendingUp className="w-4 h-4 text-accent-main" />
-          <span>Same Dice Peers: {displayPeers}</span>
+        <div className="mt-3 space-y-2">
+          <div className="p-2 border border-accent-main/10 rounded bg-surface text-sm flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <TrendingUp className="w-4 h-4 text-accent-main" />
+              <span>Same Dice Peers: {displayPeers}</span>
+            </div>
+            {potentialReward > 0 && (
+              <span className="text-positive font-semibold">
+                Potential: {potentialReward.toFixed(3)} MON
+              </span>
+            )}
+          </div>
+          
+          <div className="p-2 border border-positive/20 rounded bg-surface/50 text-sm flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Trophy className="w-4 h-4 text-positive" />
+              <span>Active Players: {displayActivePlayers}</span>
+            </div>
+            <span className="text-positive font-semibold">
+              Prize Pool: {totalPrizePool.toFixed(3)} MON
+            </span>
+          </div>
         </div>
       )}
     </motion.div>

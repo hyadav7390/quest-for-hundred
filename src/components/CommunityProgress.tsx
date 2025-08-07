@@ -1,6 +1,6 @@
 
 import { motion } from 'framer-motion';
-import { Info, Users, Gamepad2, Coins } from 'lucide-react';
+import { Info, Users, Gamepad2, Coins, Trophy, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useGame } from '@/hooks/useGame';
@@ -37,11 +37,17 @@ const CommunityProgress = ({ mode }: CommunityProgressProps) => {
     // Use single player contract for total supply (both contracts should have same total supply)
     const nunuMinted = singlePlayerData.totalSupply ? parseFloat(singlePlayerData.totalSupply) : 0;
 
+    // Get multiplayer-specific stats
+    const totalRewardsWon = multiplayerData.gameStats?.totalRewardsWon ?? 0;
+    const totalLiquidityAdded = multiplayerData.gameStats?.totalLiquidityAdded ?? 0;
+
     return {
       gamesPlayed: totalGames,
       totalPlayers: totalPlayers,
       nunuMinted: nunuMinted,
-      nunuTotalSupply: singlePlayerData.maxSupply ? parseFloat(singlePlayerData.maxSupply) : 0
+      nunuTotalSupply: singlePlayerData.maxSupply ? parseFloat(singlePlayerData.maxSupply) : 0,
+      totalRewardsWon: totalRewardsWon,
+      totalLiquidityAdded: totalLiquidityAdded
     };
   }, [
     singlePlayerData.gameStats?.gamesCompleted,
@@ -49,7 +55,9 @@ const CommunityProgress = ({ mode }: CommunityProgressProps) => {
     singlePlayerData.gameStats?.totalPlayers,
     multiplayerData.gameStats?.totalPlayers,
     singlePlayerData.totalSupply,
-    singlePlayerData.maxSupply
+    singlePlayerData.maxSupply,
+    multiplayerData.gameStats?.totalRewardsWon,
+    multiplayerData.gameStats?.totalLiquidityAdded
   ]);
 
   // Check if data is still loading
@@ -70,6 +78,16 @@ const CommunityProgress = ({ mode }: CommunityProgressProps) => {
       icon: <Users className="w-6 h-6" />, 
       label: "Total Players", 
       value: isLoading ? '...' : combinedStats.totalPlayers.toLocaleString() 
+    },
+    { 
+      icon: <Trophy className="w-6 h-6" />, 
+      label: "Total Rewards Won", 
+      value: isLoading ? '...' : (combinedStats.totalRewardsWon ? `${(combinedStats.totalRewardsWon / 1e18).toFixed(2)} MON` : '-') 
+    },
+    { 
+      icon: <TrendingUp className="w-6 h-6" />, 
+      label: "Total Liquidity Added", 
+      value: isLoading ? '...' : (combinedStats.totalLiquidityAdded ? `${(combinedStats.totalLiquidityAdded / 1e18).toFixed(2)} MON` : '-') 
     }
   ];
 
@@ -141,7 +159,7 @@ const CommunityProgress = ({ mode }: CommunityProgressProps) => {
           </div>
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
             {stats.map((stat, index) => (
               <motion.div
                 key={index}

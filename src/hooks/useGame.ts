@@ -82,15 +82,12 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
   // Contract selection - memoized to prevent recreation
   const { contractAddress, contractAbi } = useMemo(() => {
     if (memoizedMode === 'multi') {
-      console.log('[useGame] Using MULTIPLAYER contracts');
       return { contractAddress: MULTI_PLAYER_CONTRACT_ADDRESS, contractAbi: MULTI_PLAYER_GAME_ABI };
     }
-    console.log('[useGame] Using SINGLE_PLAYER contracts');
     return { contractAddress: SINGLE_PLAYER_CONTRACT_ADDRESS, contractAbi: SINGLE_PLAYER_GAME_ABI };
   }, [memoizedMode]);
 
   const rollFeeFunctionName = useMemo(() => (memoizedMode === 'multi' ? 'getRollFee' : 'ROLL_FEE'), [memoizedMode]);
-  console.log(`[useGame] Roll fee function name: ${rollFeeFunctionName}`);
 
   // Contract calls
   const {
@@ -142,10 +139,21 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
     address: contractAddress as `0x${string}`,
     abi: contractAbi,
     functionName: 'getGameStats',
+    args: memoizedMode === 'multi' ? [1] : undefined, // gameId 1 for multiplayer
     query: {
       enabled: true,
       refetchInterval: false,
       staleTime: 60000, // 1 minute - game stats don't change frequently
+    },
+  });
+  const { data: joinGameFeeData, refetch: refetchJoinGameFee } = useReadContract({
+    address: contractAddress as `0x${string}`,
+    abi: contractAbi,
+    functionName: 'getJoinGameFee',
+    query: {
+      enabled: memoizedMode === 'multi',
+      refetchInterval: false,
+      staleTime: 300000, // 5 minutes - join fee rarely changes
     },
   });
   const { data: totalSupplyData, refetch: refetchTotalSupply } = useReadContract({
@@ -250,17 +258,8 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
     },
   });
 
-  console.log('[useGame] Game Activities Contract Call:', {
-    mode: memoizedMode,
-    enabled: memoizedMode === 'multi',
-    contractAddress,
-    gameActivitiesData,
-    dataType: typeof gameActivitiesData,
-    isArray: Array.isArray(gameActivitiesData),
-    length: Array.isArray(gameActivitiesData) ? gameActivitiesData.length : 'N/A'
-  });
-
   const rollFee = rollFeeData ? BigInt(rollFeeData as any).toString() : null;
+  const joinGameFee = joinGameFeeData ? BigInt(joinGameFeeData as any).toString() : null;
   const totalSupply = totalSupplyData ? formatEther(BigInt(totalSupplyData as any)) : null;
   const maxSupply = maxSupplyData ? formatEther(BigInt(maxSupplyData as any)) : null;
 
@@ -269,7 +268,6 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
     if (memoizedMode !== 'single' || !address || isStartGamePending || isStartGameConfirming) {
       return;
     }
-    console.log('[useGame] Attempting to start SINGLE player game...');
     setIsLoadingStartGame(true);
     try {
       writeStartGame({
@@ -292,15 +290,17 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
     if (memoizedMode !== 'multi' || !address) {
       return;
     }
-    console.log('[useGame] Attempting to join MULTIPLAYER game...');
     try {
+      // Use dynamic join fee from contract
+      const fee = joinGameFee ? BigInt(joinGameFee) : BigInt('100000000000000000'); // fallback to 0.1 ETH
+      
       // Use async version to allow awaiting in the UI
       await writeJoinGameAsync({
         address: MULTI_PLAYER_CONTRACT_ADDRESS as `0x${string}`,
         abi: MULTI_PLAYER_GAME_ABI,
         functionName: 'joinGame',
         args: [1], // Join gameId 1
-        value: BigInt('100000000000000000'), // 0.1 ETH
+        value: fee,
         chain: monadTestnet,
         account: address,
       });
@@ -308,7 +308,7 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
       console.error('[useGame] Failed to join MULTIPLAYER game:', error);
       throw error; // Re-throw to be caught by the UI handler
     }
-  }, [address, writeJoinGameAsync, memoizedMode]);
+  }, [address, writeJoinGameAsync, memoizedMode, joinGameFee]);
 
   // After a successful join, refetch status to load the board.
   useEffect(() => {
@@ -335,7 +335,6 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
       toast({ title: 'Error', description: 'Game not ready or position unknown.', variant: 'destructive' });
       return;
     }
-    console.log(`[useGame] Rolling dice for position ${gameState.position} with fee ${rollFee}`);
     setIsWaitingForVRF(true);
     try {
       writeRollDice({
@@ -358,7 +357,6 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
     if (!address || !gameState?.hasFinished) {
       return;
     }
-    console.log(`[useGame] Manually triggering claimRewards for ${memoizedMode} mode...`);
     try {
       setClaimRewardsError(null);
       setClaimRewardsSuccess(false);
@@ -403,8 +401,6 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
         console.log('[useGame] No address available, skipping auto-claim');
         return;
       }
-      
-      console.log(`[useGame] Auto-claiming rewards for ${memoizedMode} victory...`);
       setAutoClaimTriggered(true); // Mark that we've attempted to claim
       
       // Use a local function to avoid dependency issues
@@ -462,7 +458,6 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
       
       // For single player: if nunuEarned is 0, rewards were already claimed
       if (memoizedMode === 'single' && gameState.nunuEarned === 0) {
-        console.log('[useGame] Single player: nunuEarned is 0, rewards already claimed');
         setClaimRewardsSuccess(true);
         setAutoClaimTriggered(true);
         alreadyClaimedDetectedRef.current = true; // Mark as detected to prevent auto-claim
@@ -470,7 +465,6 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
       }
       // For multiplayer: if playerStatusData is null/undefined, player was deleted (rewards claimed)
       else if (memoizedMode === 'multi' && !playerStatusData && isPlayerStatusFetched) {
-        console.log('[useGame] Multiplayer: playerStatusData is null, rewards already claimed');
         setClaimRewardsSuccess(true);
         setAutoClaimTriggered(true);
         alreadyClaimedDetectedRef.current = true; // Mark as detected to prevent auto-claim
@@ -554,16 +548,31 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
 
   useEffect(() => {
     if (gameStatsData) {
-      setGameStats({
-        gamesCompleted: Number(gameStatsData[0]),
-        totalNunuEarned: Number(gameStatsData[1]),
-        totalPlayers: Number(gameStatsData[2]),
-      });
+      console.log('gameStatsData', gameStatsData);
+      if (memoizedMode === 'multi') {
+        // Multiplayer has additional fields
+        setGameStats({
+          gamesCompleted: Number(gameStatsData[0]),
+          totalNunuEarned: Number(gameStatsData[1]),
+          totalPlayers: Number(gameStatsData[2]),
+          totalRewardsWon: Number(gameStatsData[3]),
+          gameActivePlayers: Number(gameStatsData[4]),
+          totalLiquidityAdded: Number(gameStatsData[5]),
+        });
+      } else {
+        // Single player has original fields
+        setGameStats({
+          gamesCompleted: Number(gameStatsData[0]),
+          totalNunuEarned: Number(gameStatsData[1]),
+          totalPlayers: Number(gameStatsData[2]),
+        });
+      }
     }
-  }, [gameStatsData]);
+  }, [gameStatsData, memoizedMode]);
 
   useEffect(() => {
     if (playerStatsData) {
+      console.log('playerStatsData', playerStatsData);
       setPlayerStats({
         totalNunuEarned: Number(playerStatsData[0]),
         highestScore: Number(playerStatsData[1]),
@@ -880,6 +889,7 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
       totalSupply,
       maxSupply,
       rollFee,
+      joinGameFee,
       isLoading: isLoading || isStartGameConfirming || isRollDiceConfirming || isClaimRewardsConfirming || isJoinGamePending,
       isLoadingStartGame: isLoadingStartGame || isStartGamePending || isStartGameConfirming,
       isWaitingForVRF: isWaitingForVRF || isRollDicePending || isRollDiceConfirming,
@@ -905,7 +915,7 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
     };
   }, [
     memoizedMode, gameState, claimRewardsSuccess, isPlayerStatusError,
-    address, boardData, gameStats, playerRank, leaderboard, playerStats, totalSupply, maxSupply, rollFee,
+    address, boardData, gameStats, playerRank, leaderboard, playerStats, totalSupply, maxSupply, rollFee, joinGameFee,
     isLoading, isStartGameConfirming, isRollDiceConfirming, isClaimRewardsConfirming, isJoinGamePending,
     isLoadingStartGame, isStartGamePending,
     isWaitingForVRF, isRollDicePending,
