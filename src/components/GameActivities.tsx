@@ -61,11 +61,11 @@ const GameActivities = ({ activities, compact = false }: GameActivitiesProps) =>
       case 2: // Join
         return `joined the game.`;
       case 3: // Gift
-        return `collected a gift and got ${formatAmount(activity.amount)} $ROLL`;
-      case 4: // Detour
-        return `took a detour of -${formatAmount(activity.amount)} tiles`;
-      case 5: // Shortcut
-        return `took a shortcut of +${formatAmount(activity.amount)} tiles`;
+        return `collected a gift and got ${activity.amount} $ROLL`;
+      case 4: // Shortcut
+        return `took a shortcut of +${activity.amount} tiles`;
+      case 5: // Detour
+        return `took a detour of -${activity.amount} tiles`;
       default:
         return `Won ${formatAmount(activity.amount)} MON`;
     }
@@ -80,7 +80,7 @@ const GameActivities = ({ activities, compact = false }: GameActivitiesProps) =>
     >
       <h3 className={`${compact ? 'text-sm' : 'text-lg'} font-semibold text-text-high mb-2 flex items-center`}>
         <TrendingDown className={`${compact ? 'w-3 h-3' : 'w-5 h-5'} text-red-500 mr-1`} />
-        Live Game Activities
+        Rugg Feed
       </h3>
       
       <div className={`space-y-2 ${compact ? 'max-h-24' : 'max-h-64'} overflow-y-auto`}>
@@ -95,7 +95,7 @@ const GameActivities = ({ activities, compact = false }: GameActivitiesProps) =>
               <p className={`${compact ? 'text-xs' : 'text-sm'}`}>No recent activities</p>
             </motion.div>
           ) : (
-            activities.map((activity, index) => (
+            activities.slice().reverse().map((activity, index) => (
               <motion.div
                 key={`${activity.actor}-${activity.timestamp}-${index}`}
                 initial={{ opacity: 0, x: -20 }}
@@ -120,7 +120,7 @@ const GameActivities = ({ activities, compact = false }: GameActivitiesProps) =>
                     <p className={`${compact ? 'text-xs' : 'text-xs'} text-text-low`}>
                       {formatTimestamp(activity.timestamp)}
                     </p>
-                    {activity.amount > 0 && (
+                    {activity.actionType === 0 && activity.amount > 0 && (
                       <p className={`${compact ? 'text-xs' : 'text-xs'} font-medium text-success`}>
                         +{formatAmount(activity.amount)} MON
                       </p>

@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
-import { Trophy, RotateCcw, Gift, Target, TrendingDown, ArrowUp, TrendingUp, Coins, X, DoorClosed } from 'lucide-react';
+import { Trophy, RotateCcw, Gift, Target, TrendingDown, ArrowUp, TrendingUp, Coins, X, DoorClosed, Home } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface VictoryModalProps {
   isOpen: boolean;
@@ -53,6 +54,8 @@ const VictoryModal = ({
   canRestart = true, // Default to true for backwards compatibility
   onClose,
 }: VictoryModalProps) => {
+  const navigate = useNavigate();
+  
   if (!isOpen) return null;
 
   // Use contract values if available, otherwise fall back to UI state
@@ -62,6 +65,85 @@ const VictoryModal = ({
   const displayDetours = detours ?? detourTrapsTriggered;
   const displayRuggedCount = ruggedCount ?? 0;
   const displayRewardWon = totalRewardWon ?? 0;
+
+  const handleGoHome = () => {
+    navigate('/');
+  };
+
+  // Fireworks animation component
+  const Fireworks = () => (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden">
+      {[...Array(8)].map((_, i) => (
+        <motion.div
+          key={i}
+          className="absolute w-2 h-2 bg-yellow-400 rounded-full"
+          initial={{ 
+            x: '50%', 
+            y: '100%', 
+            scale: 0,
+            opacity: 1 
+          }}
+          animate={{ 
+            x: `${20 + (i * 10)}%`, 
+            y: `${20 + (i * 5)}%`, 
+            scale: [0, 1, 0],
+            opacity: [1, 1, 0]
+          }}
+          transition={{ 
+            duration: 1.5, 
+            delay: i * 0.1,
+            ease: "easeOut"
+          }}
+        />
+      ))}
+      {[...Array(6)].map((_, i) => (
+        <motion.div
+          key={`spark-${i}`}
+          className="absolute w-1 h-1 bg-red-400 rounded-full"
+          initial={{ 
+            x: '50%', 
+            y: '100%', 
+            scale: 0,
+            opacity: 1 
+          }}
+          animate={{ 
+            x: `${30 + (i * 8)}%`, 
+            y: `${30 + (i * 3)}%`, 
+            scale: [0, 1, 0],
+            opacity: [1, 1, 0]
+          }}
+          transition={{ 
+            duration: 1.2, 
+            delay: i * 0.15,
+            ease: "easeOut"
+          }}
+        />
+      ))}
+      {[...Array(4)].map((_, i) => (
+        <motion.div
+          key={`star-${i}`}
+          className="absolute w-1.5 h-1.5 bg-blue-400 rounded-full"
+          initial={{ 
+            x: '50%', 
+            y: '100%', 
+            scale: 0,
+            opacity: 1 
+          }}
+          animate={{ 
+            x: `${40 + (i * 12)}%`, 
+            y: `${40 + (i * 2)}%`, 
+            scale: [0, 1, 0],
+            opacity: [1, 1, 0]
+          }}
+          transition={{ 
+            duration: 1.8, 
+            delay: i * 0.2,
+            ease: "easeOut"
+          }}
+        />
+      ))}
+    </div>
+  );
 
   return (
     <motion.div
@@ -76,14 +158,9 @@ const VictoryModal = ({
         animate={{ scale: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 25 }}
       >
-        {/* Close (X) Button */}
-        <button
-          aria-label="Close"
-          onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-full hover:bg-accent-main/10 focus:outline-none focus:ring-2 focus:ring-accent-main"
-        >
-          <X className="w-5 h-5 text-text-high" />
-        </button>
+        {/* Fireworks animation for successful claim */}
+        {claimRewardsSuccess && <Fireworks />}
+        
         <div className="text-center mb-6">
           <motion.div
             className="inline-block p-4 bg-gradient-to-r from-accent-main to-success rounded-full mb-4"
@@ -173,6 +250,18 @@ const VictoryModal = ({
                     : 'Play Again'
                 }
               </span>
+            </div>
+          </motion.button>
+
+          <motion.button
+            onClick={handleGoHome}
+            className="w-full py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold rounded-lg shadow-lg hover:from-blue-500/80 hover:to-purple-600/80 transition-all duration-200"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <div className="flex items-center justify-center space-x-2">
+              <Home className="w-4 h-4" />
+              <span>Go to Home</span>
             </div>
           </motion.button>
 

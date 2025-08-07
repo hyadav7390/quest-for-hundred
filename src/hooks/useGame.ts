@@ -262,7 +262,7 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
     address: contractAddress as `0x${string}`,
     abi: contractAbi,
     functionName: 'getGameActivities',
-    args: [1, 0, 10], // gameId: 0, start: 0, count: 10 (latest 10 activities)
+    args: [1, 0, 50], // gameId: 0, start: 0, count: 10 (latest 10 activities)
     query: {
       enabled: memoizedMode === 'multi',
       refetchInterval: 15000, // 15 seconds - refresh activities
@@ -357,7 +357,7 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
         value: BigInt(rollFee || 0),
         chain: monadTestnet,
         account: address,
-        gas: 200000n,
+        gas: 300000n,
       });
     } catch (error: any) {
       setIsWaitingForVRF(false);
@@ -435,7 +435,7 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
                 args: [address as `0x${string}`],
                 chain: monadTestnet,
                 account: address,
-                gas: 500000n
+                gas: 700000n
               }
             : {
                 address: SINGLE_PLAYER_CONTRACT_ADDRESS as `0x${string}`,
