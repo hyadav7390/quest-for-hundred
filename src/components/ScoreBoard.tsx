@@ -1,6 +1,6 @@
 
 import { motion } from 'framer-motion';
-import { Trophy, Target, Gift, Dices, Volume2, VolumeX, DoorClosed, TrendingUp } from 'lucide-react';
+import { Trophy, Target, Gift, Dices, Volume2, VolumeX, DoorClosed, TrendingUp, Info } from 'lucide-react';
 
 interface ScoreBoardProps {
   score: number;
@@ -52,15 +52,55 @@ const ScoreBoard = ({
   const potentialReward = displayPeers * displayJoinGameFee;
   const totalPrizePool = displayActivePlayers * displayJoinGameFee;
 
+  // Peer messaging system
+  const getPeerMessage = (peerCount: number) => {
+    if (peerCount === 0) return "No Ruggmates yet. You're rolling solo. 🎲";
+    if (peerCount === 1) return "You've got 1 Ruggmate. 👀";
+    if (peerCount === 2) return "2 Ruggmates spotted. Stay sharp. 🔪";
+    return `${peerCount}+ Ruggmates! It's a ruggstorm out there.`;
+  };
+
+  // Tooltip content
+  const tooltips = {
+    score: "Total points earned based on dice, gifts, rugs, etc.",
+    diceRolled: "More rolls = more chaos",
+    position: "Your spot on the board",
+    gifts: "Rewards picked up",
+    detours: "Lost turns or setbacks",
+    shortcuts: "Boost tiles hit",
+    ruggmates: "Others with same dice roll",
+    potentialWin: "Your current eligible prize",
+    activePlayers: "Still in the game",
+    prizePool: "Total $MON up for grabs"
+  };
+
+  const StatCard = ({ icon, label, value, tooltip }: { icon: React.ReactNode; label: string; value: string | number; tooltip: string }) => (
+    <div className="group relative bg-surface rounded-lg p-2 sm:p-3 text-center border border-accent-main/20 hover:border-accent-main/40 transition-colors">
+      <div className="flex items-center justify-center text-accent-main mb-1 sm:mb-2">
+        {icon}
+      </div>
+      <div className="text-base sm:text-lg font-bold text-white mb-1">{value}</div>
+      <div className="text-xs text-white/60 flex items-center justify-center">
+        {label}
+        <Info className="w-3 h-3 ml-1 text-white/40 group-hover:text-accent-main transition-colors" />
+      </div>
+      {/* Tooltip */}
+      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-surface border border-accent-main/30 rounded-lg text-xs text-white/90 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10 max-w-48 text-center">
+        {tooltip}
+        <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-surface"></div>
+      </div>
+    </div>
+  );
+
   return (
     <motion.div
-      className="panel"
+      className="panel h-full"
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-heading font-bold text-white">Game Stats</h2>
+      <div className="flex justify-between items-center mb-1">
+        <h2 className="text-lg font-heading font-bold text-white">Game Stats</h2>
         <motion.button
           onClick={onToggleSound}
           className="p-2 rounded-lg bg-surface hover:bg-surface/80 transition-colors"
@@ -68,75 +108,76 @@ const ScoreBoard = ({
           whileTap={{ scale: 0.95 }}
         >
           {isSoundMuted ? (
-            <VolumeX className="w-5 h-5 text-white/60" />
+            <VolumeX className="w-4 h-4 text-white/60" />
           ) : (
-            <Volume2 className="w-5 h-5 text-accent-main" />
+            <Volume2 className="w-4 h-4 text-accent-main" />
           )}
         </motion.button>
       </div>
-      
-      <div className="grid grid-cols-2 gap-3">
-        <div className="bg-surface rounded-lg p-3 text-center border border-accent-main/20">
-          <Trophy className="w-8 h-8 text-positive mx-auto mb-2" />
-          <p className="text-xs text-white/60">Score</p>
-          <p className="text-xl font-bold text-white">{score}</p>
-        </div>
 
-        <div className="bg-surface rounded-lg p-3 text-center border border-accent-main/20">
-          <Dices className="w-8 h-8 text-accent-main mx-auto mb-2" />
-          <p className="text-xs text-white/60">Dice Rolled</p>
-          <p className="text-xl font-bold text-white">{displayDiceRolls}</p>
-        </div>
-
-        <div className="bg-surface rounded-lg p-3 text-center border border-accent-main/20">
-          <Target className="w-8 h-8 text-accent-main mx-auto mb-2" />
-          <p className="text-xs text-white/60">Position</p>
-          <p className="text-xl font-bold text-white">{position}/100</p>
-        </div>
-
-        <div className="bg-surface rounded-lg p-3 text-center border border-accent-main/20">
-          <Gift className="w-8 h-8 text-yellow-400 mx-auto mb-2" />
-          <p className="text-xs text-white/60">Gifts</p>
-          <p className="text-xl font-bold text-white">{displayGifts}</p>
-        </div>
-        
-        <div className="bg-surface rounded-lg p-3 text-center border border-accent-main/20">
-          <DoorClosed className="w-8 h-8 text-red-500 mx-auto mb-2" />
-          <p className="text-xs text-white/60">Detours</p>
-          <p className="text-xl font-bold text-white">{displayDetours}</p>
-        </div>
-        
-        <div className="bg-surface rounded-lg p-3 text-center border border-accent-main/20">
-          <DoorClosed className="w-8 h-8 text-green-500 mx-auto mb-2" />
-          <p className="text-xs text-white/60">Shortcuts</p>
-          <p className="text-xl font-bold text-white">{displayShortcuts}</p>
-        </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 sm:gap-3">
+        <StatCard 
+          icon={<Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-positive" />} 
+          label="Score" 
+          value={score} 
+          tooltip={tooltips.score} 
+        />
+        <StatCard 
+          icon={<Dices className="w-5 h-5 sm:w-6 sm:h-6 text-accent-main" />} 
+          label="Dice Rolled" 
+          value={displayDiceRolls} 
+          tooltip={tooltips.diceRolled} 
+        />
+        <StatCard 
+          icon={<Target className="w-5 h-5 sm:w-6 sm:h-6 text-accent-main" />} 
+          label="Position" 
+          value={`${position}/100`} 
+          tooltip={tooltips.position} 
+        />
+        <StatCard 
+          icon={<Gift className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-400" />} 
+          label="Gifts" 
+          value={displayGifts} 
+          tooltip={tooltips.gifts} 
+        />
+        <StatCard 
+          icon={<DoorClosed className="w-5 h-5 sm:w-6 sm:h-6 text-red-500" />} 
+          label="Detours" 
+          value={displayDetours} 
+          tooltip={tooltips.detours} 
+        />
+        <StatCard 
+          icon={<DoorClosed className="w-5 h-5 sm:w-6 sm:h-6 text-green-500" />} 
+          label="Shortcuts" 
+          value={displayShortcuts} 
+          tooltip={tooltips.shortcuts} 
+        />
       </div>
-      {/* Multiplayer stats - only for multiplayer */}
+
+      {/* Multiplayer stats */}
       {mode === 'multi' && (
-        <div className="mt-3 space-y-2">
-          <div className="p-2 border border-accent-main/10 rounded bg-surface text-sm flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <TrendingUp className="w-4 h-4 text-accent-main" />
-              <span>Same Dice Peers: {displayPeers}</span>
-            </div>
-            {potentialReward > 0 && (
-              <span className="text-positive font-semibold">
-                Potential: {potentialReward.toFixed(3)} MON
-              </span>
-            )}
+        <>
+          <div className="mt-3 p-3 bg-gradient-to-r from-accent-main/10 to-blue-500/10 border border-accent-main/20 rounded-lg">
+            <p className="text-sm text-white/90 text-center font-medium">
+              {getPeerMessage(displayPeers)}
+            </p>
           </div>
-          
-          <div className="p-2 border border-positive/20 rounded bg-surface/50 text-sm flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Trophy className="w-4 h-4 text-positive" />
-              <span>Active Players: {displayActivePlayers}</span>
-            </div>
-            <span className="text-positive font-semibold">
-              Prize Pool: {totalPrizePool.toFixed(3)} MON
-            </span>
+
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 mt-3">
+            <StatCard 
+              icon={<TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-accent-main" />} 
+              label="Potential Win" 
+              value={`${potentialReward.toFixed(3)} MON`} 
+              tooltip={tooltips.potentialWin} 
+            />
+            <StatCard 
+              icon={<Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-positive" />} 
+              label="Prize Pool" 
+              value={`${totalPrizePool.toFixed(3)} MON`} 
+              tooltip={tooltips.prizePool} 
+            />
           </div>
-        </div>
+        </>
       )}
     </motion.div>
   );

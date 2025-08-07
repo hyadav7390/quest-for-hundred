@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { TrendingDown, Coins, Clock } from 'lucide-react';
+import { TrendingDown, Coins, Clock, TrendingUp, Trophy, Users } from 'lucide-react';
 
 interface GameActivity {
   actor: string;
@@ -36,7 +36,11 @@ const GameActivities = ({ activities, compact = false }: GameActivitiesProps) =>
   const getActivityIcon = (actionType: number) => {
     switch (actionType) {
       case 0: // Rug
-        return <TrendingDown className="w-4 h-4 text-red-500" />;
+        return <TrendingUp className="w-4 h-4 text-green-500" />;
+      case 1:
+        return <Trophy className="w-4 h-4 text-yellow-500" />;
+      case 2:
+        return <Users className="w-4 h-4 text-sky-500" />;
       default:
         return <Coins className="w-4 h-4 text-yellow-500" />;
     }
@@ -44,8 +48,12 @@ const GameActivities = ({ activities, compact = false }: GameActivitiesProps) =>
 
   const getActivityText = (activity: GameActivity) => {
     switch (activity.actionType) {
-      case 0: // Rug
-        return `Rugged ${activity.count} players`;
+      case 0: // Won
+        return `Rugged ${activity.count} players and Won ${formatAmount(activity.amount)} MON`;
+      case 1: // Game Finish
+        return `reached 100`;
+      case 2: // Join
+        return `joined the game.`;
       default:
         return `Won ${formatAmount(activity.amount)} MON`;
     }

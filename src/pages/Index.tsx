@@ -37,22 +37,24 @@ const BalanceWarning = () => (
 
 const DiceSection = ({ gameState, isWaitingForVRF, rollDice, isDiceDisabled, contractValue, hasNoBalance, rollFee = null }) => (
   <motion.div
-    className="panel flex flex-col items-center justify-center space-y-6 text-center"
+    className="panel flex flex-col items-center justify-center p-3 sm:p-4 text-center h-full"
     initial={{ opacity: 0, scale: 0.9 }}
     animate={{ opacity: 1, scale: 1 }}
     transition={{ duration: 0.5, delay: 0.2 }}
   >
-    <Dice
-      value={contractValue}
-      isRolling={gameState.isRolling || isWaitingForVRF}
-      onRoll={rollDice}
-      disabled={isDiceDisabled}
-      contractValue={contractValue}
-      isWaitingForVRF={isWaitingForVRF}
-      rollFee={rollFee}
-    />
+    <div className="flex-1 flex items-center justify-center">
+      <Dice
+        value={contractValue}
+        isRolling={gameState.isRolling || isWaitingForVRF}
+        onRoll={rollDice}
+        disabled={isDiceDisabled}
+        contractValue={contractValue}
+        isWaitingForVRF={isWaitingForVRF}
+        rollFee={rollFee}
+      />
+    </div>
     {hasNoBalance && (
-      <p className="text-center text-negative text-sm mt-2">
+      <p className="text-center text-negative text-xs sm:text-sm mt-2">
         ⚠️ Add MON tokens to play
       </p>
     )}
@@ -485,45 +487,44 @@ const Index = () => {
   }
   
   return (
-    <div className="min-h-screen bg-bg-primary p-4">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
+    <div className="min-h-screen bg-bg-primary">
+      <div className="max-w-7xl mx-auto p-3 sm:p-4 lg:p-6">
+        {/* Compact Professional Header */}
         <motion.div
-          className="flex justify-between items-start mb-6 sm:mb-8"
-          initial={{ opacity: 0, y: -30 }}
+          className="flex flex-col sm:flex-row justify-between items-center mb-4 sm:mb-6"
+          initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.5 }}
         >
-          <div className="text-center flex-1">
-            <h1 className="text-3xl sm:text-4xl font-heading font-bold text-white mb-2">🎲 RUGGROLL</h1>
-            <p className="text-lg sm:text-xl text-white/70">
-              Roll the dice to collect $ROLL tokens and race to 100 to RUGG other players!
+          <div className="text-center sm:text-left mb-3 sm:mb-0">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-heading font-bold text-white mb-1">🎲 RUGGROLL</h1>
+            <p className="text-sm sm:text-base text-white/70">
+              Roll the dice to collect $ROLL tokens and race to 100!
             </p>
-            <div className="flex justify-center gap-4 mt-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowGameRules(true)}
-                className="border-accent-main text-accent-main hover:bg-accent-main/10 hover:text-accent-main focus:text-accent-main"
-              >
-                <HelpCircle className="w-4 h-4 mr-2" />
-                Game Rules
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate('/game/leaderboard')}
-                className="border-positive text-positive hover:bg-positive/10 hover:text-positive focus:text-positive"
-              >
-                <Trophy className="w-4 h-4 mr-2" />
-                Leaderboard
-              </Button>
-            </div>
-            {contractInfo && (
-              <div className="text-sm text-accent-main mt-2 space-y-1">
-                {playerRank > 0 && (
-                  <p className="text-positive">🏅 Your Rank: #{playerRank}</p>
-                )}
+          </div>
+          
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowGameRules(true)}
+              className="border-accent-main text-accent-main hover:bg-accent-main/10 text-xs sm:text-sm"
+            >
+              <HelpCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+              Rules
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/game/leaderboard')}
+              className="border-positive text-positive hover:bg-positive/10 text-xs sm:text-sm"
+            >
+              <Trophy className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+              Leaderboard
+            </Button>
+            {playerRank > 0 && (
+              <div className="text-xs sm:text-sm text-positive font-semibold bg-positive/10 px-2 py-1 rounded">
+                🏅 #{playerRank}
               </div>
             )}
           </div>
@@ -532,75 +533,9 @@ const Index = () => {
         {/* Balance Warning */}
         {hasNoBalance && <BalanceWarning />}
 
-        {/* VRF Waiting Indicator */}
-        {/* {isWaitingForVRF && <VRFWaitingIndicator />} */}
-
-        {/* Mobile Layout */}
-        <div className="block lg:hidden space-y-6">
-          <ScoreBoard
-            score={contractInfo.gameState?.gameScore ?? gameState.score}
-            position={gameState.playerPosition}
-            turnsPlayed={gameState.turnsPlayed}
-            giftsCollected={contractInfo.gameState?.giftsCollected ?? 0}
-            detourTrapsTriggered={gameState.detourTrapsTriggered}
-            shortcutGatesTriggered={gameState.shortcutGatesTriggered}
-            isSoundMuted={gameState.isSoundMuted}
-            onToggleSound={toggleSound}
-            diceRolls={contractInfo.gameState?.diceRolls}
-            shortcuts={contractInfo.gameState?.shortcuts}
-            detours={contractInfo.gameState?.detours}
-            peers={contractInfo.gameState?.sameDicePeers}
-            mode={mode}
-            activePlayers={contractInfo.gameStats?.gameActivePlayers}
-            joinGameFee={contractInfo.joinGameFee}
-          />
-
-          <div className="relative">
-            <GameBoard
-              playerPosition={gameState.playerPosition}
-              giftTiles={gameState.giftTiles}
-              detourTrapTiles={gameState.detourTrapTiles}
-              shortcutGateTiles={gameState.shortcutGateTiles}
-              revealedTraps={gameState.revealedTraps}
-              revealedGates={gameState.revealedGates}
-              isMoving={gameState.isMoving}
-              animatedPosition={gameState.animatedPosition}
-              peerPositions={contractInfo.peerPositions}
-            />
-
-            {/* Board-scoped Splash Animation */}
-            <SplashAnimation {...splash} onComplete={hideSplash} />
-          </div>
-
-          <div className="space-y-4">
-            <DiceSection 
-              gameState={gameState}
-              isWaitingForVRF={isWaitingForVRF}
-              rollDice={rollDice}
-              isDiceDisabled={isDiceDisabled}
-              contractValue={contractInfo.gameState?.diceValue}
-              hasNoBalance={hasNoBalance}
-              rollFee={contractInfo.rollFee}
-            />
-            
-            {/* Game Activities - Only for multiplayer */}
-            {mode === 'multi' && (
-              <GameActivities activities={contractInfo.gameActivities || []} compact={true} />
-            )}
-            
-            {/* Only show New Game button for single player mode */}
-            {mode === 'single' && (
-              <NewGameButton 
-                handleNewGameClick={handleNewGameClick}
-                isNewGameDisabled={isNewGameDisabled}
-                isStartingGame={isLoadingStartGame}
-              />
-            )}
-          </div>
-        </div>
-
-        {/* Desktop Layout */}
-        <div className="hidden lg:grid lg:grid-cols-4 gap-6">
+        {/* Main Game Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-6">
+          {/* Game Board */}
           <div className="lg:col-span-3 relative">
             <GameBoard
               playerPosition={gameState.playerPosition}
@@ -613,59 +548,57 @@ const Index = () => {
               animatedPosition={gameState.animatedPosition}
               peerPositions={contractInfo.peerPositions}
             />
-
-            {/* Board-scoped Splash Animation */}
             <SplashAnimation {...splash} onComplete={hideSplash} />
           </div>
 
-          <div className="lg:col-span-1 space-y-5">
-            <ScoreBoard
-              score={contractInfo.gameState?.gameScore ?? gameState.score}
-              position={gameState.playerPosition}
-              turnsPlayed={gameState.turnsPlayed}
-              giftsCollected={contractInfo.gameState?.giftsCollected ?? 0}
-              detourTrapsTriggered={gameState.detourTrapsTriggered}
-              shortcutGatesTriggered={gameState.shortcutGatesTriggered}
-              isSoundMuted={gameState.isSoundMuted}
-              onToggleSound={toggleSound}
-              diceRolls={contractInfo.gameState?.diceRolls}
-              shortcuts={contractInfo.gameState?.shortcuts}
-              detours={contractInfo.gameState?.detours}
-              peers={contractInfo.gameState?.sameDicePeers}
-              mode={mode}
-              activePlayers={contractInfo.gameStats?.gameActivePlayers}
-              joinGameFee={contractInfo.joinGameFee}
-            />
-
-            {/* Game Activities - Only for multiplayer */}
-            {mode === 'multi' && (
-              <GameActivities activities={contractInfo.gameActivities || []} />
-            )}
-
-            <DiceSection 
-              gameState={gameState}
-              isWaitingForVRF={isWaitingForVRF}
-              rollDice={rollDice}
-              isDiceDisabled={isDiceDisabled}
-              contractValue={contractInfo.gameState?.diceValue}
-              hasNoBalance={hasNoBalance}
-              rollFee={contractInfo.rollFee}
-            />
-            {mode === 'single' && (
-              <NewGameButton 
-                handleNewGameClick={handleNewGameClick}
-                isNewGameDisabled={isNewGameDisabled}
-                isStartingGame={isLoadingStartGame}
+          {/* Controls Section */}
+          <div className="lg:col-span-1 flex flex-col gap-4">
+            <div className="flex-1 flex flex-col gap-4">
+              <ScoreBoard
+                score={contractInfo.gameState?.gameScore ?? gameState.score}
+                position={gameState.playerPosition}
+                turnsPlayed={gameState.turnsPlayed}
+                giftsCollected={contractInfo.gameState?.giftsCollected ?? 0}
+                detourTrapsTriggered={gameState.detourTrapsTriggered}
+                shortcutGatesTriggered={gameState.shortcutGatesTriggered}
+                isSoundMuted={gameState.isSoundMuted}
+                onToggleSound={toggleSound}
+                diceRolls={contractInfo.gameState?.diceRolls}
+                shortcuts={contractInfo.gameState?.shortcuts}
+                detours={contractInfo.gameState?.detours}
+                peers={contractInfo.gameState?.sameDicePeers}
+                mode={mode}
+                activePlayers={contractInfo.gameStats?.gameActivePlayers}
+                joinGameFee={contractInfo.joinGameFee}
               />
-            )}
+
+              <DiceSection 
+                gameState={gameState}
+                isWaitingForVRF={isWaitingForVRF}
+                rollDice={rollDice}
+                isDiceDisabled={isDiceDisabled}
+                contractValue={contractInfo.gameState?.diceValue}
+                hasNoBalance={hasNoBalance}
+                rollFee={contractInfo.rollFee}
+              />
+
+              {mode === 'single' && (
+                <NewGameButton 
+                  handleNewGameClick={handleNewGameClick}
+                  isNewGameDisabled={isNewGameDisabled}
+                  isStartingGame={isLoadingStartGame}
+                />
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Splash Animation */}
-        {/* <SplashAnimation
-          {...splash}
-          onComplete={hideSplash}
-        /> */}
+        {/* Game Activities - Full Width */}
+        {mode === 'multi' && (
+          <div className="mt-4 lg:mt-6">
+            <GameActivities activities={contractInfo.gameActivities || []} />
+          </div>
+        )}
 
         {showBoardLoader && (
           <div className="fixed inset-0 flex items-center justify-center z-50 bg-bg-primary/80 backdrop-blur-sm">
