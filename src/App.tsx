@@ -22,7 +22,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/game" element={<Index />} />
-            <Route path="/game/leaderboard" element={<GameLeaderboard />} />
+            {/* <Route path="/game/leaderboard" element={<GameLeaderboard />} /> */}
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

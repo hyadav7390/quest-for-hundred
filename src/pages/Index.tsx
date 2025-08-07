@@ -514,7 +514,7 @@ const Index = () => {
               <HelpCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
               Rules
             </Button>
-            <Button
+            {/* <Button
               variant="outline"
               size="sm"
               onClick={() => navigate('/game/leaderboard')}
@@ -522,7 +522,7 @@ const Index = () => {
             >
               <Trophy className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
               Leaderboard
-            </Button>
+            </Button> */}
             {playerRank > 0 && (
               <div className="text-xs sm:text-sm text-positive font-semibold bg-positive/10 px-2 py-1 rounded">
                 🏅 #{playerRank}
