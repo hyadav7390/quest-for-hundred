@@ -71,6 +71,7 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
   const [gameFinishBonus, setGameFinishBonus] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingStartGame, setIsLoadingStartGame] = useState(false);
+  const [isLoadingBoard, setIsLoadingBoard] = useState(false);
   const [isWaitingForVRF, setIsWaitingForVRF] = useState(false);
   const [isClaimRewardsPending, setIsClaimRewardsPending] = useState(false);
   const [claimRewardsError, setClaimRewardsError] = useState<string | null>(null);
@@ -325,6 +326,7 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
   // After a successful join, refetch status to load the board.
   useEffect(() => {
     if (isJoinGameConfirmed) {
+      setIsLoadingBoard(true);
       toast({ title: "Joined Multiplayer Game!", description: "Loading the game board..." });
       console.log('[useGame] Join game confirmed. Refetching player status and board data...');
       // Fetch both status and board data to ensure the UI is complete.
@@ -333,7 +335,12 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
         refetchBoardData(),
         refetchGameActivities(),
         refetchPeerPositions(),
-      ]);
+      ]).finally(() => {
+        // Give a small delay to ensure the data is processed
+        setTimeout(() => {
+          setIsLoadingBoard(false);
+        }, 1000);
+      });
     }
   }, [isJoinGameConfirmed, refetchPlayerStatus, refetchBoardData, refetchGameActivities, refetchPeerPositions]);
 
@@ -913,6 +920,7 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
       joinGameFee,
       isLoading: isLoading || isStartGameConfirming || isRollDiceConfirming || isClaimRewardsConfirming || isJoinGamePending,
       isLoadingStartGame: isLoadingStartGame || isStartGamePending || isStartGameConfirming,
+      isLoadingBoard,
       isWaitingForVRF: isWaitingForVRF || isRollDicePending || isRollDiceConfirming,
       isClaimRewardsPending: isClaimRewardsConfirming || isClaimRewardsPendingWagmi,
       claimRewardsError,
@@ -938,7 +946,7 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
     memoizedMode, gameState, claimRewardsSuccess, isPlayerStatusError,
     address, boardData, gameStats, playerRank, leaderboard, playerStats, totalSupply, maxSupply, rollFee, joinGameFee,
     isLoading, isStartGameConfirming, isRollDiceConfirming, isClaimRewardsConfirming, isJoinGamePending,
-    isLoadingStartGame, isStartGamePending,
+    isLoadingStartGame, isStartGamePending, isLoadingBoard,
     isWaitingForVRF, isRollDicePending,
     isClaimRewardsConfirming, isClaimRewardsPendingWagmi,
     claimRewardsError, claimRewardsSuccess, fetchPlatformData, fetchPlayerData, fetchLeaderboard,

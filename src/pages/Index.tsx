@@ -18,7 +18,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAccount, useBalance } from 'wagmi';
 import { monadTestnet } from '@/types/monadTestnet';
 import { useWalletBalancesAndWithdraw } from '@/hooks/useWalletBalancesAndWithdraw';
-import { REWARD_TOKEN } from '@/configs';
+import { NATIVE_TOKEN, REWARD_TOKEN } from '@/configs';
 
 // Helper components defined outside Index to prevent re-mounting on every render
 const BalanceWarning = () => (
@@ -89,6 +89,7 @@ const Index = () => {
   const { 
     isLoading, 
     isLoadingStartGame, 
+    isLoadingBoard,
     isWaitingForVRF, 
     playerRank, 
     CONTRACT_ADDRESS,
@@ -217,12 +218,12 @@ const Index = () => {
   const isOperationInProgress = gameState.isRolling || isLoading || isWaitingForVRF;
 
   // Disable conditions
-  const isDiceDisabled = gameState.isRolling || isWaitingForVRF || !contractInfo.gameState?.boardGenerated || hasNoBalance || contractInfo.gameState?.hasFinished;
-  const isNewGameDisabled = gameState.isRolling || isWaitingForVRF || hasNoBalance;
+  const isDiceDisabled = gameState.isRolling || isWaitingForVRF || !contractInfo.gameState?.boardGenerated || isLoadingBoard || hasNoBalance || contractInfo.gameState?.hasFinished;
+  const isNewGameDisabled = gameState.isRolling || isWaitingForVRF || isLoadingBoard || hasNoBalance;
 
   // Handle new game (match old code: use only reducer/UI state)
   const handleNewGameClick = async () => {
-    if (isLoading || gameState.isRolling || isWaitingForVRF) return;
+    if (isLoading || isLoadingBoard || gameState.isRolling || isWaitingForVRF) return;
     if (!isConnected) {
       toast({
         title: "Wallet Required",
@@ -307,10 +308,10 @@ const Index = () => {
 
   // Hide loader when new game is confirmed
   useEffect(() => {
-    if (isLoadingStartGame === false && showBoardLoader) {
+    if (isLoadingStartGame === false && isLoadingBoard === false && showBoardLoader) {
       setShowBoardLoader(false);
     }
-  }, [isLoadingStartGame]);
+  }, [isLoadingStartGame, isLoadingBoard]);
 
   // Show wallet connection prompt if not connected
   if (!isConnected) {
@@ -415,18 +416,23 @@ const Index = () => {
                   <div className="text-center mb-4">
                     <p className="text-white/70 text-sm mb-2">Entry Fee</p>
                     <p className="text-accent-main font-bold text-lg">
-                      {contractInfo.joinGameFee ? `${(parseFloat(contractInfo.joinGameFee) / 1e18).toFixed(3)} MON` : 'Loading...'}
+                      {contractInfo.joinGameFee ? `${(parseInt(contractInfo.joinGameFee) / 1e18)} ${NATIVE_TOKEN.symbol}` : 'Loading...'}
                     </p>
                   </div>
                   <Button
                     onClick={joinGame}
                     className="btn-primary w-full py-3 rounded-lg shadow-lg"
-                    disabled={isLoading || hasNoBalance}
+                    disabled={isLoading || isLoadingBoard || hasNoBalance}
                   >
                     {isLoading ? (
                       <>
                         <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
                         Joining Game...
+                      </>
+                    ) : isLoadingBoard ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                        Loading Board...
                       </>
                     ) : (
                       'Join Game'
@@ -626,7 +632,7 @@ const Index = () => {
           diceRolls={contractInfo.gameState?.diceRolls}
           shortcuts={contractInfo.gameState?.shortcuts}
           detours={contractInfo.gameState?.detours}
-          isRestarting={isLoadingStartGame || showBoardLoader}
+          isRestarting={isLoadingStartGame || isLoadingBoard || showBoardLoader}
           isClaimRewardsPending={contractInfo.isClaimRewardsPending}
           claimRewardsError={contractInfo.claimRewardsError}
           claimRewardsSuccess={contractInfo.claimRewardsSuccess}
