@@ -651,6 +651,7 @@ const Index = () => {
           onClose={() => setShowGameRules(false)}
           mode={mode}
           gameFinishBonus={contractInfo.gameFinishBonus}
+          rollFee={contractInfo.rollFee}
         />
       </div>
     </div>

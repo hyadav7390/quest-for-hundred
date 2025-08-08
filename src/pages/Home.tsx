@@ -6,11 +6,27 @@ import { useNavigate } from 'react-router-dom';
 import CommunityProgress from '@/components/CommunityProgress';
 import GameModeModal from '@/components/GameModeModal';
 import { useState, useEffect } from 'react';
-import { REWARD_TOKEN } from '@/configs';
+import { NATIVE_TOKEN, REWARD_TOKEN } from '@/configs';
+import { useGame } from '@/hooks/useGame';
 
 const Home = () => {
   const navigate = useNavigate();
   const [showGameModeModal, setShowGameModeModal] = useState(false);
+  
+  // Fetch rollFee from contract
+  const { rollFee } = useGame('single');
+
+  // Format roll fee (assume value is in wei, convert to MON)
+  const formatRollFee = (fee: string | null | undefined) => {
+    if (!fee) return '0.001';
+    try {
+      // 18 decimals for MON (like ETH)
+      const mon = (Number(fee) / 1e18).toFixed(2);
+      return mon;
+    } catch {
+      return '0.001';
+    }
+  };
 
   const handlePlayNow = () => {
     setShowGameModeModal(true);
@@ -246,7 +262,7 @@ const Home = () => {
                 >
                   <div className="text-2xl mb-2">💧</div>
                   <h4 className="font-semibold text-white mb-1">Auto Liquidity</h4>
-                  <p className="text-sm text-white/70">Every roll = 0.001 MON to LP</p>
+                  <p className="text-sm text-white/70">Every roll = {formatRollFee(rollFee)} ${NATIVE_TOKEN.symbol} to LP</p>
                 </motion.div>
               </div>
             </motion.div>

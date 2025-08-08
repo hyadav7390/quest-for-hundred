@@ -9,9 +9,22 @@ interface GameRulesModalProps {
   onClose: () => void;
   mode?: 'single' | 'multi';
   gameFinishBonus?: number;
+  rollFee?: string | null;
 }
 
-const GameRulesModal = ({ isOpen, onClose, mode = 'single', gameFinishBonus }: GameRulesModalProps) => {
+const GameRulesModal = ({ isOpen, onClose, mode = 'single', gameFinishBonus, rollFee }: GameRulesModalProps) => {
+  // Format roll fee (assume value is in wei, convert to MON)
+  const formatRollFee = (fee: string | null | undefined) => {
+    if (!fee) return '0.001';
+    try {
+      // 18 decimals for MON (like ETH)
+      const mon = (Number(fee) / 1e18).toFixed(2);
+      return mon;
+    } catch {
+      return '0.001';
+    }
+  };
+
   const singlePlayerRules = [
     "Roll the dice to move forward on the board",
     "Collect gifts to earn $ROLL coins (50-300 coins each)",
@@ -29,7 +42,7 @@ const GameRulesModal = ({ isOpen, onClose, mode = 'single', gameFinishBonus }: G
     "Be the first to reach tile 100 to win the round",
     "If you reach tile 100 first, you 'rugg' all slower players",
     "Rugged players lose their entry fee to the winner",
-    "Each dice roll adds 0.001 MON to $ROLL liquidity pool"
+    `Each dice roll adds ${formatRollFee(rollFee)} MON to $ROLL liquidity pool`
   ];
 
   const gameRules = mode === 'multi' ? multiplayerRules : singlePlayerRules;
@@ -96,7 +109,7 @@ const GameRulesModal = ({ isOpen, onClose, mode = 'single', gameFinishBonus }: G
                 </div>
                 <div className="bg-surface rounded-xl p-4 text-center border border-accent-main/30">
                   <Coins className="w-6 h-6 text-accent-main mx-auto mb-2" />
-                  <div className="text-lg font-bold text-white">0.001 MON</div>
+                  <div className="text-lg font-bold text-white">{formatRollFee(rollFee)} MON</div>
                   <div className="text-white/60 text-sm">Per Dice Roll</div>
                 </div>
                 <div className="bg-surface rounded-xl p-4 text-center border border-accent-main/30">
