@@ -262,7 +262,7 @@ const Home = () => {
                 >
                   <div className="text-2xl mb-2">💧</div>
                   <h4 className="font-semibold text-white mb-1">Auto Liquidity</h4>
-                  <p className="text-sm text-white/70">Every roll = {formatRollFee(rollFee)} ${NATIVE_TOKEN.symbol} to LP</p>
+                  <p className="text-sm text-white/70">Every roll = {formatRollFee(rollFee)} {NATIVE_TOKEN.symbol} to LP</p>
                 </motion.div>
               </div>
             </motion.div>
