@@ -58,7 +58,7 @@ const GameActivities = ({ activities, compact = false }: GameActivitiesProps) =>
       case 0: // Won
         return `Rugged ${activity.count} players and Won ${formatAmount(activity.amount)} ${NATIVE_TOKEN.symbol}`;
       case 1: // Game Finish
-        return `reached 100 and claimed ${formatAmount(activity.amount)} ${REWARD_TOKEN.symbol}`;
+        return `reached 100 and claimed ${activity.amount} ${REWARD_TOKEN.symbol}`;
       case 2: // Join
         return `joined the game.`;
       case 3: // Gift
