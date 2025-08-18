@@ -1,17 +1,24 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Coins, Trophy, Sparkles, Star } from 'lucide-react';
+import { User, Coins, Trophy, Sparkles, Star, Users, User as UserIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Toggle } from '@/components/ui/toggle';
 import { useGame } from '@/hooks/useGame';
 import CrawlingCharacter from './CrawlingCharacter';
+import { useState } from 'react';
 
 interface ContractUserProfileProps {
   mode?: 'single' | 'multi';
 }
 
 const ContractUserProfile = ({ mode = 'single' }: ContractUserProfileProps) => {
-  const { gameState, playerStats } = useGame(mode);
+  const [currentMode, setCurrentMode] = useState<'single' | 'multi'>(mode);
+  const { gameState, playerStats } = useGame(currentMode);
   const hasFinished = gameState?.hasFinished;
+
+  const handleModeToggle = (newMode: 'single' | 'multi') => {
+    setCurrentMode(newMode);
+  };
 
   return (
     <Popover>
@@ -33,10 +40,33 @@ const ContractUserProfile = ({ mode = 'single' }: ContractUserProfileProps) => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
           >
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-3">
               <Sparkles className="w-6 h-6 text-accent-main animate-pulse" />
               <h3 className="text-xl font-heading font-bold text-accent-main drop-shadow-glow tracking-wide animate-glow">On-Chain Profile</h3>
             </div>
+            
+            {/* Mode Toggle */}
+            <div className="flex items-center gap-2 mb-2">
+              <Toggle
+                pressed={currentMode === 'single'}
+                onPressedChange={() => handleModeToggle('single')}
+                className="bg-surface border border-accent-main/30 hover:bg-accent-main/10 data-[state=on]:bg-accent-main/20 data-[state=on]:border-accent-main/60"
+                size="sm"
+              >
+                <UserIcon className="w-4 h-4 mr-1" />
+                Single
+              </Toggle>
+              <Toggle
+                pressed={currentMode === 'multi'}
+                onPressedChange={() => handleModeToggle('multi')}
+                className="bg-surface border border-accent-main/30 hover:bg-accent-main/10 data-[state=on]:bg-accent-main/20 data-[state=on]:border-accent-main/60"
+                size="sm"
+              >
+                <Users className="w-4 h-4 mr-1" />
+                Multi
+              </Toggle>
+            </div>
+            
             <p className="text-xs text-text-low">Data from Smart Contract</p>
           </motion.div>
 
