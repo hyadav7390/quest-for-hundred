@@ -201,6 +201,38 @@ export const useGameReducer = (mode: 'single' | 'multi' = 'single', triggerRugSp
   // Track if this is the initial load to prevent unnecessary animation
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
+  // Reset initial load state when mode changes
+  useEffect(() => {
+    console.log('🎯 [UI REDUCER] Mode changed, resetting initial load state');
+    setIsInitialLoad(true);
+  }, [mode]);
+
+  // Handle initial contract data load
+  useEffect(() => {
+    if (gameData.gameState && isInitialLoad) {
+      console.log('🎯 [UI REDUCER] Initial contract data received - setting position immediately:', gameData.gameState.position);
+      dispatch({
+        type: 'UPDATE_FROM_CONTRACT',
+        payload: gameData.gameState,
+      });
+      dispatch({ type: 'UPDATE_ANIMATED_POSITION', payload: gameData.gameState.position });
+      setIsInitialLoad(false);
+    }
+  }, [gameData.gameState, isInitialLoad]);
+
+  // Additional safety check: if we have contract data but position is still 1, force update
+  useEffect(() => {
+    if (gameData.gameState && state.playerPosition === 1 && gameData.gameState.position !== 1 && isInitialLoad) {
+      console.log('🎯 [UI REDUCER] Safety check: forcing position update from', state.playerPosition, 'to', gameData.gameState.position);
+      dispatch({
+        type: 'UPDATE_FROM_CONTRACT',
+        payload: gameData.gameState,
+      });
+      dispatch({ type: 'UPDATE_ANIMATED_POSITION', payload: gameData.gameState.position });
+      setIsInitialLoad(false);
+    }
+  }, [gameData.gameState, state.playerPosition, isInitialLoad]);
+
   // Sync contract state with UI state (from old code)
   useEffect(() => {
     if (gameData.gameState) {
@@ -208,6 +240,19 @@ export const useGameReducer = (mode: 'single' | 'multi' = 'single', triggerRugSp
       if (gameData.gameState.diceValue > 0 && state.isRolling) {
         dispatch({ type: 'STOP_DICE_ANIMATION', payload: gameData.gameState.diceValue });
       }
+      
+      // If this is the initial load and we have contract data, immediately set the position
+      if (isInitialLoad) {
+        console.log('🎯 [UI REDUCER] Initial load with contract data - setting position immediately:', gameData.gameState.position);
+        dispatch({
+          type: 'UPDATE_FROM_CONTRACT',
+          payload: gameData.gameState,
+        });
+        dispatch({ type: 'UPDATE_ANIMATED_POSITION', payload: gameData.gameState.position });
+        setIsInitialLoad(false);
+        return;
+      }
+      
       dispatch({
         type: 'UPDATE_FROM_CONTRACT',
         payload: gameData.gameState,
@@ -225,7 +270,7 @@ export const useGameReducer = (mode: 'single' | 'multi' = 'single', triggerRugSp
         }, 2000);
       }
     }
-  }, [gameData.gameState, state.isRolling, state.gameStatus, state.isMoving]);
+  }, [gameData.gameState, state.isRolling, state.gameStatus, state.isMoving, isInitialLoad]);
 
   // Handle tile-by-tile movement animation
   useEffect(() => {
@@ -293,7 +338,7 @@ export const useGameReducer = (mode: 'single' | 'multi' = 'single', triggerRugSp
 
       animateTiles();
     }
-  }, [gameData.gameState?.position, state.playerPosition, isInitialLoad]);
+  }, [gameData.gameState?.position, state.playerPosition, isInitialLoad, gameData.isLoadingStartGame, gameData.isLoading]);
 
   // Sync board data from contract
   useEffect(() => {

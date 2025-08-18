@@ -5,7 +5,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Toggle } from '@/components/ui/toggle';
 import { useGame } from '@/hooks/useGame';
 import CrawlingCharacter from './CrawlingCharacter';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface ContractUserProfileProps {
   mode?: 'single' | 'multi';
@@ -15,6 +15,11 @@ const ContractUserProfile = ({ mode = 'single' }: ContractUserProfileProps) => {
   const [currentMode, setCurrentMode] = useState<'single' | 'multi'>(mode);
   const { gameState, playerStats } = useGame(currentMode);
   const hasFinished = gameState?.hasFinished;
+
+  // Sync with prop changes
+  useEffect(() => {
+    setCurrentMode(mode);
+  }, [mode]);
 
   const handleModeToggle = (newMode: 'single' | 'multi') => {
     setCurrentMode(newMode);
