@@ -1,6 +1,7 @@
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, RotateCcw, Gift, Target, TrendingDown, ArrowUp, TrendingUp, Coins, X, DoorClosed, Home } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 
 interface VictoryModalProps {
   isOpen: boolean;
@@ -55,6 +56,32 @@ const VictoryModal = ({
   onClose,
 }: VictoryModalProps) => {
   const navigate = useNavigate();
+  const [showGameEndFireworks, setShowGameEndFireworks] = useState(false);
+  const [showClaimFireworks, setShowClaimFireworks] = useState(false);
+
+  // Trigger game end fireworks when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setShowGameEndFireworks(true);
+      // Stop game end fireworks after 4 seconds
+      const timer = setTimeout(() => {
+        setShowGameEndFireworks(false);
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
+
+  // Trigger claim fireworks when claim is successful
+  useEffect(() => {
+    if (claimRewardsSuccess) {
+      setShowClaimFireworks(true);
+      // Stop claim fireworks after 3 seconds
+      const timer = setTimeout(() => {
+        setShowClaimFireworks(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [claimRewardsSuccess]);
   
   if (!isOpen) return null;
 
@@ -66,84 +93,335 @@ const VictoryModal = ({
   const displayRuggedCount = ruggedCount ?? 0;
   const displayRewardWon = totalRewardWon ?? 0;
 
+  // Determine which stats to highlight based on importance hierarchy
+  const hasRuggedPlayers = displayRuggedCount > 0;
+  const hasRewardWon = displayRewardWon > 0;
+  const hasRollCoins = nunuCoins > 0;
+
+  // Priority system: Rugged Players > Reward Won > $ROLL Coins
+  const primaryHighlight = hasRuggedPlayers ? 'rugged' : hasRewardWon ? 'reward' : hasRollCoins ? 'coins' : null;
+  const secondaryHighlight = hasRuggedPlayers && hasRewardWon ? 'reward' : 
+                           hasRuggedPlayers && hasRollCoins ? 'coins' : 
+                           hasRewardWon && hasRollCoins ? 'coins' : null;
+
   const handleGoHome = () => {
     navigate('/');
   };
 
-  // Fireworks animation component
-  const Fireworks = () => (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden">
-      {[...Array(8)].map((_, i) => (
-        <motion.div
-          key={i}
-          className="absolute w-2 h-2 bg-yellow-400 rounded-full"
-          initial={{ 
-            x: '50%', 
-            y: '100%', 
-            scale: 0,
-            opacity: 1 
-          }}
-          animate={{ 
-            x: `${20 + (i * 10)}%`, 
-            y: `${20 + (i * 5)}%`, 
-            scale: [0, 1, 0],
-            opacity: [1, 1, 0]
-          }}
-          transition={{ 
-            duration: 1.5, 
-            delay: i * 0.1,
-            ease: "easeOut"
-          }}
-        />
-      ))}
-      {[...Array(6)].map((_, i) => (
-        <motion.div
-          key={`spark-${i}`}
-          className="absolute w-1 h-1 bg-red-400 rounded-full"
-          initial={{ 
-            x: '50%', 
-            y: '100%', 
-            scale: 0,
-            opacity: 1 
-          }}
-          animate={{ 
-            x: `${30 + (i * 8)}%`, 
-            y: `${30 + (i * 3)}%`, 
-            scale: [0, 1, 0],
-            opacity: [1, 1, 0]
-          }}
-          transition={{ 
-            duration: 1.2, 
-            delay: i * 0.15,
-            ease: "easeOut"
-          }}
-        />
-      ))}
-      {[...Array(4)].map((_, i) => (
-        <motion.div
-          key={`star-${i}`}
-          className="absolute w-1.5 h-1.5 bg-blue-400 rounded-full"
-          initial={{ 
-            x: '50%', 
-            y: '100%', 
-            scale: 0,
-            opacity: 1 
-          }}
-          animate={{ 
-            x: `${40 + (i * 12)}%`, 
-            y: `${40 + (i * 2)}%`, 
-            scale: [0, 1, 0],
-            opacity: [1, 1, 0]
-          }}
-          transition={{ 
-            duration: 1.8, 
-            delay: i * 0.2,
-            ease: "easeOut"
-          }}
-        />
-      ))}
-    </div>
-  );
+  // Enhanced Fireworks animation component
+  const Fireworks = ({ type = 'game-end' }: { type?: 'game-end' | 'claim-success' }) => {
+    const colors = type === 'game-end' 
+      ? ['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7']
+      : ['#00FF88', '#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4'];
+    
+    const positions = [
+      { x: '20%', y: '30%' },
+      { x: '80%', y: '25%' },
+      { x: '50%', y: '20%' },
+      { x: '15%', y: '40%' },
+      { x: '85%', y: '35%' },
+      { x: '70%', y: '15%' },
+      { x: '30%', y: '10%' },
+      { x: '60%', y: '45%' },
+    ];
+
+    return (
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-40">
+        <AnimatePresence>
+          {positions.map((pos, index) => (
+            <motion.div
+              key={`firework-${index}`}
+              className="absolute"
+              style={{ left: pos.x, top: pos.y }}
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ 
+                scale: [0, 1, 0],
+                opacity: [0, 1, 0]
+              }}
+              transition={{
+                duration: 2,
+                delay: index * 0.3,
+                ease: "easeOut"
+              }}
+            >
+              {/* Firework burst */}
+              {[...Array(12)].map((_, i) => (
+                <motion.div
+                  key={`particle-${index}-${i}`}
+                  className="absolute w-1 h-1 rounded-full"
+                  style={{ 
+                    backgroundColor: colors[i % colors.length],
+                    boxShadow: `0 0 6px ${colors[i % colors.length]}`
+                  }}
+                  initial={{ 
+                    x: 0, 
+                    y: 0, 
+                    scale: 0,
+                    opacity: 1 
+                  }}
+                  animate={{ 
+                    x: Math.cos((i * 30) * Math.PI / 180) * 60,
+                    y: Math.sin((i * 30) * Math.PI / 180) * 60,
+                    scale: [0, 1, 0],
+                    opacity: [1, 1, 0]
+                  }}
+                  transition={{
+                    duration: 1.5,
+                    delay: index * 0.3 + 0.1,
+                    ease: "easeOut"
+                  }}
+                />
+              ))}
+              
+              {/* Secondary burst */}
+              {[...Array(8)].map((_, i) => (
+                <motion.div
+                  key={`secondary-${index}-${i}`}
+                  className="absolute w-0.5 h-0.5 rounded-full"
+                  style={{ 
+                    backgroundColor: colors[(i + 6) % colors.length],
+                    boxShadow: `0 0 4px ${colors[(i + 6) % colors.length]}`
+                  }}
+                  initial={{ 
+                    x: 0, 
+                    y: 0, 
+                    scale: 0,
+                    opacity: 1 
+                  }}
+                  animate={{ 
+                    x: Math.cos((i * 45) * Math.PI / 180) * 40,
+                    y: Math.sin((i * 45) * Math.PI / 180) * 40,
+                    scale: [0, 1, 0],
+                    opacity: [1, 1, 0]
+                  }}
+                  transition={{
+                    duration: 1.2,
+                    delay: index * 0.3 + 0.3,
+                    ease: "easeOut"
+                  }}
+                />
+              ))}
+            </motion.div>
+          ))}
+        </AnimatePresence>
+
+        {/* Floating sparkles */}
+        {[...Array(20)].map((_, i) => (
+          <motion.div
+            key={`sparkle-${i}`}
+            className="absolute w-1 h-1 rounded-full"
+            style={{ 
+              backgroundColor: colors[i % colors.length],
+              boxShadow: `0 0 4px ${colors[i % colors.length]}`
+            }}
+            initial={{ 
+              x: `${Math.random() * 100}%`, 
+              y: '100%', 
+              scale: 0,
+              opacity: 0 
+            }}
+            animate={{ 
+              x: `${Math.random() * 100}%`,
+              y: `${Math.random() * 80}%`,
+              scale: [0, 1, 0],
+              opacity: [0, 1, 0]
+            }}
+            transition={{
+              duration: 2 + Math.random() * 2,
+              delay: Math.random() * 2,
+              ease: "easeOut"
+            }}
+          />
+        ))}
+      </div>
+    );
+  };
+
+  // Highlighted Stat Component
+  const HighlightedStat = ({ 
+    type, 
+    value, 
+    label, 
+    icon: Icon, 
+    isPrimary = false, 
+    isSecondary = false 
+  }: {
+    type: 'rugged' | 'reward' | 'coins' | 'detours' | 'shortcuts';
+    value: string | number;
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+    isPrimary?: boolean;
+    isSecondary?: boolean;
+  }) => {
+    const isHighlighted = isPrimary || isSecondary;
+    const highlightLevel = isPrimary ? 'primary' : isSecondary ? 'secondary' : 'none';
+    
+    const getHighlightStyles = () => {
+      if (!isHighlighted) return {};
+      
+      const baseStyles = {
+        border: '2px solid',
+        borderRadius: '12px',
+        padding: '16px',
+        position: 'relative' as const,
+        overflow: 'hidden' as const,
+      };
+
+      if (highlightLevel === 'primary') {
+        return {
+          ...baseStyles,
+          borderColor: type === 'rugged' ? '#f59e0b' : type === 'reward' ? '#10b981' : '#00aaff',
+          background: type === 'rugged' 
+            ? 'linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05))'
+            : type === 'reward'
+            ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05))'
+            : 'linear-gradient(135deg, rgba(0, 170, 255, 0.1), rgba(0, 170, 255, 0.05))',
+          boxShadow: type === 'rugged'
+            ? '0 0 20px rgba(245, 158, 11, 0.3)'
+            : type === 'reward'
+            ? '0 0 20px rgba(16, 185, 129, 0.3)'
+            : '0 0 20px rgba(0, 170, 255, 0.3)',
+        };
+      }
+
+      if (highlightLevel === 'secondary') {
+        return {
+          ...baseStyles,
+          borderColor: type === 'rugged' ? '#f59e0b' : type === 'reward' ? '#10b981' : '#00aaff',
+          background: type === 'rugged' 
+            ? 'linear-gradient(135deg, rgba(245, 158, 11, 0.05), rgba(245, 158, 11, 0.02))'
+            : type === 'reward'
+            ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(16, 185, 129, 0.02))'
+            : 'linear-gradient(135deg, rgba(0, 170, 255, 0.05), rgba(0, 170, 255, 0.02))',
+          boxShadow: type === 'rugged'
+            ? '0 0 15px rgba(245, 158, 11, 0.2)'
+            : type === 'reward'
+            ? '0 0 15px rgba(16, 185, 129, 0.2)'
+            : '0 0 15px rgba(0, 170, 255, 0.2)',
+        };
+      }
+
+      return {};
+    };
+
+    return (
+      <motion.div
+        className="relative"
+        style={getHighlightStyles()}
+        initial={{ scale: 1, opacity: 1 }}
+        animate={{ 
+          scale: isHighlighted ? [1, 1.02, 1] : 1,
+          opacity: 1
+        }}
+        transition={{ 
+          duration: 0.5, 
+          repeat: isHighlighted ? Infinity : 0, 
+          repeatType: "reverse" as const,
+          repeatDelay: 1
+        }}
+      >
+        {/* Glowing background effect for primary highlights */}
+        {isPrimary && (
+          <motion.div
+            className="absolute inset-0 rounded-lg opacity-20"
+            style={{
+              background: type === 'rugged' 
+                ? 'radial-gradient(circle, rgba(245, 158, 11, 0.3) 0%, transparent 70%)'
+                : type === 'reward'
+                ? 'radial-gradient(circle, rgba(16, 185, 129, 0.3) 0%, transparent 70%)'
+                : 'radial-gradient(circle, rgba(0, 170, 255, 0.3) 0%, transparent 70%)'
+            }}
+            animate={{ 
+              scale: [1, 1.1, 1],
+              opacity: [0.2, 0.4, 0.2]
+            }}
+            transition={{ 
+              duration: 2, 
+              repeat: Infinity, 
+              ease: "easeInOut" 
+            }}
+          />
+        )}
+
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <motion.div
+              animate={{ 
+                scale: isHighlighted ? [1, 1.2, 1] : 1,
+                rotate: isHighlighted ? [0, 5, -5, 0] : 0
+              }}
+              transition={{ 
+                duration: 0.8, 
+                repeat: isHighlighted ? Infinity : 0, 
+                repeatType: "reverse" as const 
+              }}
+            >
+              <Icon className={`w-5 h-5 ${
+                type === 'rugged' ? 'text-warning' : 
+                type === 'reward' ? 'text-success' : 
+                type === 'detours' ? 'text-red-500' :
+                type === 'shortcuts' ? 'text-green-500' :
+                'text-accent-main'
+              }`} />
+            </motion.div>
+            <span className={`text-sm font-medium ${
+              isHighlighted ? 'text-text-high' : 'text-text-low'
+            }`}>
+              {label}
+            </span>
+          </div>
+          
+          <motion.div
+            className={`text-lg font-bold ${
+              type === 'rugged' ? 'text-warning' : 
+              type === 'reward' ? 'text-success' : 
+              type === 'detours' ? 'text-red-500' :
+              type === 'shortcuts' ? 'text-green-500' :
+              'text-accent-main'
+            }`}
+            animate={{ 
+              scale: isHighlighted ? [1, 1.1, 1] : 1,
+              textShadow: isHighlighted ? 
+                (type === 'rugged' ? '0 0 10px rgba(245, 158, 11, 0.8)' :
+                 type === 'reward' ? '0 0 10px rgba(16, 185, 129, 0.8)' :
+                 '0 0 10px rgba(0, 170, 255, 0.8)') : 'none'
+            }}
+            transition={{ 
+              duration: 0.5, 
+              repeat: isHighlighted ? Infinity : 0, 
+              repeatType: "reverse" as const 
+            }}
+          >
+            {value}
+          </motion.div>
+        </div>
+
+        {/* Priority badge for primary highlights */}
+        {isPrimary && (
+          <motion.div
+            className="absolute -top-2 -right-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg"
+            initial={{ scale: 0, rotate: -180 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            #1
+          </motion.div>
+        )}
+
+        {/* Priority badge for secondary highlights */}
+        {isSecondary && (
+          <motion.div
+            className="absolute -top-2 -right-2 bg-gradient-to-r from-blue-400 to-purple-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg"
+            initial={{ scale: 0, rotate: -180 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+          >
+            #2
+          </motion.div>
+        )}
+      </motion.div>
+    );
+  };
 
   return (
     <motion.div
@@ -152,27 +430,89 @@ const VictoryModal = ({
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
     >
+      {/* Fireworks animations */}
+      {showGameEndFireworks && <Fireworks type="game-end" />}
+      {showClaimFireworks && <Fireworks type="claim-success" />}
+      
       <motion.div
-        className="bg-surface rounded-2xl p-8 max-w-md w-full shadow-2xl shadow-glow border border-accent-main/20 relative"
+        className="bg-surface rounded-2xl p-8 max-w-md w-full shadow-2xl shadow-glow border border-accent-main/20 relative z-50"
         initial={{ scale: 0.5, y: 50 }}
         animate={{ scale: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 25 }}
       >
-        {/* Fireworks animation for successful claim */}
-        {claimRewardsSuccess && <Fireworks />}
+        {/* Confetti effect for game end */}
+        {showGameEndFireworks && (
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            {[...Array(30)].map((_, i) => (
+              <motion.div
+                key={`confetti-${i}`}
+                className="absolute w-2 h-2 rounded-sm"
+                style={{
+                  backgroundColor: ['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7'][i % 6],
+                  left: `${Math.random() * 100}%`,
+                  top: '-10px'
+                }}
+                initial={{ y: -10, rotate: 0, opacity: 1 }}
+                animate={{ 
+                  y: '100vh',
+                  rotate: 360,
+                  opacity: [1, 1, 0]
+                }}
+                transition={{
+                  duration: 3 + Math.random() * 2,
+                  delay: Math.random() * 2,
+                  ease: "easeIn"
+                }}
+              />
+            ))}
+          </div>
+        )}
         
-        <div className="text-center mb-6">
+        <div className="text-center mb-6 relative z-10">
           <motion.div
             className="inline-block p-4 bg-gradient-to-r from-accent-main to-success rounded-full mb-4"
-            animate={{ rotate: 360 }}
-            transition={{ duration: 2, ease: "easeInOut" }}
+            animate={{ 
+              rotate: 360,
+              scale: showGameEndFireworks ? [1, 1.1, 1] : 1
+            }}
+            transition={{ 
+              duration: 2, 
+              ease: "easeInOut",
+              scale: { duration: 0.5, repeat: showGameEndFireworks ? Infinity : 0, repeatType: "reverse" }
+            }}
           >
             <Trophy className="w-12 h-12 text-white" />
           </motion.div>
 
-          <h2 className="text-3xl font-bold text-text-high mb-2">Congratulations!</h2>
+          <motion.h2 
+            className="text-3xl font-bold text-text-high mb-2"
+            animate={{ 
+              scale: showGameEndFireworks ? [1, 1.05, 1] : 1,
+              textShadow: showGameEndFireworks ? "0 0 20px rgba(255, 215, 0, 0.8)" : "none"
+            }}
+            transition={{ 
+              duration: 0.5, 
+              repeat: showGameEndFireworks ? Infinity : 0, 
+              repeatType: "reverse" 
+            }}
+          >
+            Congratulations!
+          </motion.h2>
           <p className="text-text-low">You've reached tile 100!</p>
-          <p className="text-accent-main font-bold">+ {gameFinishBonus ?? 0} $ROLL Coins Bonus!</p>
+          <motion.p 
+            className="text-accent-main font-bold"
+            animate={{ 
+              scale: showGameEndFireworks ? [1, 1.1, 1] : 1,
+              textShadow: showGameEndFireworks ? "0 0 15px rgba(0, 170, 255, 0.8)" : "none"
+            }}
+            transition={{ 
+              duration: 0.8, 
+              repeat: showGameEndFireworks ? Infinity : 0, 
+              repeatType: "reverse" 
+            }}
+          >
+            + {gameFinishBonus ?? 0} $ROLL Coins Bonus!
+          </motion.p>
         </div>
 
         <div className="space-y-4 mb-6">
@@ -189,45 +529,65 @@ const VictoryModal = ({
               </div>
 
               <div className="bg-surface border border-accent-main/10 rounded p-2">
-                <div className="text-xs text-text-low">$ROLL Coins</div>
-                <div className="text-accent-main font-bold">{nunuCoins}</div>
+                <div className="text-xs text-text-low">Position</div>
+                <div className="text-text-high font-bold">100</div>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4 text-sm mt-4">
+              {/* Players Rugged - Highest Priority */}
+              <HighlightedStat 
+                type="rugged" 
+                value={displayRuggedCount} 
+                label="Players Rugged" 
+                icon={TrendingDown} 
+                isPrimary={primaryHighlight === 'rugged'}
+                isSecondary={false}
+              />
+
+              {/* Total Reward Won - Second Priority */}
+              <HighlightedStat 
+                type="reward" 
+                value={`${displayRewardWon ? (displayRewardWon / 1e18).toFixed(2) : 0} MON`} 
+                label="Total Reward Won" 
+                icon={Coins} 
+                isPrimary={primaryHighlight === 'reward'}
+                isSecondary={secondaryHighlight === 'reward'}
+              />
+
+              {/* $ROLL Coins - Third Priority */}
+              <HighlightedStat 
+                type="coins" 
+                value={nunuCoins} 
+                label="$ROLL Coins Earned" 
+                icon={Coins} 
+                isPrimary={primaryHighlight === 'coins'}
+                isSecondary={secondaryHighlight === 'coins'}
+              />
+
+              {/* Dice Rolls - Regular stat */}
               <div className="flex items-center space-x-2">
                 <Target className="w-4 h-4 text-accent-main" />
                 <span className="text-text-low">Dice Rolls: {displayDiceRolls}</span>
               </div>
 
+              {/* Gifts - Regular stat */}
               <div className="flex items-center space-x-2">
                 <Gift className="w-4 h-4 text-yellow-400" />
                 <span className="text-text-low">Gifts: {displayGifts}</span>
               </div>
 
+              {/* Detours - Regular stat */}
               <div className="flex items-center space-x-2">
                 <DoorClosed className="w-4 h-4 text-red-500" />
                 <span className="text-text-low">Detours: {displayDetours}</span>
               </div>
 
+              {/* Shortcuts - Regular stat */}
               <div className="flex items-center space-x-2">
                 <DoorClosed className="w-4 h-4 text-green-500" />
                 <span className="text-text-low">Shortcuts: {displayShortcuts}</span>
               </div>
-
-              {displayRuggedCount > 0 && (
-                <div className="flex items-center space-x-2 col-span-2 mt-2">
-                  <TrendingDown className="w-4 h-4 text-warning" />
-                  <span className="text-text-low">Players Rugged: {displayRuggedCount}</span>
-                </div>
-              )}
-
-              {displayRewardWon > 0 && (
-                <div className="flex items-center space-x-2 col-span-2">
-                  <Coins className="w-4 h-4 text-success" />
-                  <span className="text-text-low">Reward Won: {displayRewardWon ? (displayRewardWon / 1e18).toFixed(2) : 0} MON</span>
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -276,12 +636,67 @@ const VictoryModal = ({
           )}
 
           {claimRewardsSuccess && (
-            <div className="w-full py-3 text-center text-success font-semibold bg-success/10 rounded-lg border border-success/20">
-              <div className="flex items-center justify-center space-x-2">
-                <Coins className="w-4 h-4 text-success" />
-                <span>Claimed Successfully!</span>
+            <motion.div 
+              className="w-full py-3 text-center text-success font-semibold bg-success/10 rounded-lg border border-success/20 relative overflow-hidden"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, type: "spring" }}
+            >
+              {/* Success sparkles */}
+              {showClaimFireworks && (
+                <div className="absolute inset-0 pointer-events-none">
+                  {[...Array(8)].map((_, i) => (
+                    <motion.div
+                      key={`success-sparkle-${i}`}
+                      className="absolute w-1 h-1 bg-success rounded-full"
+                      style={{
+                        left: `${20 + (i * 10)}%`,
+                        top: '50%'
+                      }}
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{ 
+                        scale: [0, 1, 0],
+                        opacity: [0, 1, 0],
+                        y: [-10, -20, -30]
+                      }}
+                      transition={{
+                        duration: 1,
+                        delay: i * 0.1,
+                        ease: "easeOut"
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
+              
+              <div className="flex items-center justify-center space-x-2 relative z-10">
+                <motion.div
+                  animate={{ 
+                    rotate: 360,
+                    scale: showClaimFireworks ? [1, 1.2, 1] : 1
+                  }}
+                  transition={{ 
+                    duration: 1, 
+                    ease: "easeInOut",
+                    scale: { duration: 0.3, repeat: showClaimFireworks ? Infinity : 0, repeatType: "reverse" }
+                  }}
+                >
+                  <Coins className="w-4 h-4 text-success" />
+                </motion.div>
+                <motion.span
+                  animate={{ 
+                    textShadow: showClaimFireworks ? "0 0 10px rgba(34, 197, 94, 0.8)" : "none"
+                  }}
+                  transition={{ 
+                    duration: 0.5, 
+                    repeat: showClaimFireworks ? Infinity : 0, 
+                    repeatType: "reverse" 
+                  }}
+                >
+                  Claimed Successfully!
+                </motion.span>
               </div>
-            </div>
+            </motion.div>
           )}
 
           {claimRewardsError && !isClaimRewardsPending && !claimRewardsSuccess && (
