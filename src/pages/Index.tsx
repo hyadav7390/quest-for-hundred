@@ -587,6 +587,7 @@ const Index = () => {
                 mode={mode}
                 activePlayers={contractInfo.gameStats?.gameActivePlayers}
                 joinGameFee={contractInfo.joinGameFee}
+                peerPositions={contractInfo.peerPositions}
               />
 
               {/* Game Activities - Only for multiplayer */}

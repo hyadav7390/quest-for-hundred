@@ -20,6 +20,7 @@ interface ScoreBoardProps {
   // New multiplayer stats
   activePlayers?: number;
   joinGameFee?: string;
+  peerPositions?: { positions: number[]; counts: number[]; ruggmates: number[] };
 }
 
 const ScoreBoard = ({ 
@@ -38,26 +39,31 @@ const ScoreBoard = ({
   mode = 'single',
   activePlayers,
   joinGameFee,
+  peerPositions,
 }: ScoreBoardProps) => {
   // Use contract values if available, otherwise fall back to UI state
   const displayDiceRolls = diceRolls ?? turnsPlayed;
   const displayGifts = giftsCollected;
   const displayShortcuts = shortcuts ?? shortcutGatesTriggered;
   const displayDetours = detours ?? detourTrapsTriggered;
-  const displayPeers = peers ?? 0;
   const displayActivePlayers = activePlayers ?? 0;
   const displayJoinGameFee = joinGameFee ? parseFloat(joinGameFee) / 1e18 : 0;
 
-  // Calculate potential rewards and prize pool
-  const potentialReward = displayPeers * displayJoinGameFee;
+  // Calculate ruggmates from peerPositions data
+  const ruggmatesCount = peerPositions?.ruggmates?.reduce((sum, isRuggmate, index) => {
+    return sum + (isRuggmate === 1 ? (peerPositions.counts[index] || 0) : 0);
+  }, 0) ?? 0;
+  
+  // Use ruggmates count for potential rewards calculation
+  const potentialReward = ruggmatesCount * displayJoinGameFee;
   const totalPrizePool = displayActivePlayers * displayJoinGameFee;
 
-  // Peer messaging system
-  const getPeerMessage = (peerCount: number) => {
-    if (peerCount === 0) return "No Ruggmates yet. You're rolling solo. 🎲";
-    if (peerCount === 1) return "You've got 1 Ruggmate. 👀";
-    if (peerCount === 2) return "2 Ruggmates spotted. Stay sharp. 🔪";
-    return `${peerCount}+ Ruggmates! It's a ruggstorm out there.`;
+  // Ruggmate messaging system
+  const getPeerMessage = (ruggmateCount: number) => {
+    if (ruggmateCount === 0) return "No Ruggmates yet. You're rolling solo. 🎲";
+    if (ruggmateCount === 1) return "You've got 1 Ruggmate! 🤝";
+    if (ruggmateCount === 2) return "2 Ruggmates spotted! 💚";
+    return `${ruggmateCount}+ Ruggmates! It's a ruggstorm out there! 🌪️`;
   };
 
   // Tooltip content
@@ -68,7 +74,7 @@ const ScoreBoard = ({
     gifts: "Rewards picked up",
     detours: "Lost turns or setbacks",
     shortcuts: "Boost tiles hit",
-    ruggmates: "Others with same dice roll",
+    ruggmates: "Your ruggmates - players you can share rewards with",
     potentialWin: "Your current eligible prize",
     activePlayers: "Still in the game",
     prizePool: "Total $MON up for grabs"
@@ -134,7 +140,7 @@ const ScoreBoard = ({
           </div>
           <div className="mt-3 p-3 bg-gradient-to-r from-accent-main/10 to-blue-500/10 border border-accent-main/20 rounded-lg">
             <p className="text-sm text-white/90 text-center font-medium">
-              {getPeerMessage(displayPeers)}
+              {getPeerMessage(ruggmatesCount)}
             </p>
           </div>
         </>

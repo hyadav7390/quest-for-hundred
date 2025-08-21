@@ -13,7 +13,7 @@ interface GameBoardProps {
   revealedGates: number[];
   isMoving: boolean;
   animatedPosition?: number; // For tile-by-tile movement animation
-  peerPositions?: { positions: number[]; counts: number[] }; // Other players' positions
+  peerPositions?: { positions: number[]; counts: number[]; ruggmates: number[] }; // Other players' positions
 }
 
 const GameBoard = ({ 
@@ -99,6 +99,7 @@ const GameBoard = ({
           // Check if other players are on this tile
           const peerIndex = peerPositions?.positions.indexOf(tileNumber) ?? -1;
           const peerCount = peerIndex >= 0 ? peerPositions?.counts[peerIndex] ?? 0 : 0;
+          const isRuggmate = peerIndex >= 0 ? peerPositions?.ruggmates[peerIndex] === 1 : false;
           const hasOtherPlayers = peerCount > 0 && !isPlayerTile;
           
           return (
@@ -163,7 +164,7 @@ const GameBoard = ({
                   className="z-20 relative"
                 >
                   <div className="relative">
-                    <CrawlingCharacter isMoving={true} isOtherPlayer={true} />
+                    <CrawlingCharacter isMoving={true} isOtherPlayer={true} isRuggmate={isRuggmate} />
                     {/* Player count indicator */}
                     {peerCount > 1 && (
                       <motion.div

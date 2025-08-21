@@ -66,7 +66,7 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
   const [playerRank, setPlayerRank] = useState<number>(0);
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [playerStats, setPlayerStats] = useState<any>(null);
-  const [peerPositions, setPeerPositions] = useState<{ positions: number[]; counts: number[] }>({ positions: [], counts: [] });
+  const [peerPositions, setPeerPositions] = useState<{ positions: number[]; counts: number[]; ruggmates: number[] }>({ positions: [], counts: [], ruggmates: [] });
   const [gameActivities, setGameActivities] = useState<any[]>([]);
   const [gameFinishBonus, setGameFinishBonus] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -613,10 +613,11 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
   // Process peer positions data
   useEffect(() => {
     if (peerPositionsData && memoizedMode === 'multi') {
-      const [positions, counts] = peerPositionsData as [number[], number[]];
+      const [positions, counts, ruggmates] = peerPositionsData as [number[], number[], number[]];
       setPeerPositions({
         positions: positions.map(p => Number(p)),
-        counts: counts.map(c => Number(c))
+        counts: counts.map(c => Number(c)),
+        ruggmates: ruggmates.map(r => Number(r))
       });
     }
   }, [peerPositionsData, memoizedMode]);

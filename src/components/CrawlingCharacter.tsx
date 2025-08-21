@@ -4,22 +4,47 @@ import { motion } from 'framer-motion';
 interface CrawlingCharacterProps {
   isMoving: boolean;
   isOtherPlayer?: boolean; // New prop to distinguish other players
+  isRuggmate?: boolean; // New prop to distinguish ruggmates from other peers
 }
 
-const CrawlingCharacter = ({ isMoving, isOtherPlayer = false }: CrawlingCharacterProps) => {
-  // Different color scheme for other players
-  const bodyColor = isOtherPlayer ? "from-blue-100 to-blue-300" : "from-amber-100 to-amber-300";
-  const borderColor = isOtherPlayer ? "border-blue-400" : "border-amber-400";
-  const headColor = isOtherPlayer ? "from-blue-50 to-blue-200" : "from-amber-50 to-amber-200";
-  const headBorderColor = isOtherPlayer ? "border-blue-300" : "border-amber-300";
-  const earColor = isOtherPlayer ? "from-blue-200 to-blue-100" : "from-amber-200 to-amber-100";
-  const earBorderColor = isOtherPlayer ? "border-blue-300" : "border-amber-300";
-  const pawColor = isOtherPlayer ? "bg-blue-300" : "bg-amber-300";
-  const pawBorderColor = isOtherPlayer ? "border-blue-400" : "border-amber-400";
-  const backPawColor = isOtherPlayer ? "bg-blue-400" : "bg-amber-400";
-  const backPawBorderColor = isOtherPlayer ? "border-blue-500" : "border-amber-500";
-  const tailColor = isOtherPlayer ? "from-white to-blue-100" : "from-white to-amber-100";
-  const tailBorderColor = isOtherPlayer ? "border-blue-300" : "border-amber-300";
+const CrawlingCharacter = ({ isMoving, isOtherPlayer = false, isRuggmate = false }: CrawlingCharacterProps) => {
+  // Different color scheme for other players and ruggmates
+  const bodyColor = isOtherPlayer 
+    ? (isRuggmate ? "from-green-100 to-green-300" : "from-blue-100 to-blue-300") 
+    : "from-amber-100 to-amber-300";
+  const borderColor = isOtherPlayer 
+    ? (isRuggmate ? "border-green-400" : "border-blue-400") 
+    : "border-amber-400";
+  const headColor = isOtherPlayer 
+    ? (isRuggmate ? "from-green-50 to-green-200" : "from-blue-50 to-blue-200") 
+    : "from-amber-50 to-amber-200";
+  const headBorderColor = isOtherPlayer 
+    ? (isRuggmate ? "border-green-300" : "border-blue-300") 
+    : "border-amber-300";
+  const earColor = isOtherPlayer 
+    ? (isRuggmate ? "from-green-200 to-green-100" : "from-blue-200 to-blue-100") 
+    : "from-amber-200 to-amber-100";
+  const earBorderColor = isOtherPlayer 
+    ? (isRuggmate ? "border-green-300" : "border-blue-300") 
+    : "border-amber-300";
+  const pawColor = isOtherPlayer 
+    ? (isRuggmate ? "bg-green-300" : "bg-blue-300") 
+    : "bg-amber-300";
+  const pawBorderColor = isOtherPlayer 
+    ? (isRuggmate ? "border-green-400" : "border-blue-400") 
+    : "border-amber-400";
+  const backPawColor = isOtherPlayer 
+    ? (isRuggmate ? "bg-green-400" : "bg-blue-400") 
+    : "bg-amber-400";
+  const backPawBorderColor = isOtherPlayer 
+    ? (isRuggmate ? "border-green-500" : "border-blue-500") 
+    : "border-amber-500";
+  const tailColor = isOtherPlayer 
+    ? (isRuggmate ? "from-white to-green-100" : "from-white to-blue-100") 
+    : "from-white to-amber-100";
+  const tailBorderColor = isOtherPlayer 
+    ? (isRuggmate ? "border-green-300" : "border-blue-300") 
+    : "border-amber-300";
   
   // Smaller size for other players
   const sizeClass = isOtherPlayer ? "w-6 h-6" : "w-8 h-7";

@@ -139,7 +139,8 @@ export const MULTI_PLAYER_GAME_ABI = [
     "name": "getPeerPositionsWithCounts",
     "outputs": [
       { "internalType": "uint8[]", "name": "positions", "type": "uint8[]" },
-      { "internalType": "uint8[]", "name": "counts", "type": "uint8[]" }
+      { "internalType": "uint8[]", "name": "counts", "type": "uint8[]" },
+      { "internalType": "uint8[]", "name": "ruggmates", "type": "uint8[]" }
     ],
     "stateMutability": "view",
     "type": "function"
