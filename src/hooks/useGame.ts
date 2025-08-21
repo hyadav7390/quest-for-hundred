@@ -420,6 +420,9 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
         console.log('[useGame] No address available, skipping auto-claim');
         return;
       }
+
+
+
       setAutoClaimTriggered(true); // Mark that we've attempted to claim
       
       // Use a local function to avoid dependency issues
@@ -433,6 +436,8 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
             console.log('[useGame] Already claimed detected during delay, skipping auto-claim');
             return;
           }
+
+
           
           const txConfig = memoizedMode === 'multi'
             ? {
@@ -472,6 +477,8 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
         console.log('[useGame] Game marked as finished but position is not 100, skipping detection');
         return;
       }
+
+
       
       console.log('[useGame] Checking if rewards already claimed...', { mode: memoizedMode, nunuEarned: gameState.nunuEarned, playerStatusData: !!playerStatusData, isPlayerStatusFetched });
       
@@ -733,6 +740,8 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
     // TODO: Implement leaderboard fetch for multiplayer if available
   }, []);
 
+
+
   // Optimize initial data fetching - only fetch once on mount
   useEffect(() => {
     let mounted = true;
@@ -769,6 +778,7 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
     setClaimRewardsSuccess(false); // Reset claim success state
     setClaimRewardsError(null); // Reset claim error state
     setAutoClaimTriggered(false); // Reset auto-claim flag for new game
+    alreadyClaimedDetectedRef.current = false; // Reset detection ref for new game
     // After resetting, we should refetch to get the 'not in game' status to show the join button.
     refetchPlayerStatus();
   }, [refetchPlayerStatus]);
@@ -821,7 +831,7 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
       
       console.error('[useGame] Claim rewards error:', errorMsg);
       
-      if (errorMsg.includes('NoRewardsToClaim') || errorMsg.includes('already claimed') || errorMsg.includes('No rewards to claim')) {
+      if (errorMsg.includes('NoRewardsToClaim') || errorMsg.includes('already claimed') || errorMsg.includes('No rewards to claim') || errorMsg.includes('not in a game')) {
         const errorMessage = 'Rewards have already been claimed for this game.';
         setClaimRewardsError(errorMessage);
         setClaimRewardsSuccess(true); // Treat as success since rewards were already claimed

@@ -596,9 +596,9 @@ const VictoryModal = ({
           <motion.button
             onClick={onRestart}
             className="w-full py-3 bg-gradient-to-r from-accent-main to-success text-white font-bold rounded-lg shadow-lg hover:from-accent-main/80 hover:to-success/80 transition-all duration-200 disabled:opacity-50"
-            whileHover={{ scale: isRestarting ? 1 : 1.02 }}
-            whileTap={{ scale: isRestarting ? 1 : 0.98 }}
-            disabled={isRestarting || !canRestart}
+            whileHover={{ scale: (isRestarting || isClaimRewardsPending) ? 1 : 1.02 }}
+            whileTap={{ scale: (isRestarting || isClaimRewardsPending) ? 1 : 0.98 }}
+            disabled={isRestarting || !canRestart || isClaimRewardsPending}
           >
             <div className="flex items-center justify-center space-x-2">
               <RotateCcw className="w-4 h-4" />
@@ -615,13 +615,14 @@ const VictoryModal = ({
 
           <motion.button
             onClick={handleGoHome}
-            className="w-full py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold rounded-lg shadow-lg hover:from-blue-500/80 hover:to-purple-600/80 transition-all duration-200"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            className="w-full py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold rounded-lg shadow-lg hover:from-blue-500/80 hover:to-purple-600/80 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            whileHover={{ scale: isClaimRewardsPending ? 1 : 1.02 }}
+            whileTap={{ scale: isClaimRewardsPending ? 1 : 0.98 }}
+            disabled={isClaimRewardsPending}
           >
             <div className="flex items-center justify-center space-x-2">
               <Home className="w-4 h-4" />
-              <span>Go to Home</span>
+              <span>{isClaimRewardsPending ? 'Claiming Rewards...' : 'Go to Home'}</span>
             </div>
           </motion.button>
 
