@@ -396,36 +396,14 @@ const VictoryModal = ({
           </motion.div>
         </div>
 
-        {/* Priority badge for primary highlights */}
-        {isPrimary && (
-          <motion.div
-            className="absolute -top-2 -right-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg"
-            initial={{ scale: 0, rotate: -180 }}
-            animate={{ scale: 1, rotate: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            #1
-          </motion.div>
-        )}
 
-        {/* Priority badge for secondary highlights */}
-        {isSecondary && (
-          <motion.div
-            className="absolute -top-2 -right-2 bg-gradient-to-r from-blue-400 to-purple-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg"
-            initial={{ scale: 0, rotate: -180 }}
-            animate={{ scale: 1, rotate: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-          >
-            #2
-          </motion.div>
-        )}
       </motion.div>
     );
   };
 
   return (
     <motion.div
-      className="fixed inset-0 bg-surface/95 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-surface/95 flex items-center justify-center z-50 p-4 overflow-y-auto"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
@@ -435,7 +413,7 @@ const VictoryModal = ({
       {showClaimFireworks && <Fireworks type="claim-success" />}
       
       <motion.div
-        className="bg-surface rounded-2xl p-8 max-w-md w-full shadow-2xl shadow-glow border border-accent-main/20 relative z-50"
+        className="bg-surface rounded-2xl p-8 max-w-md w-full shadow-2xl shadow-glow border border-accent-main/20 relative z-50 my-8"
         initial={{ scale: 0.5, y: 50 }}
         animate={{ scale: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 25 }}
@@ -515,26 +493,25 @@ const VictoryModal = ({
           </motion.p>
         </div>
 
-        <div className="space-y-4 mb-6">
-          <div className="bg-surface border border-accent-main/10 rounded-lg p-4">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-lg font-semibold text-text-high">Final Score</span>
-              <span className="text-2xl font-bold text-accent-main">{score}</span>
+        <div className="space-y-6 mb-6">
+          {/* Final Score Section */}
+          <div className="bg-gradient-to-r from-accent-main/10 to-success/10 border border-accent-main/20 rounded-xl p-6">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-xl font-bold text-text-high">Final Score</span>
+              <span className="text-3xl font-bold text-accent-main">{score}</span>
             </div>
-
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div className="bg-surface border border-accent-main/10 rounded p-2">
-                <div className="text-xs text-text-low">Game Score</div>
-                <div className="text-text-high font-bold">{gameScore}</div>
-              </div>
-
-              <div className="bg-surface border border-accent-main/10 rounded p-2">
-                <div className="text-xs text-text-low">Position</div>
-                <div className="text-text-high font-bold">100</div>
-              </div>
+            
+            <div className="bg-surface/50 border border-accent-main/10 rounded-lg p-3">
+              <div className="text-sm text-text-low mb-1">Game Score</div>
+              <div className="text-lg font-bold text-text-high">{gameScore}</div>
             </div>
+          </div>
 
-            <div className="grid grid-cols-2 gap-4 text-sm mt-4">
+          {/* Game Statistics Section */}
+          <div className="bg-surface border border-accent-main/10 rounded-xl p-6">
+            <h3 className="text-lg font-semibold text-text-high mb-4">Game Statistics</h3>
+            
+            <div className="grid grid-cols-2 gap-4">
               {/* Players Rugged - Highest Priority */}
               <HighlightedStat 
                 type="rugged" 
@@ -566,43 +543,55 @@ const VictoryModal = ({
               />
 
               {/* Dice Rolls - Regular stat */}
-              <div className="flex items-center space-x-2">
-                <Target className="w-4 h-4 text-accent-main" />
-                <span className="text-text-low">Dice Rolls: {displayDiceRolls}</span>
+              <div className="bg-surface/50 border border-accent-main/10 rounded-lg p-3 flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Target className="w-4 h-4 text-accent-main" />
+                  <span className="text-sm text-text-low">Dice Rolls</span>
+                </div>
+                <span className="text-sm font-semibold text-text-high">{displayDiceRolls}</span>
               </div>
 
               {/* Gifts - Regular stat */}
-              <div className="flex items-center space-x-2">
-                <Gift className="w-4 h-4 text-yellow-400" />
-                <span className="text-text-low">Gifts: {displayGifts}</span>
+              <div className="bg-surface/50 border border-accent-main/10 rounded-lg p-3 flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Gift className="w-4 h-4 text-yellow-400" />
+                  <span className="text-sm text-text-low">Gifts</span>
+                </div>
+                <span className="text-sm font-semibold text-text-high">{displayGifts}</span>
               </div>
 
               {/* Detours - Regular stat */}
-              <div className="flex items-center space-x-2">
-                <DoorClosed className="w-4 h-4 text-red-500" />
-                <span className="text-text-low">Detours: {displayDetours}</span>
+              <div className="bg-surface/50 border border-accent-main/10 rounded-lg p-3 flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <DoorClosed className="w-4 h-4 text-red-500" />
+                  <span className="text-sm text-text-low">Detours</span>
+                </div>
+                <span className="text-sm font-semibold text-text-high">{displayDetours}</span>
               </div>
 
               {/* Shortcuts - Regular stat */}
-              <div className="flex items-center space-x-2">
-                <DoorClosed className="w-4 h-4 text-green-500" />
-                <span className="text-text-low">Shortcuts: {displayShortcuts}</span>
+              <div className="bg-surface/50 border border-accent-main/10 rounded-lg p-3 flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <DoorClosed className="w-4 h-4 text-green-500" />
+                  <span className="text-sm text-text-low">Shortcuts</span>
+                </div>
+                <span className="text-sm font-semibold text-text-high">{displayShortcuts}</span>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-4">
           <motion.button
             onClick={onRestart}
-            className="w-full py-3 bg-gradient-to-r from-accent-main to-success text-white font-bold rounded-lg shadow-lg hover:from-accent-main/80 hover:to-success/80 transition-all duration-200 disabled:opacity-50"
+            className="w-full py-4 bg-gradient-to-r from-accent-main to-success text-white font-bold rounded-xl shadow-lg hover:from-accent-main/80 hover:to-success/80 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             whileHover={{ scale: (isRestarting || isClaimRewardsPending) ? 1 : 1.02 }}
             whileTap={{ scale: (isRestarting || isClaimRewardsPending) ? 1 : 0.98 }}
             disabled={isRestarting || !canRestart || isClaimRewardsPending}
           >
-            <div className="flex items-center justify-center space-x-2">
-              <RotateCcw className="w-4 h-4" />
-              <span>
+            <div className="flex items-center justify-center space-x-3">
+              <RotateCcw className="w-5 h-5" />
+              <span className="text-lg">
                 {isRestarting 
                   ? 'Starting...' 
                   : !canRestart 
@@ -615,30 +604,30 @@ const VictoryModal = ({
 
           <motion.button
             onClick={handleGoHome}
-            className="w-full py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold rounded-lg shadow-lg hover:from-blue-500/80 hover:to-purple-600/80 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold rounded-xl shadow-lg hover:from-blue-500/80 hover:to-purple-600/80 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             whileHover={{ scale: isClaimRewardsPending ? 1 : 1.02 }}
             whileTap={{ scale: isClaimRewardsPending ? 1 : 0.98 }}
             disabled={isClaimRewardsPending}
           >
-            <div className="flex items-center justify-center space-x-2">
-              <Home className="w-4 h-4" />
-              <span>{isClaimRewardsPending ? 'Claiming Rewards...' : 'Go to Home'}</span>
+            <div className="flex items-center justify-center space-x-3">
+              <Home className="w-5 h-5" />
+              <span className="text-lg">{isClaimRewardsPending ? 'Claiming Rewards...' : 'Go to Home'}</span>
             </div>
           </motion.button>
 
           {/* Claim Rewards Status Display */}
           {isClaimRewardsPending && !claimRewardsSuccess && (
-            <div className="w-full py-3 text-center text-accent-main font-semibold bg-accent-main/10 rounded-lg border border-accent-main/20">
-              <div className="flex items-center justify-center space-x-2">
-                <div className="w-4 h-4 border-2 border-accent-main border-t-transparent rounded-full animate-spin"></div>
-                <span>Claiming Rewards...</span>
+            <div className="w-full py-4 text-center text-accent-main font-semibold bg-accent-main/10 rounded-xl border border-accent-main/20">
+              <div className="flex items-center justify-center space-x-3">
+                <div className="w-5 h-5 border-2 border-accent-main border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-lg">Claiming Rewards...</span>
               </div>
             </div>
           )}
 
           {claimRewardsSuccess && (
             <motion.div 
-              className="w-full py-3 text-center text-success font-semibold bg-success/10 rounded-lg border border-success/20 relative overflow-hidden"
+              className="w-full py-4 text-center text-success font-semibold bg-success/10 rounded-xl border border-success/20 relative overflow-hidden"
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5, type: "spring" }}
@@ -670,7 +659,7 @@ const VictoryModal = ({
                 </div>
               )}
               
-              <div className="flex items-center justify-center space-x-2 relative z-10">
+              <div className="flex items-center justify-center space-x-3 relative z-10">
                 <motion.div
                   animate={{ 
                     rotate: 360,
@@ -682,9 +671,10 @@ const VictoryModal = ({
                     scale: { duration: 0.3, repeat: showClaimFireworks ? Infinity : 0, repeatType: "reverse" }
                   }}
                 >
-                  <Coins className="w-4 h-4 text-success" />
+                  <Coins className="w-5 h-5 text-success" />
                 </motion.div>
                 <motion.span
+                  className="text-lg"
                   animate={{ 
                     textShadow: showClaimFireworks ? "0 0 10px rgba(34, 197, 94, 0.8)" : "none"
                   }}
@@ -703,16 +693,16 @@ const VictoryModal = ({
           {claimRewardsError && !isClaimRewardsPending && !claimRewardsSuccess && (
             <motion.button
               onClick={onClaimRewards}
-              className="w-full py-3 bg-gradient-to-r from-success to-accent-main text-white font-bold rounded-lg shadow-lg hover:from-success/80 hover:to-accent-main/80 transition-all duration-200"
+              className="w-full py-4 bg-gradient-to-r from-success to-accent-main text-white font-bold rounded-xl shadow-lg hover:from-success/80 hover:to-accent-main/80 transition-all duration-200"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
             >
-              <div className="flex items-center justify-center space-x-2">
-                <Coins className="w-4 h-4" />
-                <span>Claim Rewards</span>
+              <div className="flex items-center justify-center space-x-3">
+                <Coins className="w-5 h-5" />
+                <span className="text-lg">Claim Rewards</span>
               </div>
             </motion.button>
           )}

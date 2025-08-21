@@ -379,6 +379,8 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
     try {
       setClaimRewardsError(null);
       setClaimRewardsSuccess(false);
+      setAutoClaimTriggered(true); // Prevent auto-claim from running
+      alreadyClaimedDetectedRef.current = false; // Reset detection ref for new attempt
       const txConfig = memoizedMode === 'multi'
         ? {
             address: MULTI_PLAYER_CONTRACT_ADDRESS as `0x${string}`,
@@ -406,39 +408,42 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
     }
   }, [address, gameState?.hasFinished, writeClaimRewards, memoizedMode]);
 
-  // Auto-claim rewards for both single and multiplayer when game finishes
+
+
+  // Detect if rewards were already claimed and handle auto-claim (single useEffect to prevent race conditions)
   useEffect(() => {
-    if (gameState?.hasFinished && !autoClaimTriggered && !claimRewardsSuccess && !isClaimRewardsConfirming && !isClaimRewardsPendingWagmi && !claimRewardsError && !alreadyClaimedDetectedRef.current) {
+    if (gameState?.hasFinished && !autoClaimTriggered && !claimRewardsSuccess && !claimRewardsError && !alreadyClaimedDetectedRef.current && !isClaimRewardsPending) {
       // Additional check: ensure position is actually 100 for single player
       if (memoizedMode === 'single' && gameState.position !== 100) {
-        console.log('[useGame] Game marked as finished but position is not 100, skipping auto-claim');
+        console.log('[useGame] Game marked as finished but position is not 100, skipping detection');
         return;
       }
       
-      // Additional check: ensure we have a valid address
-      if (!address) {
-        console.log('[useGame] No address available, skipping auto-claim');
-        return;
-      }
-
-
-
-      setAutoClaimTriggered(true); // Mark that we've attempted to claim
+      console.log('[useGame] Checking if rewards already claimed...', { mode: memoizedMode, nunuEarned: gameState.nunuEarned, playerStatusData: !!playerStatusData, isPlayerStatusFetched });
       
-      // Use a local function to avoid dependency issues
+      // For single player: if nunuEarned is 0, rewards were already claimed
+      if (memoizedMode === 'single' && gameState.nunuEarned === 0) {
+        setClaimRewardsSuccess(true);
+        setAutoClaimTriggered(true);
+        alreadyClaimedDetectedRef.current = true; // Mark as detected to prevent auto-claim
+        return; // Prevent auto-claim from running
+      }
+      // For multiplayer: if playerStatusData is null/undefined, player was deleted (rewards claimed)
+      else if (memoizedMode === 'multi' && !playerStatusData && isPlayerStatusFetched) {
+        setClaimRewardsSuccess(true);
+        setAutoClaimTriggered(true);
+        alreadyClaimedDetectedRef.current = true; // Mark as detected to prevent auto-claim
+        return; // Prevent auto-claim from running
+      }
+      
+      // If not already claimed, trigger auto-claim
+      // This ensures only one claim mechanism runs
+      console.log('[useGame] Rewards not already claimed, triggering auto-claim...');
+      setAutoClaimTriggered(true);
+      
+      // Perform the claim
       const performClaim = async () => {
         try {
-          // Add a small delay to ensure detection logic has run first
-          await new Promise(resolve => setTimeout(resolve, 100));
-          
-          // Double-check that we haven't been detected as already claimed
-          if (alreadyClaimedDetectedRef.current) {
-            console.log('[useGame] Already claimed detected during delay, skipping auto-claim');
-            return;
-          }
-
-
-          
           const txConfig = memoizedMode === 'multi'
             ? {
                 address: MULTI_PLAYER_CONTRACT_ADDRESS as `0x${string}`,
@@ -466,36 +471,6 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
       };
       
       performClaim();
-    }
-  }, [gameState?.hasFinished, gameState?.position, autoClaimTriggered, claimRewardsSuccess, isClaimRewardsConfirming, isClaimRewardsPendingWagmi, claimRewardsError, memoizedMode, address, writeClaimRewards]);
-
-  // Detect if rewards were already claimed (for page reloads) - run BEFORE auto-claim
-  useEffect(() => {
-    if (gameState?.hasFinished && !autoClaimTriggered && !claimRewardsSuccess && !claimRewardsError && !alreadyClaimedDetectedRef.current) {
-      // Additional check: ensure position is actually 100 for single player
-      if (memoizedMode === 'single' && gameState.position !== 100) {
-        console.log('[useGame] Game marked as finished but position is not 100, skipping detection');
-        return;
-      }
-
-
-      
-      console.log('[useGame] Checking if rewards already claimed...', { mode: memoizedMode, nunuEarned: gameState.nunuEarned, playerStatusData: !!playerStatusData, isPlayerStatusFetched });
-      
-      // For single player: if nunuEarned is 0, rewards were already claimed
-      if (memoizedMode === 'single' && gameState.nunuEarned === 0) {
-        setClaimRewardsSuccess(true);
-        setAutoClaimTriggered(true);
-        alreadyClaimedDetectedRef.current = true; // Mark as detected to prevent auto-claim
-        return; // Prevent auto-claim from running
-      }
-      // For multiplayer: if playerStatusData is null/undefined, player was deleted (rewards claimed)
-      else if (memoizedMode === 'multi' && !playerStatusData && isPlayerStatusFetched) {
-        setClaimRewardsSuccess(true);
-        setAutoClaimTriggered(true);
-        alreadyClaimedDetectedRef.current = true; // Mark as detected to prevent auto-claim
-        return; // Prevent auto-claim from running
-      }
     }
   }, [gameState?.hasFinished, gameState?.position, gameState?.nunuEarned, memoizedMode, playerStatusData, isPlayerStatusFetched, autoClaimTriggered, claimRewardsSuccess, claimRewardsError]);
 
@@ -767,6 +742,7 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
       Promise.all([
         refetchPlayerStatus(),
         refetchPlayerStats(),
+        refetchGameStats(),
         ...(memoizedMode === 'multi' ? [refetchGameActivities(), refetchPeerPositions()] : []),
       ]).finally(() => setIsLoading(false));
     }
@@ -840,6 +816,11 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
           description: errorMessage,
           variant: 'default',
         });
+      } else if (errorMsg.includes('Another transaction has higher priority') || errorMsg.includes('txpool not responding')) {
+        // Don't show error for these cases - transaction might still succeed
+        // Just log it and let the success handler take care of it
+        console.log('[useGame] Transaction priority/txpool issue, waiting for confirmation...');
+        // Don't set error state - let success handler show success if it works
       } else if (errorMsg.includes('finish first')) {
         const errorMessage = 'Please finish the game first before claiming rewards.';
         setClaimRewardsError(errorMessage);
