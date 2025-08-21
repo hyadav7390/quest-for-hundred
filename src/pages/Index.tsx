@@ -8,12 +8,13 @@ import Dice from '@/components/Dice';
 import ScoreBoard from '@/components/ScoreBoard';
 import VictoryModal from '@/components/VictoryModal';
 import NewGameConfirmation from '@/components/NewGameConfirmation';
+import QuitAndRejoinConfirmation from '@/components/QuitAndRejoinConfirmation';
 import SplashAnimation from '@/components/SplashAnimation';
 import GameRulesModal from '@/components/GameRulesModal';
 import GameActivities from '@/components/GameActivities';
 import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { Wallet, RefreshCw, HelpCircle, Trophy } from 'lucide-react';
+import { Wallet, RefreshCw, HelpCircle, Trophy, RotateCcw } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAccount, useBalance } from 'wagmi';
 import { monadTestnet } from '@/types/monadTestnet';
@@ -83,6 +84,7 @@ const Index = () => {
   const [gameState, gameActions, contractInfo] = useGameReducer(mode, triggerRugSplash);
   const { playSound } = useSoundEffects(gameState.isSoundMuted);
   const [showNewGameConfirmation, setShowNewGameConfirmation] = useState(false);
+  const [showQuitAndRejoinConfirmation, setShowQuitAndRejoinConfirmation] = useState(false);
   const [showBoardLoader, setShowBoardLoader] = useState(false);
   const [showGameRules, setShowGameRules] = useState(false);
 
@@ -245,6 +247,25 @@ const Index = () => {
     } else {
       await ensureEmbeddedWalletActive();
       await startGame();
+    }
+  };
+
+  // Handle quit and rejoin
+  const handleQuitAndRejoinClick = () => {
+    setShowQuitAndRejoinConfirmation(true);
+  };
+
+  const handleQuitAndRejoinConfirm = async () => {
+    try {
+      setShowQuitAndRejoinConfirmation(false);
+      await joinGame();
+    } catch (error) {
+      console.error('Failed to quit and rejoin:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to quit and rejoin. Please try again.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -520,6 +541,17 @@ const Index = () => {
               <HelpCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
               Rules
             </Button>
+            {mode === 'multi' && contractInfo.gameState?.boardGenerated && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleQuitAndRejoinClick}
+                className="border-red-500 text-red-500 hover:bg-red-500/10 text-xs sm:text-sm"
+              >
+                <RotateCcw className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                Quit & Rejoin
+              </Button>
+            )}
             {/* <Button
               variant="outline"
               size="sm"
@@ -645,6 +677,13 @@ const Index = () => {
           isOpen={showNewGameConfirmation}
           onConfirm={restartGame}
           onCancel={() => setShowNewGameConfirmation(false)}
+        />
+
+        <QuitAndRejoinConfirmation
+          isOpen={showQuitAndRejoinConfirmation}
+          isRugged={contractInfo.gameState?.isRugged ?? false}
+          onConfirm={handleQuitAndRejoinConfirm}
+          onCancel={() => setShowQuitAndRejoinConfirmation(false)}
         />
 
         <GameRulesModal
