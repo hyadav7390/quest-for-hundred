@@ -1,6 +1,6 @@
 
 import { motion } from 'framer-motion';
-import { Trophy, Target, Gift, Dices, Volume2, VolumeX, DoorClosed, TrendingUp, Info, Users } from 'lucide-react';
+import { Trophy, Target, Gift, Dices, Volume2, VolumeX, DoorClosed, TrendingUp, Info, Users, AlertTriangle } from 'lucide-react';
 
 interface ScoreBoardProps {
   score: number;
@@ -21,6 +21,8 @@ interface ScoreBoardProps {
   activePlayers?: number;
   joinGameFee?: string;
   peerPositions?: { positions: number[]; counts: number[]; ruggmates: number[] };
+  // Rugged status
+  isRugged?: boolean;
 }
 
 const ScoreBoard = ({ 
@@ -40,6 +42,7 @@ const ScoreBoard = ({
   activePlayers,
   joinGameFee,
   peerPositions,
+  isRugged,
 }: ScoreBoardProps) => {
   // Use contract values if available, otherwise fall back to UI state
   const displayDiceRolls = diceRolls ?? turnsPlayed;
@@ -120,6 +123,50 @@ const ScoreBoard = ({
           )}
         </motion.button>
       </div>
+
+      {/* Rugged Indicator - Only show when player is rugged */}
+      {isRugged && (
+        <motion.div
+          className="mb-3 p-3 bg-gradient-to-r from-red-500/20 to-orange-500/20 border border-red-500/30 rounded-lg"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3 }}
+        >
+          <div className="flex items-center justify-center space-x-2">
+            <motion.div
+              animate={{ 
+                scale: [1, 1.1, 1],
+                rotate: [0, 5, -5, 0]
+              }}
+              transition={{ 
+                duration: 2, 
+                repeat: Infinity, 
+                ease: "easeInOut" 
+              }}
+            >
+              <AlertTriangle className="w-4 h-4 text-red-400" />
+            </motion.div>
+            <span className="text-sm font-semibold text-red-300">You've been rugged!</span>
+            <motion.div
+              animate={{ 
+                scale: [1, 1.1, 1],
+                rotate: [0, -5, 5, 0]
+              }}
+              transition={{ 
+                duration: 2, 
+                repeat: Infinity, 
+                ease: "easeInOut",
+                delay: 0.5
+              }}
+            >
+              <AlertTriangle className="w-4 h-4 text-red-400" />
+            </motion.div>
+          </div>
+          <p className="text-xs text-red-200/80 text-center mt-1">
+            You can quit and rejoin to try again
+          </p>
+        </motion.div>
+      )}
 
       {/* Multiplayer stats */}
       {mode === 'multi' && (

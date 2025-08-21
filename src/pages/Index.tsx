@@ -620,6 +620,7 @@ const Index = () => {
                 activePlayers={contractInfo.gameStats?.gameActivePlayers}
                 joinGameFee={contractInfo.joinGameFee}
                 peerPositions={contractInfo.peerPositions}
+                isRugged={contractInfo.gameState?.isRugged}
               />
 
               {/* Game Activities - Only for multiplayer */}
