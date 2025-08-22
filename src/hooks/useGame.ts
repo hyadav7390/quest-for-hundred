@@ -72,15 +72,26 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingStartGame, setIsLoadingStartGame] = useState(false);
   const [isLoadingBoard, setIsLoadingBoard] = useState(false);
+  const [isJoinGameInProgress, setIsJoinGameInProgress] = useState(false);
   const [isWaitingForVRF, setIsWaitingForVRF] = useState(false);
   const [isClaimRewardsPending, setIsClaimRewardsPending] = useState(false);
   const [claimRewardsError, setClaimRewardsError] = useState<string | null>(null);
   const [claimRewardsSuccess, setClaimRewardsSuccess] = useState(false);
-  const [autoClaimTriggered, setAutoClaimTriggered] = useState(false); // Flag to prevent duplicate auto-claims
   
-  // Use ref to track if we've already detected claimed rewards to prevent race conditions
-  const alreadyClaimedDetectedRef = useRef(false);
+  // Single ref to track claim state to prevent race conditions
+  const claimStateRef = useRef<'idle' | 'checking' | 'claiming' | 'claimed' | 'error'>('idle');
   
+  // Add a ref to track the latest game state for claim operations
+  const gameStateRef = useRef(gameState);
+  
+  // Add a ref to track the auto-claim timeout
+  const autoClaimTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Update the ref whenever gameState changes
+  useEffect(() => {
+    gameStateRef.current = gameState;
+  }, [gameState]);
+
   // Contract selection - memoized to prevent recreation
   const { contractAddress, contractAbi } = useMemo(() => {
     if (memoizedMode === 'multi') {
@@ -304,6 +315,7 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
       return;
     }
     try {
+      setIsJoinGameInProgress(true);
       // Use dynamic join fee from contract
       const fee = joinGameFee ? BigInt(joinGameFee) : BigInt('100000000000000000'); // fallback to 0.1 ETH
       
@@ -318,6 +330,7 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
         account: address,
       });
     } catch (error: any) {
+      setIsJoinGameInProgress(false);
       console.error('[useGame] Failed to join MULTIPLAYER game:', error);
       throw error; // Re-throw to be caught by the UI handler
     }
@@ -339,6 +352,7 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
         // Give a small delay to ensure the data is processed
         setTimeout(() => {
           setIsLoadingBoard(false);
+          setIsJoinGameInProgress(false); // Reset join game progress when board loading is complete
         }, 1000);
       });
     }
@@ -373,14 +387,45 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
 
   // --- Claim Rewards ---
   const claimRewards = useCallback(async () => {
-    if (!address || !gameState?.hasFinished) {
+    if (!address) {
       return;
     }
-    try {
+    
+    // Prevent multiple claim attempts
+    if (claimStateRef.current === 'claiming' || claimStateRef.current === 'claimed') {
+      console.log('[useGame] Claim already in progress or completed, skipping.');
+      return;
+    }
+
+    // Get fresh game state to avoid stale closures
+    const currentGameState = gameStateRef.current;
+    if (!currentGameState?.hasFinished) {
+      console.log('[useGame] Game not finished yet, skipping claim.');
+      return;
+    }
+
+    // Check if rewards were already claimed
+    if (memoizedMode === 'single' && currentGameState.nunuEarned === 0) {
+      console.log('[useGame] Single player: nunuEarned is 0, rewards already claimed');
+      claimStateRef.current = 'claimed';
+      setClaimRewardsSuccess(true);
       setClaimRewardsError(null);
-      setClaimRewardsSuccess(false);
-      setAutoClaimTriggered(true); // Prevent auto-claim from running
-      alreadyClaimedDetectedRef.current = false; // Reset detection ref for new attempt
+      return;
+    }
+    
+    if (memoizedMode === 'multi' && !playerStatusData && isPlayerStatusFetched) {
+      console.log('[useGame] Multiplayer: playerStatusData is null, rewards already claimed');
+      claimStateRef.current = 'claimed';
+      setClaimRewardsSuccess(true);
+      setClaimRewardsError(null);
+      return;
+    }
+
+    // Start claiming
+    claimStateRef.current = 'claiming';
+    console.log('[useGame] Starting claim process...');
+    
+    try {
       const txConfig = memoizedMode === 'multi'
         ? {
             address: MULTI_PLAYER_CONTRACT_ADDRESS as `0x${string}`,
@@ -400,79 +445,66 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
             account: address,
             gas: 500000n
           };
-      // Use async version to allow awaiting in the UI
       await writeClaimRewards(txConfig);
     } catch (error: any) {
-      console.error(`[useGame] Failed to claim rewards for ${memoizedMode} mode:`, error);
+      console.error('[useGame] Claim failed:', error);
+      claimStateRef.current = 'error';
+      setClaimRewardsError('Failed to claim rewards. Please try again.');
       throw error; // Re-throw to be caught by the UI handler
     }
-  }, [address, gameState?.hasFinished, writeClaimRewards, memoizedMode]);
+  }, [address, memoizedMode, playerStatusData, isPlayerStatusFetched, writeClaimRewards]); // Keep only essential dependencies
 
-
-
-  // Detect if rewards were already claimed and handle auto-claim (single useEffect to prevent race conditions)
+  // Auto-claim when game finishes - optimized to prevent multiple calls
   useEffect(() => {
-    if (gameState?.hasFinished && !autoClaimTriggered && !claimRewardsSuccess && !claimRewardsError && !alreadyClaimedDetectedRef.current && !isClaimRewardsPending) {
-      // Additional check: ensure position is actually 100 for single player
-      if (memoizedMode === 'single' && gameState.position !== 100) {
-        console.log('[useGame] Game marked as finished but position is not 100, skipping detection');
-        return;
-      }
-      
-      console.log('[useGame] Checking if rewards already claimed...', { mode: memoizedMode, nunuEarned: gameState.nunuEarned, playerStatusData: !!playerStatusData, isPlayerStatusFetched });
-      
-      // For single player: if nunuEarned is 0, rewards were already claimed
-      if (memoizedMode === 'single' && gameState.nunuEarned === 0) {
-        setClaimRewardsSuccess(true);
-        setAutoClaimTriggered(true);
-        alreadyClaimedDetectedRef.current = true; // Mark as detected to prevent auto-claim
-        return; // Prevent auto-claim from running
-      }
-      // For multiplayer: if playerStatusData is null/undefined, player was deleted (rewards claimed)
-      else if (memoizedMode === 'multi' && !playerStatusData && isPlayerStatusFetched) {
-        setClaimRewardsSuccess(true);
-        setAutoClaimTriggered(true);
-        alreadyClaimedDetectedRef.current = true; // Mark as detected to prevent auto-claim
-        return; // Prevent auto-claim from running
-      }
-      
-      // If not already claimed, trigger auto-claim
-      // This ensures only one claim mechanism runs
-      console.log('[useGame] Rewards not already claimed, triggering auto-claim...');
-      setAutoClaimTriggered(true);
-      
-      // Perform the claim
-      const performClaim = async () => {
-        try {
-          const txConfig = memoizedMode === 'multi'
-            ? {
-                address: MULTI_PLAYER_CONTRACT_ADDRESS as `0x${string}`,
-                abi: MULTI_PLAYER_GAME_ABI,
-                functionName: 'claimRewardV1' as const,
-                args: [address as `0x${string}`],
-                chain: monadTestnet,
-                account: address,
-                gas: 700000n
-              }
-            : {
-                address: SINGLE_PLAYER_CONTRACT_ADDRESS as `0x${string}`,
-                abi: SINGLE_PLAYER_GAME_ABI,
-                functionName: 'claimRewards' as const,
-                args: [],
-                chain: monadTestnet,
-                account: address,
-                gas: 500000n
-              };
-          await writeClaimRewards(txConfig);
-        } catch (error: any) {
-          console.error('[useGame] Auto-claim failed:', error);
-          // Don't set error state here - let the error useEffect handle it
-        }
-      };
-      
-      performClaim();
+    // Clear any existing timeout first
+    if (autoClaimTimeoutRef.current) {
+      clearTimeout(autoClaimTimeoutRef.current);
+      autoClaimTimeoutRef.current = null;
     }
-  }, [gameState?.hasFinished, gameState?.position, gameState?.nunuEarned, memoizedMode, playerStatusData, isPlayerStatusFetched, autoClaimTriggered, claimRewardsSuccess, claimRewardsError]);
+    
+    // Early exit conditions
+    if (!gameState?.hasFinished) {
+      return;
+    }
+    
+    // Don't auto-claim if already in progress, completed, or errored
+    if (claimStateRef.current !== 'idle') {
+      console.log('[useGame] Auto-claim skipped - claim state is:', claimStateRef.current);
+      return;
+    }
+    
+    // Don't auto-claim if wagmi is already processing a claim
+    if (isClaimRewardsPendingWagmi || isClaimRewardsConfirming) {
+      console.log('[useGame] Auto-claim skipped - wagmi claim already in progress');
+      return;
+    }
+    
+    console.log('[useGame] Game finished, scheduling auto-claim...');
+    
+    // Use a ref to track the timeout and prevent multiple timeouts
+    autoClaimTimeoutRef.current = setTimeout(() => {
+      // Triple-check state before claiming to prevent race conditions
+      if (
+        claimStateRef.current === 'idle' && 
+        gameStateRef.current?.hasFinished &&
+        !isClaimRewardsPendingWagmi &&
+        !isClaimRewardsConfirming
+      ) {
+        console.log('[useGame] Executing auto-claim now');
+        claimRewards();
+      } else {
+        console.log('[useGame] Auto-claim cancelled - state changed');
+      }
+      autoClaimTimeoutRef.current = null;
+    }, 1500); // Increased delay slightly for more stability
+
+    return () => {
+      if (autoClaimTimeoutRef.current) {
+        clearTimeout(autoClaimTimeoutRef.current);
+        autoClaimTimeoutRef.current = null;
+      }
+    };
+  }, [gameState?.hasFinished, isClaimRewardsPendingWagmi, isClaimRewardsConfirming]); // Added wagmi state dependencies for safety
 
   // Process contract data
   useEffect(() => {
@@ -512,14 +544,13 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
 
   // Handle claim state resets separately to avoid dependency loops
   useEffect(() => {
-    if (gameState && !gameState.hasFinished && gameState.position === 1 && (autoClaimTriggered || claimRewardsSuccess || claimRewardsError)) {
-      console.log('[useGame] New game started (position 1), resetting all claim states');
-      setAutoClaimTriggered(false);
-      setClaimRewardsSuccess(false);
+    if (gameState && !gameState.hasFinished && gameState.position === 1) {
+      console.log('[useGame] New game started (position 1), resetting claim state');
+      claimStateRef.current = 'idle';
       setClaimRewardsError(null);
-      alreadyClaimedDetectedRef.current = false; // Reset detection ref for new game
+      setClaimRewardsSuccess(false);
     }
-  }, [gameState?.hasFinished, gameState?.position, autoClaimTriggered, claimRewardsSuccess, claimRewardsError]);
+  }, [gameState?.hasFinished, gameState?.position]);
 
   useEffect(() => {
     if (boardDataData) {
@@ -753,8 +784,7 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
     setGameState(null);
     setClaimRewardsSuccess(false); // Reset claim success state
     setClaimRewardsError(null); // Reset claim error state
-    setAutoClaimTriggered(false); // Reset auto-claim flag for new game
-    alreadyClaimedDetectedRef.current = false; // Reset detection ref for new game
+    claimStateRef.current = 'idle'; // Reset claim state
     // After resetting, we should refetch to get the 'not in game' status to show the join button.
     refetchPlayerStatus();
   }, [refetchPlayerStatus]);
@@ -795,6 +825,7 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
   useEffect(() => {
     if (joinGameError) {
       console.log('[useGame] Join game error detected.');
+      setIsJoinGameInProgress(false); // Reset join game progress on error
       handleContractError(joinGameError, 'Failed to join the game. Please try again.');
     }
   }, [joinGameError]);
@@ -803,27 +834,32 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
   useEffect(() => {
     if (claimRewardsWriteError || claimRewardsReceiptError) {
       const errorMsg = (claimRewardsWriteError || claimRewardsReceiptError)?.message || '';
-      setClaimRewardsSuccess(false);
       
       console.error('[useGame] Claim rewards error:', errorMsg);
       
+      // Handle "Another transaction has higher priority" - this is not a real error
+      if (errorMsg.includes('Another transaction has higher priority') || errorMsg.includes('txpool not responding')) {
+        console.log('[useGame] Transaction priority issue detected, this is normal and will resolve automatically');
+        // Don't set any error state - let the success handler take care of it if it works
+        // Don't reset claim state - let it continue
+        return; // Exit early to prevent error state from being set
+      }
+      
+      // Handle already claimed scenarios
       if (errorMsg.includes('NoRewardsToClaim') || errorMsg.includes('already claimed') || errorMsg.includes('No rewards to claim') || errorMsg.includes('not in a game')) {
         const errorMessage = 'Rewards have already been claimed for this game.';
         setClaimRewardsError(errorMessage);
         setClaimRewardsSuccess(true); // Treat as success since rewards were already claimed
+        claimStateRef.current = 'claimed'; // Mark as claimed
         toast({
           title: 'Already Claimed',
           description: errorMessage,
           variant: 'default',
         });
-      } else if (errorMsg.includes('Another transaction has higher priority') || errorMsg.includes('txpool not responding')) {
-        // Don't show error for these cases - transaction might still succeed
-        // Just log it and let the success handler take care of it
-        console.log('[useGame] Transaction priority/txpool issue, waiting for confirmation...');
-        // Don't set error state - let success handler show success if it works
       } else if (errorMsg.includes('finish first')) {
         const errorMessage = 'Please finish the game first before claiming rewards.';
         setClaimRewardsError(errorMessage);
+        claimStateRef.current = 'error'; // Mark as error
         toast({
           title: 'Game Not Finished',
           description: errorMessage,
@@ -832,6 +868,7 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
       } else if (errorMsg.includes('User rejected the request')) {
         const errorMessage = 'You rejected the transaction in your wallet.';
         setClaimRewardsError(errorMessage);
+        claimStateRef.current = 'error'; // Mark as error
         toast({
           title: 'Transaction Rejected',
           description: errorMessage,
@@ -840,6 +877,7 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
       } else if (errorMsg.split('Details:').length > 1) {
         const errorMessage = errorMsg.split('Details:')[1].split('Version:')[0].trim();
         setClaimRewardsError(errorMessage);
+        claimStateRef.current = 'error'; // Mark as error
         toast({
           title: 'Transaction Failed',
           description: errorMessage,
@@ -848,6 +886,7 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
       } else {
         const errorMessage = 'Failed to claim rewards. Please try again.';
         setClaimRewardsError(errorMessage);
+        claimStateRef.current = 'error'; // Mark as error for other errors
         toast({
           title: 'Transaction Failed',
           description: errorMessage,
@@ -863,6 +902,7 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
       console.log('[useGame] Claim rewards confirmed successfully');
       setClaimRewardsSuccess(true);
       setClaimRewardsError(null);
+      claimStateRef.current = 'claimed'; // Mark as claimed
       
       // Refetch player stats to get updated ruggedCount and totalRewardWon
       if (memoizedMode === 'multi') {
@@ -878,6 +918,17 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
     }
   }, [isClaimRewardsConfirmed, memoizedMode, refetchPlayerStats]);
   
+  // Cleanup auto-claim timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (autoClaimTimeoutRef.current) {
+        console.log('[useGame] Cleaning up auto-claim timeout on unmount');
+        clearTimeout(autoClaimTimeoutRef.current);
+        autoClaimTimeoutRef.current = null;
+      }
+    };
+  }, []);
+
   return useMemo(() => {
     // For multiplayer: player can only restart if rewards are claimed (player no longer in game)
     // For single player: player can restart anytime after finishing
@@ -910,7 +961,7 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
       maxSupply,
       rollFee,
       joinGameFee,
-      isLoading: isLoading || isStartGameConfirming || isRollDiceConfirming || isClaimRewardsConfirming || isJoinGamePending,
+      isLoading: isLoading || isStartGameConfirming || isRollDiceConfirming || isClaimRewardsConfirming || isJoinGamePending || isLoadingBoard || isJoinGameInProgress,
       isLoadingStartGame: isLoadingStartGame || isStartGamePending || isStartGameConfirming,
       isLoadingBoard,
       isWaitingForVRF: isWaitingForVRF || isRollDicePending || isRollDiceConfirming,
@@ -937,7 +988,7 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
   }, [
     memoizedMode, gameState, claimRewardsSuccess, isPlayerStatusError,
     address, boardData, gameStats, playerRank, leaderboard, playerStats, totalSupply, maxSupply, rollFee, joinGameFee,
-    isLoading, isStartGameConfirming, isRollDiceConfirming, isClaimRewardsConfirming, isJoinGamePending,
+    isLoading, isStartGameConfirming, isRollDiceConfirming, isClaimRewardsConfirming, isJoinGamePending, isLoadingBoard, isJoinGameInProgress,
     isLoadingStartGame, isStartGamePending, isLoadingBoard,
     isWaitingForVRF, isRollDicePending,
     isClaimRewardsConfirming, isClaimRewardsPendingWagmi,

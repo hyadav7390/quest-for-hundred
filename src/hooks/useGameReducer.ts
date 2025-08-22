@@ -398,7 +398,7 @@ export const useGameReducer = (mode: 'single' | 'multi' = 'single', triggerRugSp
   }, [state.isRolling, gameData]);
 
   const handleJoinGame = useCallback(async () => {
-    if (gameData.isLoading || state.isRolling) {
+    if (gameData.isLoading || gameData.isLoadingBoard || state.isRolling) {
       return;
     }
     if (!gameData.isConnected) {
