@@ -469,13 +469,11 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
     
     // Don't auto-claim if already in progress, completed, or errored
     if (claimStateRef.current !== 'idle') {
-      console.log('[useGame] Auto-claim skipped - claim state is:', claimStateRef.current);
       return;
     }
     
     // Don't auto-claim if wagmi is already processing a claim
     if (isClaimRewardsPendingWagmi || isClaimRewardsConfirming) {
-      console.log('[useGame] Auto-claim skipped - wagmi claim already in progress');
       return;
     }
     
@@ -490,10 +488,7 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
         !isClaimRewardsPendingWagmi &&
         !isClaimRewardsConfirming
       ) {
-        console.log('[useGame] Executing auto-claim now');
         claimRewards();
-      } else {
-        console.log('[useGame] Auto-claim cancelled - state changed');
       }
       autoClaimTimeoutRef.current = null;
     }, 1500); // Increased delay slightly for more stability
@@ -509,7 +504,6 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
   // Process contract data
   useEffect(() => {
     if (playerStatusData) {
-      console.log('[useGame] Received playerStatusData:', playerStatusData);
       const data = memoizedMode === 'multi' ? {
         position: Number(playerStatusData[0]),
         diceValue: Number(playerStatusData[1]),
@@ -637,15 +631,6 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
 
   // Process game activities data
   useEffect(() => {
-    console.log('[useGame] Processing game activities data:', {
-      gameActivitiesData,
-      mode: memoizedMode,
-      isMulti: memoizedMode === 'multi',
-      dataExists: !!gameActivitiesData,
-      dataType: typeof gameActivitiesData,
-      isArray: Array.isArray(gameActivitiesData)
-    });
-
     if (gameActivitiesData && memoizedMode === 'multi') {
       const activities = (gameActivitiesData as any[]).map(activity => ({
         actor: activity.actor,
@@ -654,23 +639,13 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
         amount: Number(activity.amount),
         timestamp: Number(activity.timestamp)
       }));
-      console.log('[useGame] Processed activities:', activities);
       setGameActivities(activities);
-    } else {
-      console.log('[useGame] Not processing activities - conditions not met');
-      if (memoizedMode !== 'multi') {
-        console.log('[useGame] Reason: Not in multiplayer mode');
-      }
-      if (!gameActivitiesData) {
-        console.log('[useGame] Reason: No game activities data');
-      }
     }
   }, [gameActivitiesData, memoizedMode]);
 
   // Fetch all game data function with logging - optimized to reduce calls
   const fetchAllGameData = useCallback(async () => {
     if (!address) return;
-    console.log('[useGame] fetchAllGameData called');
     setIsLoading(true);
     try {
       await Promise.all([
@@ -682,7 +657,6 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
         refetchMaxSupply(),
         ...(memoizedMode === 'multi' ? [refetchGameActivities(), refetchPeerPositions()] : []),
       ]);
-      console.log('[useGame] fetchAllGameData completed successfully');
     } catch (error) {
       console.error('[useGame] fetchAllGameData failed:', error);
       toast({
@@ -696,7 +670,6 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
   }, [address, refetchPlayerStatus, refetchBoardData, refetchGameStats, refetchPlayerStats, refetchTotalSupply, refetchMaxSupply, refetchGameActivities, refetchPeerPositions, memoizedMode]);
 
   const fetchPlatformData = useCallback(async () => {
-    console.log('[useGame] fetchPlatformData called');
     setIsLoading(true);
     try {
       await Promise.all([
@@ -705,7 +678,6 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
         refetchMaxSupply(),
         ...(memoizedMode === 'multi' ? [refetchGameActivities()] : []),
       ]);
-      console.log('[useGame] fetchPlatformData completed successfully');
     } catch (error) {
       console.error('[useGame] fetchPlatformData failed:', error);
       toast({
@@ -720,7 +692,6 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
 
   const fetchPlayerData = useCallback(async () => {
     if (!address) return;
-    console.log('[useGame] fetchPlayerData called');
     setIsLoading(true);
     try {
       await Promise.all([
@@ -729,7 +700,6 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
         refetchPlayerStats(),
         ...(memoizedMode === 'multi' ? [refetchGameActivities(), refetchPeerPositions()] : []),
       ]);
-      console.log('[useGame] fetchPlayerData completed successfully');
     } catch (error) {
       console.error('[useGame] fetchPlayerData failed:', error);
       toast({
@@ -839,9 +809,10 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
       
       // Handle "Another transaction has higher priority" - this is not a real error
       if (errorMsg.includes('Another transaction has higher priority') || errorMsg.includes('txpool not responding')) {
-        console.log('[useGame] Transaction priority issue detected, this is normal and will resolve automatically');
+        console.log('[useGame] Transaction priority/network issue detected, this is normal and will resolve automatically');
         // Don't set any error state - let the success handler take care of it if it works
         // Don't reset claim state - let it continue
+        // Keep the claim state as 'claiming' so UI shows proper pending state
         return; // Exit early to prevent error state from being set
       }
       
@@ -899,14 +870,13 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
   // Handle successful claim rewards
   useEffect(() => {
     if (isClaimRewardsConfirmed) {
-      console.log('[useGame] Claim rewards confirmed successfully');
+      // Set success state immediately
       setClaimRewardsSuccess(true);
-      setClaimRewardsError(null);
+      setClaimRewardsError(null); // Clear any previous errors
       claimStateRef.current = 'claimed'; // Mark as claimed
       
       // Refetch player stats to get updated ruggedCount and totalRewardWon
       if (memoizedMode === 'multi') {
-        console.log('[useGame] Refetching player stats after successful claim');
         refetchPlayerStats();
       }
       
@@ -922,7 +892,6 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
   useEffect(() => {
     return () => {
       if (autoClaimTimeoutRef.current) {
-        console.log('[useGame] Cleaning up auto-claim timeout on unmount');
         clearTimeout(autoClaimTimeoutRef.current);
         autoClaimTimeoutRef.current = null;
       }
@@ -935,14 +904,6 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
     const canRestart = memoizedMode === 'multi' 
       ? (gameState?.hasFinished && claimRewardsSuccess) || isPlayerStatusError 
       : true;
-
-    console.log('[useGame] Return object state:', {
-      mode: memoizedMode,
-      gameActivities: gameActivities,
-      peerPositions: peerPositions,
-      gameActivitiesLength: gameActivities?.length || 0,
-      peerPositionsLength: peerPositions?.positions?.length || 0
-    });
 
     return {
       address,

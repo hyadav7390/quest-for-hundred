@@ -59,6 +59,14 @@ const VictoryModal = ({
   const [showGameEndFireworks, setShowGameEndFireworks] = useState(false);
   const [showClaimFireworks, setShowClaimFireworks] = useState(false);
 
+  // Optimized button state computation
+  const buttonDisabled = isRestarting || !canRestart || isClaimRewardsPending;
+  const buttonText = isRestarting 
+    ? 'Starting New Game...' 
+    : !canRestart 
+      ? 'Claim Rewards First' 
+      : 'Play Again';
+
   // Trigger game end fireworks when modal opens
   useEffect(() => {
     if (isOpen) {
@@ -425,19 +433,14 @@ const VictoryModal = ({
           <motion.button
             onClick={onRestart}
             className="w-full py-3 bg-gradient-to-r from-accent-main to-success text-white font-bold rounded-xl shadow-lg hover:from-accent-main/80 hover:to-success/80 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            whileHover={{ scale: (isRestarting || isClaimRewardsPending) ? 1 : 1.02 }}
-            whileTap={{ scale: (isRestarting || isClaimRewardsPending) ? 1 : 0.98 }}
-            disabled={isRestarting || !canRestart || isClaimRewardsPending}
+            whileHover={{ scale: buttonDisabled ? 1 : 1.02 }}
+            whileTap={{ scale: buttonDisabled ? 1 : 0.98 }}
+            disabled={buttonDisabled}
           >
             <div className="flex items-center justify-center space-x-2">
               <RotateCcw className="w-4 h-4" />
               <span className="text-base">
-                {isRestarting 
-                  ? 'Starting New Game...' 
-                  : !canRestart 
-                    ? 'Claim Rewards First' 
-                    : 'Play Again'
-                }
+                {buttonText}
               </span>
             </div>
           </motion.button>
