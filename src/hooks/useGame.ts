@@ -13,6 +13,21 @@ import { SINGLE_PLAYER_CONTRACT_ADDRESS, MULTI_PLAYER_CONTRACT_ADDRESS, REWARD_T
 import { monadTestnet } from '@/types/monadTestnet';
 import { formatEther } from 'viem';
 
+// Global guards to avoid duplicate claims across component instances (e.g., StrictMode double effects)
+const GLOBAL_CLAIM_MUTEX_KEY = '__RUGGROLL_CLAIM_MUTEX__';
+const GLOBAL_CLAIMED_SESSION_KEY = '__RUGGROLL_CLAIMED_SESSION__';
+
+function getGlobalValue<T>(key: string, defaultValue: T): T {
+  const g = globalThis as any;
+  if (typeof g[key] === 'undefined') {
+    g[key] = defaultValue;
+  }
+  return g[key] as T;
+}
+function setGlobalValue<T>(key: string, value: T) {
+  (globalThis as any)[key] = value;
+}
+
 function handleContractError(error: any, fallbackMessage = 'Transaction failed') {
   console.error('[handleContractError]', { error, message: error?.message });
   const errorMsg = error?.message || '';
@@ -84,12 +99,29 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
   // Add a ref to track the latest game state for claim operations
   const gameStateRef = useRef(gameState);
   
-  // Add a ref to track the auto-claim timeout
-  const autoClaimTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Add a ref to track if auto-claim has been initiated for this game session
+  const autoClaimInitiatedRef = useRef<boolean>(false);
+  
+  // Add a ref to track the current game position to detect new games
+  const lastGamePositionRef = useRef<number>(1);
+  
+  // Sticky canRestart to avoid flicker when reads toggle after success
+  const [canRestartSticky, setCanRestartSticky] = useState(false);
   
   // Update the ref whenever gameState changes
   useEffect(() => {
     gameStateRef.current = gameState;
+    
+    // Reset auto-claim initiated flag when a new game starts (position resets to 1)
+    if (gameState && gameState.position === 1 && lastGamePositionRef.current > 1) {
+      console.log('[useGame] New game detected (position reset to 1), resetting auto-claim flag');
+      autoClaimInitiatedRef.current = false;
+    }
+    
+    // Update last position
+    if (gameState?.position) {
+      lastGamePositionRef.current = gameState.position;
+    }
   }, [gameState]);
 
   // Contract selection - memoized to prevent recreation
@@ -386,45 +418,41 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
   }, [address, writeRollDice, isRollDicePending, isRollDiceConfirming, contractAddress, contractAbi, rollFee, gameState]);
 
   // --- Claim Rewards ---
+  // This function is the single entry point for triggering a claim. It is safe to call multiple times.
   const claimRewards = useCallback(async () => {
     if (!address) {
-      return;
-    }
-    
-    // Prevent multiple claim attempts
-    if (claimStateRef.current === 'claiming' || claimStateRef.current === 'claimed') {
-      console.log('[useGame] Claim already in progress or completed, skipping.');
+      console.log('[useGame] claimRewards: No address, skipping');
       return;
     }
 
-    // Get fresh game state to avoid stale closures
+    // Use a global mutex to prevent multiple instances (due to StrictMode) from firing simultaneously
+    if (getGlobalValue<boolean>(GLOBAL_CLAIM_MUTEX_KEY, false)) {
+      console.log('[useGame] claimRewards: Global mutex is active, skipping');
+      return;
+    }
+
+    // Prevent new claims if one is already in progress, completed, or has errored and needs manual retry.
+    if (claimStateRef.current !== 'idle') {
+      console.log(`[useGame] claimRewards: Skipping, claim process already active. State: ${claimStateRef.current}`);
+      return;
+    }
+
+    // Get fresh game state from ref to ensure we have the latest data
     const currentGameState = gameStateRef.current;
     if (!currentGameState?.hasFinished) {
-      console.log('[useGame] Game not finished yet, skipping claim.');
+      console.log('[useGame] claimRewards: Game not finished yet, skipping');
       return;
     }
 
-    // Check if rewards were already claimed
-    if (memoizedMode === 'single' && currentGameState.nunuEarned === 0) {
-      console.log('[useGame] Single player: nunuEarned is 0, rewards already claimed');
-      claimStateRef.current = 'claimed';
-      setClaimRewardsSuccess(true);
-      setClaimRewardsError(null);
-      return;
-    }
+    console.log('[useGame] claimRewards: Initiating claim process...');
     
-    if (memoizedMode === 'multi' && !playerStatusData && isPlayerStatusFetched) {
-      console.log('[useGame] Multiplayer: playerStatusData is null, rewards already claimed');
-      claimStateRef.current = 'claimed';
-      setClaimRewardsSuccess(true);
-      setClaimRewardsError(null);
-      return;
-    }
-
-    // Start claiming
+    // Lock the mutex and set internal state to 'claiming'
+    setGlobalValue(GLOBAL_CLAIM_MUTEX_KEY, true);
     claimStateRef.current = 'claiming';
-    console.log('[useGame] Starting claim process...');
-    
+    setIsClaimRewardsPending(true);
+    setClaimRewardsError(null);
+    setClaimRewardsSuccess(false);
+
     try {
       const txConfig = memoizedMode === 'multi'
         ? {
@@ -445,61 +473,185 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
             account: address,
             gas: 500000n
           };
-      await writeClaimRewards(txConfig);
+      
+      console.log('[useGame] claimRewards: Calling writeClaimRewards with config:', txConfig.functionName);
+      // Fire-and-forget call; lifecycle is handled by the useEffect below
+      writeClaimRewards(txConfig);
     } catch (error: any) {
-      console.error('[useGame] Claim failed:', error);
+      // This catch is for synchronous errors when preparing the transaction
+      console.error('[useGame] claimRewards: Synchronous error during write call:', error);
       claimStateRef.current = 'error';
-      setClaimRewardsError('Failed to claim rewards. Please try again.');
-      throw error; // Re-throw to be caught by the UI handler
+      setIsClaimRewardsPending(false);
+      handleContractError(error, 'Failed to claim rewards.');
     }
-  }, [address, memoizedMode, playerStatusData, isPlayerStatusFetched, writeClaimRewards]); // Keep only essential dependencies
+  }, [address, memoizedMode, writeClaimRewards]); // Minimal dependencies
 
-  // Auto-claim when game finishes - optimized to prevent multiple calls
+  // Auto-claim trigger: When game finishes, automatically initiate the claim process once.
   useEffect(() => {
-    // Clear any existing timeout first
-    if (autoClaimTimeoutRef.current) {
-      clearTimeout(autoClaimTimeoutRef.current);
-      autoClaimTimeoutRef.current = null;
-    }
-    
-    // Early exit conditions
-    if (!gameState?.hasFinished) {
-      return;
-    }
-    
-    // Don't auto-claim if already in progress, completed, or errored
-    if (claimStateRef.current !== 'idle') {
-      return;
-    }
-    
-    // Don't auto-claim if wagmi is already processing a claim
-    if (isClaimRewardsPendingWagmi || isClaimRewardsConfirming) {
-      return;
-    }
-    
-    console.log('[useGame] Game finished, scheduling auto-claim...');
-    
-    // Use a ref to track the timeout and prevent multiple timeouts
-    autoClaimTimeoutRef.current = setTimeout(() => {
-      // Triple-check state before claiming to prevent race conditions
-      if (
-        claimStateRef.current === 'idle' && 
-        gameStateRef.current?.hasFinished &&
-        !isClaimRewardsPendingWagmi &&
-        !isClaimRewardsConfirming
-      ) {
-        claimRewards();
-      }
-      autoClaimTimeoutRef.current = null;
-    }, 1500); // Increased delay slightly for more stability
+    const claimSessionSignature = `${address}-${memoizedMode}-v1`;
+    const isSessionClaimed = getGlobalValue<string | null>(GLOBAL_CLAIMED_SESSION_KEY, null) === claimSessionSignature;
 
-    return () => {
-      if (autoClaimTimeoutRef.current) {
-        clearTimeout(autoClaimTimeoutRef.current);
-        autoClaimTimeoutRef.current = null;
+    // Exit if the session is already globally marked as claimed. This prevents re-triggering on navigation due to cached state.
+    if (isSessionClaimed) {
+      return;
+    }
+
+    // Exit if game is not finished or a claim has already been initiated in this instance
+    if (!gameState?.hasFinished || claimStateRef.current !== 'idle') {
+      return;
+    }
+    
+    console.log('[useGame] Auto-claim trigger: Game finished, initiating claim.');
+    
+    // Delay claim to allow UI to update (e.g., show victory modal)
+    const timeoutId = setTimeout(() => {
+      // Double-check state before claiming, in case something changed during the delay
+      if (gameStateRef.current?.hasFinished && claimStateRef.current === 'idle') {
+        claimRewards();
+      } else {
+        console.log('[useGame] Auto-claim cancelled: State changed during delay. Current state:', claimStateRef.current);
       }
-    };
-  }, [gameState?.hasFinished, isClaimRewardsPendingWagmi, isClaimRewardsConfirming]); // Added wagmi state dependencies for safety
+    }, 1500); // 1.5s delay
+    
+    return () => clearTimeout(timeoutId);
+  }, [gameState?.hasFinished, claimRewards, address, memoizedMode]); // Depends only on finish state and the stable claim function
+
+  // Unified claim lifecycle manager: This single useEffect handles success, error, and fallback checks.
+  useEffect(() => {
+    const claimSessionSignature = `${address}-${memoizedMode}-v1`;
+
+    // 1. Success Case: Transaction is confirmed
+    if (isClaimRewardsConfirmed) {
+      if (claimStateRef.current !== 'claimed') {
+        console.log('[useGame] Claim Lifecycle: Success confirmed.');
+        claimStateRef.current = 'claimed';
+        setClaimRewardsSuccess(true);
+        setClaimRewardsError(null);
+        setIsClaimRewardsPending(false);
+        setGlobalValue(GLOBAL_CLAIMED_SESSION_KEY, claimSessionSignature);
+        setGlobalValue(GLOBAL_CLAIM_MUTEX_KEY, false); // Release mutex
+        
+        toast({
+          title: 'Rewards Claimed!',
+          description: `Your ${REWARD_TOKEN.symbol} tokens have been successfully claimed.`,
+          variant: 'default',
+        });
+        
+        if (memoizedMode === 'multi') {
+          refetchPlayerStats();
+        }
+      }
+      return; // End of lifecycle
+    }
+
+    // 2. Error Case: Transaction write or receipt error occurred
+    const error = claimRewardsWriteError || claimRewardsReceiptError;
+    if (error && claimStateRef.current === 'claiming') {
+      const errorMsg = error.message || '';
+      console.error('[useGame] Claim Lifecycle: Error detected:', errorMsg);
+
+      // Ignore transient network/nonce errors, as the fallback check below will verify the outcome
+      if (
+        errorMsg.includes('Another transaction has higher priority') ||
+        errorMsg.includes('txpool not responding') ||
+        errorMsg.includes('Transaction nonce too low')
+      ) {
+        console.warn('[useGame] Claim Lifecycle: Transient network/nonce error detected. Will rely on fallback verification.');
+        return; // Do not set error state yet; wait for fallback.
+      }
+      
+      // For any other terminal error, the process is terminated. Release the mutex.
+      setGlobalValue(GLOBAL_CLAIM_MUTEX_KEY, false);
+
+      let errorMessage = '';
+      let errorTitle = 'Transaction Failed';
+      let errorVariant: 'destructive' | 'default' = 'destructive';
+
+      // Handle specific, known contract reverts
+      if (errorMsg.includes('NoRewardsToClaim') || errorMsg.includes('already claimed') || errorMsg.includes('No rewards to claim')) {
+        errorMessage = 'Rewards have already been claimed for this game.';
+        errorTitle = 'Already Claimed';
+        errorVariant = 'default';
+        // This is a success-like state, so we mark it as 'claimed'
+        claimStateRef.current = 'claimed';
+        setClaimRewardsSuccess(true);
+        setGlobalValue(GLOBAL_CLAIMED_SESSION_KEY, claimSessionSignature);
+      } else if (errorMsg.includes('finish first')) {
+        errorMessage = 'Please finish the game first before claiming rewards.';
+        errorTitle = 'Game Not Finished';
+        claimStateRef.current = 'error';
+      } else if (errorMsg.includes('User rejected the request')) {
+        errorMessage = 'You rejected the transaction in your wallet.';
+        errorTitle = 'Transaction Rejected';
+        claimStateRef.current = 'error';
+      } else {
+        errorMessage = errorMsg.split('Details:').length > 1
+          ? errorMsg.split('Details:')[1].split('Version:')[0].trim()
+          : 'Failed to claim rewards. Please try again.';
+        claimStateRef.current = 'error';
+      }
+      
+      console.log(`[useGame] Claim Lifecycle: Processed error. New state: ${claimStateRef.current}`);
+      setClaimRewardsError(errorMessage);
+      setIsClaimRewardsPending(false);
+      
+      toast({
+        title: errorTitle,
+        description: errorMessage,
+        variant: errorVariant,
+      });
+
+      return; // End of lifecycle
+    }
+    
+    // 3. Fallback Verification: Periodically check contract state if a claim is pending
+    // This catches cases where the transaction succeeded but the UI missed the event (e.g., after a network error)
+    if (claimStateRef.current === 'claiming') {
+      const singlePlayerClaimed = memoizedMode === 'single' && gameState?.hasFinished && gameState.nunuEarned === 0;
+      const multiPlayerClaimed = memoizedMode === 'multi' && isPlayerStatusFetched && !playerStatusData;
+
+      if (singlePlayerClaimed || multiPlayerClaimed) {
+        console.log('[useGame] Claim Lifecycle: Fallback check confirmed rewards have been claimed.');
+        claimStateRef.current = 'claimed';
+        setClaimRewardsSuccess(true);
+        setClaimRewardsError(null);
+        setIsClaimRewardsPending(false);
+        setGlobalValue(GLOBAL_CLAIMED_SESSION_KEY, claimSessionSignature);
+        setGlobalValue(GLOBAL_CLAIM_MUTEX_KEY, false); // Release mutex
+
+        toast({
+          title: 'Rewards Claimed!',
+          description: `Your ${REWARD_TOKEN.symbol} tokens were successfully claimed.`,
+          variant: 'default',
+        });
+        
+        if (memoizedMode === 'multi') {
+          refetchPlayerStats();
+        }
+      }
+    }
+    
+    // 4. UI Synchronization: Ensure UI is consistent if session was marked claimed globally
+    const isSessionClaimed = getGlobalValue<string | null>(GLOBAL_CLAIMED_SESSION_KEY, null) === claimSessionSignature;
+    if (isSessionClaimed && claimStateRef.current !== 'claimed') {
+        console.log('[useGame] Claim Lifecycle: Syncing UI from global session key.');
+        claimStateRef.current = 'claimed';
+        setClaimRewardsSuccess(true);
+        setIsClaimRewardsPending(false);
+        setClaimRewardsError(null);
+    }
+
+  }, [
+    address,
+    memoizedMode,
+    isClaimRewardsConfirmed,
+    claimRewardsWriteError,
+    claimRewardsReceiptError,
+    gameState,
+    isPlayerStatusFetched,
+    playerStatusData,
+    refetchPlayerStats,
+  ]);
 
   // Process contract data
   useEffect(() => {
@@ -543,6 +695,7 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
       claimStateRef.current = 'idle';
       setClaimRewardsError(null);
       setClaimRewardsSuccess(false);
+      setCanRestartSticky(false);
     }
   }, [gameState?.hasFinished, gameState?.position]);
 
@@ -755,6 +908,7 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
     setClaimRewardsSuccess(false); // Reset claim success state
     setClaimRewardsError(null); // Reset claim error state
     claimStateRef.current = 'idle'; // Reset claim state
+    setCanRestartSticky(false);
     // After resetting, we should refetch to get the 'not in game' status to show the join button.
     refetchPlayerStatus();
   }, [refetchPlayerStatus]);
@@ -800,110 +954,34 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
     }
   }, [joinGameError]);
 
-  // Handle claim rewards write/receipt errors
+  // Keep canRestart sticky once it becomes allowed; reset only on true new game start
   useEffect(() => {
-    if (claimRewardsWriteError || claimRewardsReceiptError) {
-      const errorMsg = (claimRewardsWriteError || claimRewardsReceiptError)?.message || '';
-      
-      console.error('[useGame] Claim rewards error:', errorMsg);
-      
-      // Handle "Another transaction has higher priority" - this is not a real error
-      if (errorMsg.includes('Another transaction has higher priority') || errorMsg.includes('txpool not responding')) {
-        console.log('[useGame] Transaction priority/network issue detected, this is normal and will resolve automatically');
-        // Don't set any error state - let the success handler take care of it if it works
-        // Don't reset claim state - let it continue
-        // Keep the claim state as 'claiming' so UI shows proper pending state
-        return; // Exit early to prevent error state from being set
-      }
-      
-      // Handle already claimed scenarios
-      if (errorMsg.includes('NoRewardsToClaim') || errorMsg.includes('already claimed') || errorMsg.includes('No rewards to claim') || errorMsg.includes('not in a game')) {
-        const errorMessage = 'Rewards have already been claimed for this game.';
-        setClaimRewardsError(errorMessage);
-        setClaimRewardsSuccess(true); // Treat as success since rewards were already claimed
-        claimStateRef.current = 'claimed'; // Mark as claimed
-        toast({
-          title: 'Already Claimed',
-          description: errorMessage,
-          variant: 'default',
-        });
-      } else if (errorMsg.includes('finish first')) {
-        const errorMessage = 'Please finish the game first before claiming rewards.';
-        setClaimRewardsError(errorMessage);
-        claimStateRef.current = 'error'; // Mark as error
-        toast({
-          title: 'Game Not Finished',
-          description: errorMessage,
-          variant: 'destructive',
-        });
-      } else if (errorMsg.includes('User rejected the request')) {
-        const errorMessage = 'You rejected the transaction in your wallet.';
-        setClaimRewardsError(errorMessage);
-        claimStateRef.current = 'error'; // Mark as error
-        toast({
-          title: 'Transaction Rejected',
-          description: errorMessage,
-          variant: 'destructive',
-        });
-      } else if (errorMsg.split('Details:').length > 1) {
-        const errorMessage = errorMsg.split('Details:')[1].split('Version:')[0].trim();
-        setClaimRewardsError(errorMessage);
-        claimStateRef.current = 'error'; // Mark as error
-        toast({
-          title: 'Transaction Failed',
-          description: errorMessage,
-          variant: 'destructive',
-        });
-      } else {
-        const errorMessage = 'Failed to claim rewards. Please try again.';
-        setClaimRewardsError(errorMessage);
-        claimStateRef.current = 'error'; // Mark as error for other errors
-        toast({
-          title: 'Transaction Failed',
-          description: errorMessage,
-          variant: 'destructive',
-        });
-      }
+    const computed = memoizedMode === 'multi' 
+      ? (gameState?.hasFinished && claimRewardsSuccess) || isPlayerStatusError 
+      : true;
+    if (computed && !canRestartSticky) {
+      setCanRestartSticky(true);
     }
-  }, [claimRewardsWriteError, claimRewardsReceiptError]);
-
-  // Handle successful claim rewards
-  useEffect(() => {
-    if (isClaimRewardsConfirmed) {
-      // Set success state immediately
-      setClaimRewardsSuccess(true);
-      setClaimRewardsError(null); // Clear any previous errors
-      claimStateRef.current = 'claimed'; // Mark as claimed
-      
-      // Refetch player stats to get updated ruggedCount and totalRewardWon
-      if (memoizedMode === 'multi') {
-        refetchPlayerStats();
-      }
-      
-      toast({
-        title: 'Rewards Claimed!',
-        description: `Your ${REWARD_TOKEN.symbol} tokens have been successfully claimed.`,
-        variant: 'default',
-      });
-    }
-  }, [isClaimRewardsConfirmed, memoizedMode, refetchPlayerStats]);
+  }, [memoizedMode, gameState?.hasFinished, claimRewardsSuccess, isPlayerStatusError, canRestartSticky]);
   
-  // Cleanup auto-claim timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (autoClaimTimeoutRef.current) {
-        clearTimeout(autoClaimTimeoutRef.current);
-        autoClaimTimeoutRef.current = null;
-      }
-    };
-  }, []);
-
   return useMemo(() => {
     // For multiplayer: player can only restart if rewards are claimed (player no longer in game)
     // For single player: player can restart anytime after finishing
-    const canRestart = memoizedMode === 'multi' 
+    const canRestartComputed = memoizedMode === 'multi' 
       ? (gameState?.hasFinished && claimRewardsSuccess) || isPlayerStatusError 
       : true;
+
+    // Debug logging for canRestart calculation
+    if (gameState?.hasFinished) {
+      console.log('[useGame] canRestart calculation:', {
+        mode: memoizedMode,
+        hasFinished: gameState?.hasFinished,
+        claimRewardsSuccess,
+        isPlayerStatusError,
+        canRestart: canRestartSticky || canRestartComputed,
+        claimState: claimStateRef.current
+      });
+    }
 
     return {
       address,
@@ -926,10 +1004,10 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
       isLoadingStartGame: isLoadingStartGame || isStartGamePending || isStartGameConfirming,
       isLoadingBoard,
       isWaitingForVRF: isWaitingForVRF || isRollDicePending || isRollDiceConfirming,
-      isClaimRewardsPending: isClaimRewardsConfirming || isClaimRewardsPendingWagmi,
+      isClaimRewardsPending: isClaimRewardsConfirming || isClaimRewardsPendingWagmi || isClaimRewardsPending,
       claimRewardsError,
       claimRewardsSuccess,
-      canRestart, // New property to control restart availability
+      canRestart: canRestartSticky || canRestartComputed, // sticky to avoid flicker
       fetchPlatformData,
       fetchPlayerData,
       fetchLeaderboard,
@@ -952,8 +1030,9 @@ export const useGame = (mode: 'single' | 'multi' = 'single') => {
     isLoading, isStartGameConfirming, isRollDiceConfirming, isClaimRewardsConfirming, isJoinGamePending, isLoadingBoard, isJoinGameInProgress,
     isLoadingStartGame, isStartGamePending, isLoadingBoard,
     isWaitingForVRF, isRollDicePending,
-    isClaimRewardsConfirming, isClaimRewardsPendingWagmi,
+    isClaimRewardsConfirming, isClaimRewardsPendingWagmi, isClaimRewardsPending,
     claimRewardsError, claimRewardsSuccess, fetchPlatformData, fetchPlayerData, fetchLeaderboard,
-    startGame, joinGame, rollDice, claimRewards, isPlayerStatusFetched, playerStatusError, peerPositions, gameActivities, refetchGameActivities, refetchPeerPositions, gameFinishBonus
+    startGame, joinGame, rollDice, claimRewards, isPlayerStatusFetched, playerStatusError, peerPositions, gameActivities, refetchGameActivities, refetchPeerPositions, gameFinishBonus,
+    canRestartSticky
   ]);
 }; 

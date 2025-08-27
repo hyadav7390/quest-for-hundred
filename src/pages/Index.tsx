@@ -672,6 +672,7 @@ const Index = () => {
           claimRewardsSuccess={contractInfo.claimRewardsSuccess}
           onClose={() => { /* Victory modal is now controlled by gameState */ }}
           canRestart={canRestart}
+          mode={mode}
         />
 
         <NewGameConfirmation

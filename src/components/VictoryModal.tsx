@@ -28,6 +28,7 @@ interface VictoryModalProps {
   claimRewardsSuccess?: boolean;
   canRestart?: boolean; // New prop to control restart availability
   onClose: () => void;
+  mode?: 'single' | 'multi';
 }
 
 const VictoryModal = ({
@@ -54,18 +55,37 @@ const VictoryModal = ({
   claimRewardsSuccess = false,
   canRestart = true, // Default to true for backwards compatibility
   onClose,
+  mode = 'single',
 }: VictoryModalProps) => {
   const navigate = useNavigate();
   const [showGameEndFireworks, setShowGameEndFireworks] = useState(false);
   const [showClaimFireworks, setShowClaimFireworks] = useState(false);
 
-  // Optimized button state computation
-  const buttonDisabled = isRestarting || !canRestart || isClaimRewardsPending;
-  const buttonText = isRestarting 
-    ? 'Starting New Game...' 
-    : !canRestart 
-      ? 'Claim Rewards First' 
-      : 'Play Again';
+  // Debug logging for props changes
+  useEffect(() => {
+    if (isOpen) {
+      console.log('[VictoryModal] Modal opened with props:', {
+        isClaimRewardsPending,
+        claimRewardsError,
+        claimRewardsSuccess,
+        canRestart,
+        isRestarting
+      });
+    }
+  }, [isOpen, isClaimRewardsPending, claimRewardsError, claimRewardsSuccess, canRestart, isRestarting]);
+
+  // Track claim success changes specifically
+  useEffect(() => {
+    console.log('[VictoryModal] claimRewardsSuccess changed to:', claimRewardsSuccess);
+    if (claimRewardsSuccess) {
+      console.log('[VictoryModal] Claim successful! canRestart should be true, current value:', canRestart);
+    }
+  }, [claimRewardsSuccess, canRestart]);
+
+  // Track canRestart changes
+  useEffect(() => {
+    console.log('[VictoryModal] canRestart changed to:', canRestart);
+  }, [canRestart]);
 
   // Trigger game end fireworks when modal opens
   useEffect(() => {
@@ -345,35 +365,39 @@ const VictoryModal = ({
             <h3 className="text-base font-semibold text-text-high mb-3">Game Statistics</h3>
             
             <div className="grid grid-cols-2 gap-2">
-              {/* Players Rugged - Highlighted if > 0 */}
-              <div className={`p-2 rounded-lg border flex items-center justify-between ${
-                displayRuggedCount > 0 
-                  ? 'bg-warning/10 border-warning/30 shadow-sm' 
-                  : 'bg-surface/50 border-accent-main/10'
-              }`}>
-                <div className="flex items-center space-x-2">
-                  <TrendingDown className={`w-4 h-4 ${displayRuggedCount > 0 ? 'text-warning' : 'text-accent-main'}`} />
-                  <span className="text-xs font-medium text-text-high">Players Rugged</span>
-                </div>
-                <span className={`text-sm font-bold ${displayRuggedCount > 0 ? 'text-warning' : 'text-text-high'}`}>
-                  {displayRuggedCount}
-                </span>
-              </div>
+              {mode === 'multi' && (
+                <>
+                  {/* Players Rugged - Highlighted if > 0 */}
+                  <div className={`p-2 rounded-lg border flex items-center justify-between ${
+                    displayRuggedCount > 0 
+                      ? 'bg-warning/10 border-warning/30 shadow-sm' 
+                      : 'bg-surface/50 border-accent-main/10'
+                  }`}>
+                    <div className="flex items-center space-x-2">
+                      <TrendingDown className={`w-4 h-4 ${displayRuggedCount > 0 ? 'text-warning' : 'text-accent-main'}`} />
+                      <span className="text-xs font-medium text-text-high">Players Rugged</span>
+                    </div>
+                    <span className={`text-sm font-bold ${displayRuggedCount > 0 ? 'text-warning' : 'text-text-high'}`}>
+                      {displayRuggedCount}
+                    </span>
+                  </div>
 
-              {/* Total Reward Won - Highlighted if > 0 */}
-              <div className={`p-2 rounded-lg border flex items-center justify-between ${
-                displayRewardWon > 0 
-                  ? 'bg-success/10 border-success/30 shadow-sm' 
-                  : 'bg-surface/50 border-accent-main/10'
-              }`}>
-                <div className="flex items-center space-x-2">
-                  <Coins className={`w-4 h-4 ${displayRewardWon > 0 ? 'text-success' : 'text-accent-main'}`} />
-                  <span className="text-xs font-medium text-text-high">Reward Won</span>
-                </div>
-                <span className={`text-sm font-bold ${displayRewardWon > 0 ? 'text-success' : 'text-text-high'}`}>
-                  {displayRewardWon ? (displayRewardWon / 1e18).toFixed(2) : 0} MON
-                </span>
-              </div>
+                  {/* Total Reward Won - Highlighted if > 0 */}
+                  <div className={`p-2 rounded-lg border flex items-center justify-between ${
+                    displayRewardWon > 0 
+                      ? 'bg-success/10 border-success/30 shadow-sm' 
+                      : 'bg-surface/50 border-accent-main/10'
+                  }`}>
+                    <div className="flex items-center space-x-2">
+                      <Coins className={`w-4 h-4 ${displayRewardWon > 0 ? 'text-success' : 'text-accent-main'}`} />
+                      <span className="text-xs font-medium text-text-high">Reward Won</span>
+                    </div>
+                    <span className={`text-sm font-bold ${displayRewardWon > 0 ? 'text-success' : 'text-text-high'}`}>
+                      {displayRewardWon ? (displayRewardWon / 1e18).toFixed(2) : 0} MON
+                    </span>
+                  </div>
+                </>
+              )}
 
               {/* $ROLL Coins - Highlighted if > 0 */}
               <div className={`p-2 rounded-lg border flex items-center justify-between ${
@@ -430,27 +454,32 @@ const VictoryModal = ({
         </div>
 
         <div className="space-y-3">
-          <motion.button
-            onClick={onRestart}
-            className="w-full py-3 bg-gradient-to-r from-accent-main to-success text-white font-bold rounded-xl shadow-lg hover:from-accent-main/80 hover:to-success/80 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            whileHover={{ scale: buttonDisabled ? 1 : 1.02 }}
-            whileTap={{ scale: buttonDisabled ? 1 : 0.98 }}
-            disabled={buttonDisabled}
-          >
-            <div className="flex items-center justify-center space-x-2">
-              <RotateCcw className="w-4 h-4" />
-              <span className="text-base">
-                {buttonText}
-              </span>
-            </div>
-          </motion.button>
+          {/* --- ACTION BUTTONS --- */}
+          {/* Play Again button only shows when a restart is possible */}
+          {canRestart && (
+            <motion.button
+              onClick={onRestart}
+              className="w-full py-3 bg-gradient-to-r from-accent-main to-success text-white font-bold rounded-xl shadow-lg hover:from-accent-main/80 hover:to-success/80 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              whileHover={{ scale: (isRestarting) ? 1 : 1.02 }}
+              whileTap={{ scale: (isRestarting) ? 1 : 0.98 }}
+              disabled={isRestarting}
+            >
+              <div className="flex items-center justify-center space-x-2">
+                <RotateCcw className="w-4 h-4" />
+                <span className="text-base">
+                  {isRestarting ? 'Starting New Game...' : 'Play Again'}
+                </span>
+              </div>
+            </motion.button>
+          )}
 
+          {/* Go Home button is always available, but disabled during claim */}
           <motion.button
             onClick={handleGoHome}
             className="w-full py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold rounded-xl shadow-lg hover:from-blue-500/80 hover:to-purple-600/80 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             whileHover={{ scale: isClaimRewardsPending ? 1 : 1.02 }}
             whileTap={{ scale: isClaimRewardsPending ? 1 : 0.98 }}
-            disabled={isClaimRewardsPending}
+            disabled={isClaimRewardsPending || isRestarting}
           >
             <div className="flex items-center justify-center space-x-2">
               <Home className="w-4 h-4" />
@@ -458,8 +487,10 @@ const VictoryModal = ({
             </div>
           </motion.button>
 
-          {/* Claim Rewards Status Display */}
-          {isClaimRewardsPending && !claimRewardsSuccess && (
+          {/* --- CLAIM STATUS & ACTIONS --- */}
+
+          {/* Pending State */}
+          {isClaimRewardsPending && (
             <motion.div 
               className="w-full py-3 text-center text-accent-main font-semibold bg-accent-main/10 rounded-xl border border-accent-main/20"
               initial={{ opacity: 0, y: 10 }}
@@ -474,6 +505,7 @@ const VictoryModal = ({
             </motion.div>
           )}
 
+          {/* Success State */}
           {claimRewardsSuccess && (
             <motion.div 
               className="w-full py-3 text-center text-success font-semibold bg-success/10 rounded-xl border border-success/20 relative overflow-hidden"
@@ -539,7 +571,8 @@ const VictoryModal = ({
               <p className="text-xs text-success/70 mt-1">Your tokens have been sent to your wallet</p>
             </motion.div>
           )}
-
+          
+          {/* Error State + Retry Button */}
           {claimRewardsError && !isClaimRewardsPending && !claimRewardsSuccess && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
