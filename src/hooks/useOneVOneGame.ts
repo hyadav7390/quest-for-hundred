@@ -362,6 +362,7 @@ export const useOneVOneGame = (overrideMatchId?: bigint) => {
           abi: ONE_V_ONE_GAME_ABI,
           functionName: 'roll',
           args: [matchId],
+          gas: 100000n,
         },
         'Dice rolled',
       );
