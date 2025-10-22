@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import Home from "./pages/Home";
 import GameLeaderboard from "./pages/GameLeaderboard";
 import NotFound from "./pages/NotFound";
+import OneVOne from "./pages/OneVOne";
 import Header from "./components/wallet/Header";
 import WalletProvider from "./components/wallet/WalletProvider";
 
@@ -22,6 +23,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/game" element={<Index />} />
+            <Route path="/1v1" element={<OneVOne />} />
             {/* <Route path="/game/leaderboard" element={<GameLeaderboard />} /> */}
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

@@ -14,6 +14,7 @@ interface GameBoardProps {
   isMoving: boolean;
   animatedPosition?: number; // For tile-by-tile movement animation
   peerPositions?: { positions: number[]; counts: number[] }; // Other players' positions
+  doorHighlight?: { position: number; type: 'red' | 'green' } | null;
 }
 
 const GameBoard = ({ 
@@ -25,7 +26,8 @@ const GameBoard = ({
   revealedGates,
   isMoving,
   animatedPosition,
-  peerPositions
+  peerPositions,
+  doorHighlight
 }: GameBoardProps) => {
   // Use animatedPosition for rendering if available, otherwise use playerPosition
   const displayPosition = animatedPosition ?? playerPosition;
@@ -95,6 +97,7 @@ const GameBoard = ({
           const tileType = getTileType(tileNumber);
           const isPlayerTile = tileNumber === displayPosition; // Use displayPosition for character rendering
           const isPlayerOnTile = tileNumber === displayPosition; // Use displayPosition for door logic
+          const isDoorHighlighted = doorHighlight && doorHighlight.position === tileNumber;
           
           // Check if other players are on this tile
           const peerIndex = peerPositions?.positions.indexOf(tileNumber) ?? -1;
@@ -104,7 +107,7 @@ const GameBoard = ({
           return (
             <motion.div
               key={tileNumber}
-              className={getTileStyles(tileNumber, tileType)}
+              className={`${getTileStyles(tileNumber, tileType)} ${isDoorHighlighted ? (doorHighlight?.type === 'green' ? 'ring-4 ring-emerald-400' : 'ring-4 ring-red-500') : ''}`}
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ 
                 opacity: 1, 

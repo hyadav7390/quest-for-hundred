@@ -16,9 +16,13 @@ const Home = () => {
     setShowGameModeModal(true);
   };
 
-  const handleSelectMode = (mode: 'single' | 'multi') => {
+  const handleSelectMode = (mode: 'single' | 'multi' | 'onevone') => {
     setShowGameModeModal(false);
-    navigate('/game', { state: { mode } });
+    if (mode === 'onevone') {
+      navigate('/1v1');
+    } else {
+      navigate('/game', { state: { mode } });
+    }
   };
 
   const features = [

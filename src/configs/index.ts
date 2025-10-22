@@ -33,4 +33,7 @@ export const SINGLE_PLAYER_CONTRACT_ADDRESS = '0xc99d63935cbf0c36adb320bf8603102
 // TODO: Replace with actual deployed multiplayer contract address
 export const MULTI_PLAYER_CONTRACT_ADDRESS = '0x791c8ff407f218f531d6911a5abb368850c9d9ab';
 
+// TODO: Replace with deployed 1v1 contract address once available
+export const ONE_V_ONE_CONTRACT_ADDRESS = '0xdbd23c1267214942f163831825cd2a5975835213';
+
 export type TokenSymbol = typeof NATIVE_TOKEN.symbol | typeof REWARD_TOKEN.symbol;

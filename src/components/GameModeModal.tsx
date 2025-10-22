@@ -1,11 +1,11 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, User, Users, Play, Target, Trophy } from 'lucide-react';
+import { X, User, Users, Play, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface GameModeModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelectMode: (mode: 'single' | 'multi') => void;
+  onSelectMode: (mode: 'single' | 'multi' | 'onevone') => void;
 }
 
 const GameModeModal = ({ isOpen, onClose, onSelectMode }: GameModeModalProps) => {
@@ -37,6 +37,20 @@ const GameModeModal = ({ isOpen, onClose, onSelectMode }: GameModeModalProps) =>
       ],
       color: 'from-purple-500 to-purple-600',
       borderColor: 'border-purple-500/30'
+    },
+    {
+      id: 'onevone' as const,
+      title: '1v1 Versus',
+      description: 'Wagered duels with 30 second timers',
+      icon: <Trophy className="w-8 h-8" />,
+      features: [
+        'Exactly two players',
+        'Auto-roll after 30 seconds',
+        'Queue & friend invites',
+        'Native MON escrow'
+      ],
+      color: 'from-amber-500 to-orange-600',
+      borderColor: 'border-amber-500/30'
     }
   ];
 
