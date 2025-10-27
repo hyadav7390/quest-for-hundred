@@ -10,7 +10,7 @@ import {
   ONE_V_ONE_CONTRACT_ADDRESS,
 } from '@/configs';
 import { ONE_V_ONE_GAME_ABI } from '@/abi/oneVOneGameABI';
-import { keccak256, parseEther, stringToBytes } from 'viem';
+import { keccak256, parseEther, stringToHex } from 'viem';
 
 export type MatchState = 'none' | 'waiting' | 'active' | 'completed' | 'canceled';
 export type MatchMode = 'queue' | 'friend';
@@ -296,8 +296,8 @@ export const useOneVOneGame = (overrideMatchId?: bigint) => {
     async (betAmount: string) => {
       const value = parseEther(betAmount);
       const secret = crypto.randomUUID();
-      const secretBytes = stringToBytes(secret);
-      const inviteHash = keccak256(secretBytes);
+      const secretHex = stringToHex(secret);
+      const inviteHash = keccak256(secretHex);
 
       await sendTx(
         {
@@ -339,13 +339,13 @@ export const useOneVOneGame = (overrideMatchId?: bigint) => {
   const joinInvite = useCallback(
     async (matchId: bigint, betAmount: string, secret: string) => {
       const value = parseEther(betAmount);
-      const secretBytes = stringToBytes(secret);
+      const secretHex = stringToHex(secret);
       await sendTx(
         {
           address: CONTRACT_ADDRESS,
           abi: ONE_V_ONE_GAME_ABI,
           functionName: 'joinMatch',
-          args: [matchId, secretBytes],
+          args: [matchId, secretHex],
           value,
         },
         'Joined match',
